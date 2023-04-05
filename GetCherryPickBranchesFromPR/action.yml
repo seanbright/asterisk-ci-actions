@@ -45,6 +45,7 @@ runs:
         done
         json+="]"
         echo "branches=$json" >> "$GITHUB_OUTPUT"
+        echo "branch_count=$branch_count" >> "$GITHUB_OUTPUT"
         if [ $branch_count -eq 0 ] ; then
           echo "::notice::No branches needing cherry picks identified"
         else

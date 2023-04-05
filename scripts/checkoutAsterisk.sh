@@ -6,20 +6,20 @@ set -x
 set -e
 
 if [ ${PR_NUMBER} -gt 0 ] ; then
-  if ${IS_CHERRY_PICK} ; then
-    CHECKOUT_REF=${BASE_BRANCH}
-    echo "Cherry picking PR ${PR_NUMBER} to branch ${BASE_BRANCH}" 
-  else
-    CHECKOUT_REF=refs/pull/${PR_NUMBER}/head
-    echo "Checking out PR ${PR_NUMBER}" 
-  fi
+	if ${IS_CHERRY_PICK} ; then
+		CHECKOUT_REF=${BASE_BRANCH}
+		echo "Cherry picking PR ${PR_NUMBER} to branch ${BASE_BRANCH}"
+	else
+		CHECKOUT_REF=refs/pull/${PR_NUMBER}/head
+		echo "Checking out PR ${PR_NUMBER}"
+	fi
 else
-  if ${IS_CHERRY_PICK} ; then
-    echo "::error::Cherry-pick requested without a PR to cherry-pick"
-    exit 1
-  fi
-  CHECKOUT_REF=${BASE_BRANCH}
-  echo "Checking out branch ${BASE_BRANCH}" 
+	if ${IS_CHERRY_PICK} ; then
+		echo "::error::Cherry-pick requested without a PR to cherry-pick"
+		exit 1
+	fi
+	CHECKOUT_REF=${BASE_BRANCH}
+	echo "Checking out branch ${BASE_BRANCH}"
 fi
 
 mkdir -p ${DESTINATION}
@@ -40,11 +40,11 @@ if ${IS_CHERRY_PICK} ; then
 	commits=$(gh api repos/asterisk/asterisk-gh-test/pulls/${PR_NUMBER}/commits --jq '.[].sha')
 	IFS=$'\n '
 	for commit in $commits ; do
-	  desc=$(git show --oneline -s ${commit})
-	  echo "Cherry picking commit ${desc}"
-	  git cherry-pick ${commit} || {
-	    echo "::error::Unable to cherry-pick commit '${desc}'"
-	    exit 1
-	  }
+		desc=$(git show --oneline -s ${commit})
+		echo "Cherry picking commit ${desc}"
+		git cherry-pick ${commit} || {
+			echo "::error::Unable to cherry-pick commit '${desc}'"
+			exit 1
+		}
 	done 
 fi
