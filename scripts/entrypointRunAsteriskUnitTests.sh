@@ -16,7 +16,7 @@ ${SCRIPT_DIR}/installAsterisk.sh --github --uninstall-all \
   --branch-name=${INPUT_BASE_BRANCH} --user-group=asteriskci:users \
   --output-dir=${OUTPUT_DIR}
 
-${SCRIPT_DIR}/runUnittests.sh --no-expect --github \
+${SCRIPT_DIR}/runAsteriskUnittests.sh --no-expect --github \
   --user-group=asteriskci:users \
   --output-dir=${OUTPUT_DIR} \
   --output-xml=${OUTPUT_DIR}/unittests-results.xml \

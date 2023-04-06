@@ -24,7 +24,7 @@ fi
 
 mkdir -p ${DESTINATION}
 git clone --depth 5 -q -b ${BASE_BRANCH} \
-	${GITHUB_SERVER_URL}/${ASTERISK_REPO} ${DESTINATION}
+	${GITHUB_SERVER_URL}/${REPO} ${DESTINATION}
 git config --global --add safe.directory $(realpath ${DESTINATION})
 cd ${DESTINATION}
 
@@ -37,7 +37,7 @@ fi
 
 if ${IS_CHERRY_PICK} ; then
 	echo "Cherry-picking commits"
-	commits=$(gh api repos/asterisk/asterisk-gh-test/pulls/${PR_NUMBER}/commits --jq '.[].sha')
+	commits=$(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[].sha')
 	IFS=$'\n '
 	for commit in $commits ; do
 		desc=$(git show --oneline -s ${commit})

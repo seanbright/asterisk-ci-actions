@@ -6,7 +6,7 @@ SCRIPT_DIR=${GITHUB_WORKSPACE}/$(basename ${GITHUB_ACTION_REPOSITORY})/scripts
 ASTERISK_DIR=${GITHUB_WORKSPACE}/asterisk
 
 mkdir -p ${ASTERISK_DIR}
-${SCRIPT_DIR}/checkoutAsterisk.sh --asterisk-repo=asterisk/asterisk-gh-test \
+${SCRIPT_DIR}/checkoutRepo.sh --repo=asterisk/asterisk-gh-test \
 	--base-branch=master --is-cherry-pick=false \
 	--pr-number=0 --destination=${ASTERISK_DIR}
 

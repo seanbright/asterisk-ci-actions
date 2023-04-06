@@ -1,6 +1,6 @@
-name: GetAsterisk
+name: GetRepo
 inputs:
-  asterisk_repo:
+  repo:
     required: true
     type: string
     default: ${{github.repository}}
@@ -19,6 +19,10 @@ inputs:
     required: false
     type: boolean
     default: false
+  build_script:
+    required: false
+    type: string
+    default: ''
   github_token:
     description: 'GitHub API Access Token.'
     default: ${{ github.token }}
@@ -32,4 +36,4 @@ runs:
   using: "docker"
   image: "docker://ghcr.io/asterisk/asteriskci-agent-rocky8:latest"
   args:
-    - entrypointGetAsterisk.sh
+    - entrypointGetRepo.sh

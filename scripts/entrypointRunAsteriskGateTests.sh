@@ -35,7 +35,7 @@ TEST_DIR=$(jq -j '.'${INPUT_GATETEST_GROUP}'.dir' /tmp/test_commands.json)
 cd ${TESTSUITE_DIR}
 
 TESTRC=0
-${SCRIPT_DIR}/runTestsuite.sh \
+${SCRIPT_DIR}/runAsteriskGateTests.sh \
   --timeout=${TEST_TIMEOUT} \
   --testsuite-command="${TEST_OPTIONS} ${TEST_CMD}" || TESTRC=1
 cp asterisk-test-suite-report.xml logs/ || :

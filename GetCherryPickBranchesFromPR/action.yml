@@ -1,6 +1,6 @@
 name: GetCherryPickBranchesFromPR
 inputs:
-  asterisk_repo:
+  repo:
     required: true
     type: string
   pr_number:
@@ -21,7 +21,7 @@ runs:
       id: getbranches
       shell: bash
       env:
-        GCP_ASTERISK_REPO: ${{inputs.asterisk_repo}}
+        GCP_ASTERISK_REPO: ${{inputs.repo}}
         GCP_PR_NUMBER:     ${{inputs.pr_number}}
         GITHUB_TOKEN:      ${{inputs.github_token}}
         GH_TOKEN:          ${{inputs.github_token}}

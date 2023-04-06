@@ -51,13 +51,14 @@ runs:
     - name: SetupIPV6
       uses: asterisk/asterisk-ci-actions/EnableIPv6InRunner@main
 
-    - name: Install Asterisk
-      uses: asterisk/asterisk-ci-actions/GetAsterisk@main
+    - name: Get Asterisk
+      uses: asterisk/asterisk-ci-actions/GetRepo@main
       with:
-        asterisk_repo:     ${{inputs.asterisk_repo}}
+        repo:              ${{inputs.asterisk_repo}}
         base_branch:       ${{inputs.base_branch}}
         pr_number:         ${{inputs.pr_number}}
         is_cherry_pick:    ${{inputs.is_cherry_pick}}
+        build_script:      buildAsterisk.sh
         github_token:      ${{inputs.github_token}}
         modules_blacklist: ${{inputs.modules_blacklist}}
   
