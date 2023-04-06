@@ -1,0 +1,37 @@
+name: PublishAsteriskDocs
+inputs:
+  asterisk_repo:
+    required: true
+    type: string
+  base_branch:
+    required: true
+    type: string
+  github_token:
+    description: 'GitHub API Access Token.'
+    default: ${{ github.token }}
+    required: false
+  publish_docs_repo:
+    required: true
+    type: string
+  publish_docs_branch:
+    required: false
+    type: string
+    default: master
+  branch_regex:
+    required: true
+    type: string
+  confluence_url:
+    required: true
+    type: string
+  confluence_userpass:
+    required: true
+    type: string
+  confluence_space:
+    required: true
+    type: string
+
+runs:
+  using: "docker"
+  image: "docker://ghcr.io/asterisk/asteriskci-agent-rocky8:latest"
+  args:
+    - entrypointPublishAsteriskDocs.sh

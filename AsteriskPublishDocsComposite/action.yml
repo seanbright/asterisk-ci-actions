@@ -1,0 +1,60 @@
+name: AsteriskPublishDocsComposite
+inputs:
+  asterisk_repo:
+    required: true
+    type: string
+  base_branch:
+    required: true
+    type: string
+  modules_blacklist:
+    description: 'List of Asterisk modules to blacklist from the build'
+    default: ""
+    required: false
+  github_token:
+    description: 'GitHub API Access Token.'
+    default: ${{ github.token }}
+    required: false
+  publish_docs_repo:
+    required: true
+    type: string
+  publish_docs_branch:
+    required: false
+    type: string
+    default: master
+  branch_regex:
+    required: true
+    type: string
+  confluence_url:
+    required: true
+    type: string
+  confluence_userpass:
+    required: true
+    type: string
+  confluence_space:
+    required: true
+    type: string
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build Asterisk
+      uses: asterisk/asterisk-ci-actions/GetAsterisk@main
+      with:
+        asterisk_repo:     ${{inputs.asterisk_repo}}
+        base_branch:       ${{inputs.base_branch}}
+        github_token:      ${{inputs.github_token}}
+        modules_blacklist: ${{inputs.modules_blacklist}}
+  
+    - name: Publish Asterisk Docs for branch ${{inputs.base_branch}}
+      uses: asterisk/asterisk-ci-actions/PublishAsteriskDocs@main
+      with:
+        asterisk_repo:       ${{inputs.asterisk_repo}}
+        base_branch:         ${{inputs.base_branch}}
+        github_token:        ${{inputs.github_token}}
+        publish_docs_repo:   ${{inputs.publish_docs_repo}}
+        publish_docs_branch: ${{inputs.publish_docs_branch}}
+        branch_regex:        ${{inputs.branch_regex}}
+        confluence_url:      ${{inputs.confluence_url}}
+        confluence_userpass: ${{inputs.confluence_userpass}}
+        confluence_space:    ${{inputs.confluence_space}}
+
