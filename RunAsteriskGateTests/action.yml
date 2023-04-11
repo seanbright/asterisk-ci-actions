@@ -16,6 +16,9 @@ inputs:
     description: 'GitHub API Access Token.'
     default: ${{ github.token }}
     required: false
+  cache_dir:
+    default: cache
+    required: false
   testsuite_repo:
     description: 'Testsuite Repo (default: asterisk/testsuite)'
     type: string

@@ -3,7 +3,7 @@ set -x
 set -e
 
 SCRIPT_DIR=${GITHUB_WORKSPACE}/$(basename ${GITHUB_ACTION_REPOSITORY})/scripts
-REPO_DIR=${GITHUB_WORKSPACE}/${INPUT_REPO}
+REPO_DIR=${GITHUB_WORKSPACE}/$(basename ${INPUT_REPO})
 
 mkdir -p ${REPO_DIR}
 ${SCRIPT_DIR}/checkoutRepo.sh --repo=${INPUT_REPO} \
@@ -13,7 +13,7 @@ ${SCRIPT_DIR}/checkoutRepo.sh --repo=${INPUT_REPO} \
 cd ${REPO_DIR}
 
 if [ "x${INPUT_BUILD_SCRIPT}" != "x" ] ; then
-	OUTPUT_DIR=${GITHUB_WORKSPACE}/cache/output
+	OUTPUT_DIR=${GITHUB_WORKSPACE}/${INPUT_CACHE_DIR}/output
 	mkdir -p ${OUTPUT_DIR}
 
 	${SCRIPT_DIR}/${INPUT_BUILD_SCRIPT} --github --branch-name=${INPUT_BASE_BRANCH} \

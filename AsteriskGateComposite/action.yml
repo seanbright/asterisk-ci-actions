@@ -23,6 +23,9 @@ inputs:
     description: 'List of Asterisk modules to blacklist from the build'
     default: ""
     required: false
+  cache_dir:
+    default: cache
+    required: false
   github_token:
     description: 'GitHub API Access Token.'
     default: ${{ github.token }}
@@ -59,6 +62,7 @@ runs:
         pr_number:         ${{inputs.pr_number}}
         is_cherry_pick:    ${{inputs.is_cherry_pick}}
         build_script:      buildAsterisk.sh
+        cache_dir:         ${{inputs.cache_dir}}
         github_token:      ${{inputs.github_token}}
         modules_blacklist: ${{inputs.modules_blacklist}}
   
@@ -68,6 +72,7 @@ runs:
         asterisk_repo:     ${{inputs.asterisk_repo}}
         base_branch:       ${{inputs.base_branch}}
         pr_number:         ${{inputs.pr_number}}
+        cache_dir:         ${{inputs.cache_dir}}
         github_token:      ${{inputs.github_token}}
         testsuite_repo:    ${{inputs.testsuite_repo}}
         gatetest_group:    ${{inputs.gatetest_group}}
@@ -79,7 +84,9 @@ runs:
       uses: actions/upload-artifact@v3
       with:
         name: ${{inputs.test_type}} Test Output ${{inputs.gatetest_group}}-${{inputs.base_branch}}
-        path: testsuite/logs
+        path: |
+          testsuite/logs
+          ${{inputs.cache_dir}}
 
     - name: Publish Unit Test Results
       id: publish-results

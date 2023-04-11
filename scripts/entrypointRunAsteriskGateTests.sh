@@ -3,14 +3,12 @@ set -x
 set -e
 
 SCRIPT_DIR=${GITHUB_WORKSPACE}/$(basename ${GITHUB_ACTION_REPOSITORY})/scripts
-ASTERISK_DIR=${GITHUB_WORKSPACE}/asterisk
-OUTPUT_DIR=${GITHUB_WORKSPACE}/cache/output
+ASTERISK_DIR=${GITHUB_WORKSPACE}/$(basename ${INPUT_ASTERISK_REPO})
+OUTPUT_DIR=${GITHUB_WORKSPACE}/${INPUT_CACHE_DIR}/output
 
 [ ! -d ${SCRIPT_DIR} ] && { echo "::error::SCRIPT_DIR ${SCRIPT_DIR} not found" ; exit 1 ; } 
 [ ! -d ${ASTERISK_DIR} ] && { echo "::error::ASTERISK_DIR ${ASTERISK_DIR} not found" ; exit 1 ; } 
 [ ! -d ${OUTPUT_DIR} ] && { echo "::error::OUTPUT_DIR ${OUTPUT_DIR} not found" ; exit 1 ; } 
-
-TESTSUITE_DIR=${GITHUB_WORKSPACE}/testsuite
 
 cd ${ASTERISK_DIR}
 
@@ -20,6 +18,7 @@ ${SCRIPT_DIR}/installAsterisk.sh --github --uninstall-all \
 
 cd ${GITHUB_WORKSPACE}
 
+TESTSUITE_DIR=${GITHUB_WORKSPACE}/$(basename ${INPUT_TESTSUITE_REPO})
 mkdir -p ${TESTSUITE_DIR}
 git clone --depth 1 --no-tags -q -b ${INPUT_BASE_BRANCH} \
 	${GITHUB_SERVER_URL}/${INPUT_TESTSUITE_REPO} ${TESTSUITE_DIR}
