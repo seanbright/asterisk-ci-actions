@@ -21,16 +21,16 @@ runs:
       id: getbranches
       shell: bash
       env:
-        GCP_ASTERISK_REPO: ${{inputs.repo}}
+        GCP_REPO: ${{inputs.repo}}
         GCP_PR_NUMBER:     ${{inputs.pr_number}}
         GITHUB_TOKEN:      ${{inputs.github_token}}
         GH_TOKEN:          ${{inputs.github_token}}
       run: |
         echo "${{env.GITHUB_ACTION}} Get branches"
-        gh pr edit --repo ${GCP_ASTERISK_REPO} \
+        gh pr edit --repo ${GCP_REPO} \
           --remove-label ${{vars.CHERRY_PICK_TEST_LABEL}} ${GCP_PR_NUMBER}
         # now scan the comments
-        branchlist=$(gh api /repos/${GCP_ASTERISK_REPO}/issues/${GCP_PR_NUMBER}/comments \
+        branchlist=$(gh api /repos/${GCP_REPO}/issues/${GCP_PR_NUMBER}/comments \
           --jq '.[].body | match("${{ vars.CHERRY_PICK_REGEX }}"; "g") | .captures[0].string' | tr '\n' ' ')
         echo $branchlist
         eval declare -a BRANCHES=( $branchlist )
@@ -51,4 +51,3 @@ runs:
         else
           echo "::notice::Branches that will have cherry-picks testeds: $json"
         fi
-  
