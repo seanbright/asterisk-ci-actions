@@ -38,6 +38,8 @@ fi
 if ${IS_CHERRY_PICK} ; then
 	echo "Cherry-picking commits"
 	while read SHA MESSAGE ; do
+		echo "Fetching ${SHA} : ${MESSAGE}"
+		git fetch origin ${SHA}
 		echo "Cherry-picking ${SHA} : ${MESSAGE}"
 		git cherry-pick ${SHA} || {
 			echo "::error::Unable to cherry-pick commit"
