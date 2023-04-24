@@ -51,6 +51,7 @@ runs:
       uses: asterisk/asterisk-ci-actions/EnableIPv6InRunner@main
 
     - name: GetTestsuiteDir
+      shell: bash
       run: |
         echo "GC_TESTSUITE_DIR=$(basename ${{inputs.testsuite_repo}})" >> "${GITHUB_ENV}"
 
