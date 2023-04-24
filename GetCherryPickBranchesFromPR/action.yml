@@ -6,13 +6,24 @@ inputs:
   pr_number:
     required: true
     type: number
+  cherry_pick_test_label:
+    required: true
+    type: string
+  cherry_pick_regex:
+    required: true
+    type: string
   github_token:
     description: 'GitHub API Access Token.'
     default: ${{ github.token }}
     required: false
 
 outputs:
-  branches: ${{ steps.getbranches.outputs.branches }}
+  branch_count:
+    description: "Number of branches"
+    value: ${{ steps.getbranches.outputs.branch_count }}
+  branches:
+    description: "List of branches formatted as a JSON array"
+    value: ${{ steps.getbranches.outputs.branches }}
 
 runs:
   using: "composite"
@@ -21,17 +32,15 @@ runs:
       id: getbranches
       shell: bash
       env:
-        GCP_REPO: ${{inputs.repo}}
-        GCP_PR_NUMBER:     ${{inputs.pr_number}}
         GITHUB_TOKEN:      ${{inputs.github_token}}
         GH_TOKEN:          ${{inputs.github_token}}
       run: |
         echo "${{env.GITHUB_ACTION}} Get branches"
-        gh pr edit --repo ${GCP_REPO} \
-          --remove-label ${{vars.CHERRY_PICK_TEST_LABEL}} ${GCP_PR_NUMBER}
+        gh pr edit --repo ${{inputs.repo}} \
+          --remove-label ${{inputs.cherry_pick_test_label}} ${{inputs.pr_number}}
         # now scan the comments
-        branchlist=$(gh api /repos/${GCP_REPO}/issues/${GCP_PR_NUMBER}/comments \
-          --jq '.[].body | match("${{ vars.CHERRY_PICK_REGEX }}"; "g") | .captures[0].string' | tr '\n' ' ')
+        branchlist=$(gh api /repos/${{inputs.repo}}/issues/${{inputs.pr_number}}/comments \
+          --jq '.[].body | match("${{inputs.cherry_pick_regex}}"; "g") | .captures[0].string' | tr '\n' ' ')
         echo $branchlist
         eval declare -a BRANCHES=( $branchlist )
         declare -p BRANCHES
