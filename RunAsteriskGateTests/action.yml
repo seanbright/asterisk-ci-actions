@@ -22,8 +22,7 @@ inputs:
   testsuite_repo:
     description: 'Testsuite Repo (default: asterisk/testsuite)'
     type: string
-    required: false
-    default: asterisk/testsuite
+    required: true
   gatetest_group:
     description: 'Gate Group Number'
     type: number
@@ -32,10 +31,6 @@ inputs:
     description: 'Gate Commands'
     type: string
     required: true
-  testsuite_dir:
-    required: false
-    type: string
-    default: testsuite
 
 runs:
   using: "docker"

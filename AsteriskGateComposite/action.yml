@@ -43,16 +43,16 @@ inputs:
     description: 'Gate Commands'
     type: string
     required: true
-  testsuite_dir:
-    required: false
-    type: string
-    default: testsuite
   
 runs:
   using: "composite"
   steps:
     - name: SetupIPV6
       uses: asterisk/asterisk-ci-actions/EnableIPv6InRunner@main
+
+    - name: GetTestsuiteDir
+      run: |
+        echo "GC_TESTSUITE_DIR=$(basename ${{inputs.testsuite_repo}})" >> "${GITHUB_ENV}"
 
     - name: Get Asterisk
       uses: asterisk/asterisk-ci-actions/GetRepo@main
@@ -65,7 +65,7 @@ runs:
         cache_dir:         ${{inputs.cache_dir}}
         github_token:      ${{inputs.github_token}}
         modules_blacklist: ${{inputs.modules_blacklist}}
-  
+
     - name: ${{inputs.test_type}} Test ${{inputs.gatetest_group}}-${{inputs.base_branch}}
       uses: asterisk/asterisk-ci-actions/RunAsteriskGateTests@main
       with:
@@ -85,17 +85,17 @@ runs:
       with:
         name: ${{inputs.test_type}} Test Output ${{inputs.gatetest_group}}-${{inputs.base_branch}}
         path: |
-          testsuite/logs
+          ${{env.GC_TESTSUITE_DIR}}/logs
           ${{inputs.cache_dir}}
 
-    - name: Publish Unit Test Results
+    - name: Publish Gate Test Results
       id: publish-results
       if: always()
       uses: EnricoMi/publish-unit-test-result-action@v2.4.2
       with:
         check_name: ${{inputs.test_type}} Test Results ${{inputs.gatetest_group}}-${{inputs.base_branch}}
         comment_title: ${{inputs.test_type}} Test Results ${{inputs.gatetest_group}}-${{inputs.base_branch}}
-        files: testsuite/*.xml
+        files: ${{env.GC_TESTSUITE_DIR}}/*.xml
         comment_mode: always
         compare_to_earlier_commit: false
         report_individual_runs: true
