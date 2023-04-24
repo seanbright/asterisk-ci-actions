@@ -26,6 +26,7 @@ mkdir -p ${DESTINATION}
 git clone --depth 5 -q -b ${BASE_BRANCH} \
 	${GITHUB_SERVER_URL}/${REPO} ${DESTINATION}
 git config --global --add safe.directory $(realpath ${DESTINATION})
+
 cd ${DESTINATION}
 
 if [[ ${CHECKOUT_REF} =~ refs/pull ]] ; then
@@ -37,7 +38,10 @@ fi
 
 if ${IS_CHERRY_PICK} ; then
 	echo "Cherry-picking commits"
-	while read SHA MESSAGE ; do
+	IFS=$'|'
+	while read SHA MESSAGE NAME EMAIL ; do
+		git config --global user.email "$EMAIL"
+		git config --global user.name "$NAME"
 		echo "Fetching ${SHA} : ${MESSAGE}"
 		git fetch origin ${SHA}
 		echo "Cherry-picking ${SHA} : ${MESSAGE}"
@@ -46,5 +50,5 @@ if ${IS_CHERRY_PICK} ; then
 			exit 1
 		}
 		echo "Success"
-	done < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + " \"" + .commit.message + "\""')
+	done < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + "|" + (.commit.message | split("\n")[0]) + "|" + .commit.author.name + "|" + .commit.author.email + "|"')
 fi
