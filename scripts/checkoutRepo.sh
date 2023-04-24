@@ -37,14 +37,12 @@ fi
 
 if ${IS_CHERRY_PICK} ; then
 	echo "Cherry-picking commits"
-	commits=$(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[].sha')
-	IFS=$'\n '
-	for commit in $commits ; do
-		desc=$(git show --oneline -s ${commit})
-		echo "Cherry picking commit ${desc}"
-		git cherry-pick ${commit} || {
-			echo "::error::Unable to cherry-pick commit '${desc}'"
+	while read SHA MESSAGE ; do
+		echo "Cherry-picking ${SHA} : ${MESSAGE}"
+		git cherry-pick ${SHA} || {
+			echo "::error::Unable to cherry-pick commit"
 			exit 1
 		}
-	done 
+		echo "Success"
+	done < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + " \"" + .commit.message + "\""')
 fi
