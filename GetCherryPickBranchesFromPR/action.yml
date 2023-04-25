@@ -36,8 +36,10 @@ runs:
         GH_TOKEN:          ${{inputs.github_token}}
       run: |
         echo "${{env.GITHUB_ACTION}} Get branches"
-        gh pr edit --repo ${{inputs.repo}} \
-          --remove-label ${{inputs.cherry_pick_test_label}} ${{inputs.pr_number}}
+        if [ "x${{inputs.cherry_pick_test_label}}" != "x" ] ; then
+          gh pr edit --repo ${{inputs.repo}} \
+            --remove-label ${{inputs.cherry_pick_test_label}} ${{inputs.pr_number}} || :
+        fi
         # now scan the comments
         branchlist=$(gh api /repos/${{inputs.repo}}/issues/${{inputs.pr_number}}/comments \
           --jq '.[].body | match("${{inputs.cherry_pick_regex}}"; "g") | .captures[0].string' | tr '\n' ' ')
