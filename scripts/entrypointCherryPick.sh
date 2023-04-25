@@ -11,13 +11,14 @@ mkdir -p ${OUTPUT_DIR}
 
 cd ${GITHUB_WORKSPACE}
 ${SCRIPT_DIR}/checkoutRepo.sh --repo=${INPUT_REPO} \
-	--branch=${INPUT_BASE_BRANCH} --is-cherry-pick=${INPUT_IS_CHERRY_PICK} \
+	--branch=${INPUT_BRANCH} --is-cherry-pick=true \
 	--pr-number=${INPUT_PR_NUMBER} --destination=${REPO_DIR}
 
 cd ${REPO_DIR}
-
-if [ "x${INPUT_BUILD_SCRIPT}" != "x" ] ; then
-	${SCRIPT_DIR}/${INPUT_BUILD_SCRIPT} --github --branch-name=${INPUT_BASE_BRANCH} \
-		--modules-blacklist="${INPUT_MODULES_BLACKLIST// /}" \
-		--output-dir=${OUTPUT_DIR}
-fi
+# We should already be on the correct branch
+# with the cherry-picks applied.
+# We just need to set up git to use GITHUB_TOKEN
+# via gh and push.
+export GH_TOKEN="${INPUT_GITHUB_TOKEN}"
+gh auth setup-git -h github.com
+git push
