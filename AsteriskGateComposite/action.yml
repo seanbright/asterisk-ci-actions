@@ -65,7 +65,7 @@ runs:
         base_branch:       ${{inputs.base_branch}}
         pr_number:         ${{inputs.pr_number}}
         is_cherry_pick:    ${{inputs.is_cherry_pick}}
-#        build_script:      buildAsterisk.sh
+        build_script:      buildAsterisk.sh
         cache_dir:         ${{inputs.cache_dir}}
         github_token:      ${{inputs.github_token}}
         modules_blacklist: ${{inputs.modules_blacklist}}
@@ -83,30 +83,30 @@ runs:
         gatetest_group:    ${{inputs.gatetest_group}}
         gatetest_commands: ${{inputs.gatetest_commands}} 
 
-#    - name: Save Output
-#      id: save-output
-#      if: ${{ always() }}
-#      uses: actions/upload-artifact@v3
-#      with:
-#        name: ${{inputs.test_type}} Test Output ${{inputs.gatetest_group}}-${{inputs.base_branch}}
-#        path: |
-#          ${{env.GC_TESTSUITE_DIR}}/logs
-#          ${{inputs.cache_dir}}
-#
-#    - name: Publish Gate Test Results
-#      id: publish-results
-#      if: always()
-#      uses: EnricoMi/publish-unit-test-result-action@v2.4.2
-#      with:
-#        check_name: ${{inputs.test_type}} Test Results ${{inputs.gatetest_group}}-${{inputs.base_branch}}
-#        comment_title: ${{inputs.test_type}} Test Results ${{inputs.gatetest_group}}-${{inputs.base_branch}}
-#        files: ${{env.GC_TESTSUITE_DIR}}/*.xml
-#        comment_mode: off
-#        compare_to_earlier_commit: false
-#        check_run_annotations: none
-#        ignore_runs: true
-#        report_individual_runs: true
-#        fail_on: "test failures"
-#        action_fail: true
-#      env:
-#        GITHUB_REPOSITORY: ${{inputs.asterisk_repo}}
+    - name: Save Output
+      id: save-output
+      if: ${{ always() }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{inputs.test_type}} Test Output ${{inputs.gatetest_group}}-${{inputs.base_branch}}
+        path: |
+          ${{env.GC_TESTSUITE_DIR}}/logs
+          ${{inputs.cache_dir}}
+
+    - name: Publish Gate Test Results
+      id: publish-results
+      if: always()
+      uses: EnricoMi/publish-unit-test-result-action@v2.4.2
+      with:
+        check_name: ${{inputs.test_type}} Test Results ${{inputs.gatetest_group}}-${{inputs.base_branch}}
+        comment_title: ${{inputs.test_type}} Test Results ${{inputs.gatetest_group}}-${{inputs.base_branch}}
+        files: ${{env.GC_TESTSUITE_DIR}}/*.xml
+        comment_mode: off
+        compare_to_earlier_commit: false
+        check_run_annotations: none
+        ignore_runs: true
+        report_individual_runs: true
+        fail_on: "test failures"
+        action_fail: true
+      env:
+        GITHUB_REPOSITORY: ${{inputs.asterisk_repo}}
