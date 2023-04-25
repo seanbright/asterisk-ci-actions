@@ -1,0 +1,23 @@
+name: TestCompositeAction
+inputs:
+  test_type:
+    required: true
+    type: string
+outputs:
+  result:
+    value: ${{steps.teststep.output.result}}
+runs:
+  using: "composite"
+  steps:
+    - name: TestStep
+      id: teststep
+      shell: bash
+      run: |
+        if [ "${{inputs.test_type}}" == "pass_fail" ] ; then
+          echo "Exiting with RC 1 (forced)"
+          echo "result=failure" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+        echo "Exiting with RC 0 (forced)"
+        echo "result=success" >> $GITHUB_OUTPUT
+        exit 0
