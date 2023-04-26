@@ -20,5 +20,7 @@ cd ${REPO_DIR}
 # We just need to set up git to use GITHUB_TOKEN
 # via gh and push.
 export GH_TOKEN="${INPUT_GITHUB_TOKEN}"
+export GITHUB_TOKEN="${INPUT_GITHUB_TOKEN}"
+echo "${INPUT_GITHUB_TOKEN}"
 gh auth setup-git -h github.com
 git push
