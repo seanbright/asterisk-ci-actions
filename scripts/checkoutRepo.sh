@@ -43,7 +43,8 @@ if [ ${PR_NUMBER} -le 0 ] ; then
 	exit 0
 fi
 
-git fetch upstream refs/pull/${PR_NUMBER}/head
+cd ${DESTINATION}
+git fetch origin refs/pull/${PR_NUMBER}/head
 if ! ${IS_CHERRY_PICK} ; then
 	# We're just checking out the PR
 	git checkout FETCH_HEAD
