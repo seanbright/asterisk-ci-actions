@@ -12,7 +12,7 @@ runs:
       run: |
         set -e +v +x
         echo "::group::inputs"
-        echo '${{inputs.action-inputs}}'
+        echo '${{toJSON(fromJSON(inputs.action-inputs))}}'
         echo "::endgroup::"
         
         echo "::group::ctxenv"

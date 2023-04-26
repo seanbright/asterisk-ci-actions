@@ -9,16 +9,43 @@ inputs:
   branch:
     required: true
     type: string
-  cache_dir:
-    default: cache
-    required: false
   github_token:
     description: 'GitHub API Access Token.'
     type: string
     required: true
+  access_app_id:
+    type: string
+    required: true
+  access_app_key:
+    type: string
+    required: true
 
 runs:
-  using: "docker"
-  image: "docker://ghcr.io/asterisk/asteriskci-agent-rocky8:latest"
-  args:
-    - entrypointCherryPick.sh
+  using: "composite"
+  steps:
+    - name: DumpEnvironment
+      uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+      with:
+        action-inputs: ${{toJSON(inputs)}}
+
+    - name: Get Token needed to push commits
+      id: get_workflow_token
+      uses: peter-murray/workflow-application-token-action@v1
+      with:
+        application_id: ${{inputs.access_app_id}}
+        application_private_key: ${{inputs.access_app_key}}
+        organization: asterisk
+
+    - name: CherryPick
+      shell: bash
+      env:
+#        GITHUB_TOKEN: ${{steps.get_workflow_token.outputs.token}}
+#        GH_TOKEN: ${{steps.get_workflow_token.outputs.token}}
+        GITHUB_TOKEN: ${{inputs.github_token}}
+        GH_TOKEN: ${{inputs.github_token}}
+      run: |
+        SCRIPT_DIR=$(dirname ${GITHUB_ACTION_PATH})/scripts
+        export GH_TOKEN
+        export GITHUB_TOKEN
+        ${SCRIPT_DIR}/cherryPick.sh --repo=${{inputs.repo}} --branch=${{inputs.branch}} \
+          --pr-number=${{inputs.pr_number}} 
