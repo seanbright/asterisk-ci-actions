@@ -1,4 +1,4 @@
-name: AsteriskUnitComposite
+name: TestsuiteUnitComposite
 inputs:
   asterisk_repo:
     required: true
@@ -9,9 +9,6 @@ inputs:
   pr_number:
     required: true
     type: number
-  pr_commit:
-    required: true
-    type: string
   base_branch:
     required: true
     type: string
@@ -59,6 +56,7 @@ runs:
     - name: Run Unit Tests
       uses: asterisk/asterisk-ci-actions/RunTestsuiteUnitTests@main
       with:
+        asterisk_repo:    ${{inputs.asterisk_repo}}
         testsuite_repo:   ${{inputs.testsuite_repo}}
         base_branch:      ${{inputs.base_branch}}
         pr_number:        ${{inputs.pr_number}}
