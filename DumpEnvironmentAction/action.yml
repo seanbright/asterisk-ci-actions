@@ -3,6 +3,7 @@ inputs:
   action-inputs:
     required: false
     type: string
+    default: '{}'
 
 runs:
   using: "composite"
