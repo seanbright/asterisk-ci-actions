@@ -4,6 +4,10 @@ inputs:
     required: false
     type: string
     default: '{}'
+  action-vars:
+    required: false
+    type: string
+    default: '{}'
 
 runs:
   using: "composite"
@@ -11,9 +15,13 @@ runs:
     - name: "Dump github context"
       shell: bash
       run: |
-        set -e +v +x
+        set +e +v +x
         echo "::group::inputs"
         echo '${{toJSON(fromJSON(inputs.action-inputs))}}'
+        echo "::endgroup::"
+        
+        echo "::group::vars"
+        echo '${{toJSON(fromJSON(inputs.action-vars))}}'
         echo "::endgroup::"
         
         echo "::group::ctxenv"
