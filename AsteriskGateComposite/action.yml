@@ -93,20 +93,20 @@ runs:
           ${{env.GC_TESTSUITE_DIR}}/logs
           ${{inputs.cache_dir}}
 
-    - name: Publish Gate Test Results
-      id: publish-results
-      if: always()
-      uses: EnricoMi/publish-unit-test-result-action@v2.4.2
-      with:
-        check_name: ${{inputs.test_type}} Test Results ${{inputs.gatetest_group}}-${{inputs.base_branch}}
-        comment_title: ${{inputs.test_type}} Test Results ${{inputs.gatetest_group}}-${{inputs.base_branch}}
-        files: ${{env.GC_TESTSUITE_DIR}}/*.xml
-        comment_mode: off
-        compare_to_earlier_commit: false
-        check_run_annotations: none
-        ignore_runs: true
-        report_individual_runs: true
-        fail_on: "test failures"
-        action_fail: true
-      env:
-        GITHUB_REPOSITORY: ${{inputs.asterisk_repo}}
+#    - name: Publish Gate Test Results
+#      id: publish-results
+#      if: always()
+#      uses: EnricoMi/publish-unit-test-result-action@v2.4.2
+#      with:
+#        check_name: ${{inputs.test_type}} Test Results ${{inputs.gatetest_group}}-${{inputs.base_branch}}
+#        comment_title: ${{inputs.test_type}} Test Results ${{inputs.gatetest_group}}-${{inputs.base_branch}}
+#        files: ${{env.GC_TESTSUITE_DIR}}/*.xml
+#        comment_mode: off
+#        compare_to_earlier_commit: false
+#        check_run_annotations: none
+#        ignore_runs: true
+#        report_individual_runs: true
+#        fail_on: "test failures"
+#        action_fail: true
+#      env:
+#        GITHUB_REPOSITORY: ${{inputs.asterisk_repo}}
