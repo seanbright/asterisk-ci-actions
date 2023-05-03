@@ -17,15 +17,21 @@ runs:
       run: |
         set +e +v +x
         echo "::group::inputs"
-        echo '${{toJSON(fromJSON(inputs.action-inputs))}}'
+        cat <<%%EOF%%
+        ${{toJSON(fromJSON(inputs.action-inputs))}}
+        %%EOF%%
         echo "::endgroup::"
         
         echo "::group::vars"
-        echo '${{toJSON(fromJSON(inputs.action-vars))}}'
+        cat <<%%EOF%%
+        ${{toJSON(fromJSON(inputs.action-vars))}}
+        %%EOF%%
         echo "::endgroup::"
         
         echo "::group::ctxenv"
-        echo '${{toJSON(env)}}'
+        cat <<%%EOF%%
+        ${{toJSON(env)}}
+        %%EOF%%
         echo "::endgroup::"
         
         echo "::group::env"
@@ -33,6 +39,8 @@ runs:
         echo "::endgroup::"
         
         echo "::group::github_context"
-        echo '${{toJSON(github)}}'
+        cat <<%%EOF%%
+        ${{toJSON(github)}}
+        %%EOF%%
         echo "::endgroup::"
         exit 0
