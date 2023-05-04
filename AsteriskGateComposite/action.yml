@@ -57,6 +57,9 @@ runs:
       shell: bash
       run: |
         echo "GC_TESTSUITE_DIR=$(basename ${{inputs.testsuite_repo}})" >> "${GITHUB_ENV}"
+        BASE_BRANCH="${{inputs.base_branch}}"
+        GC_TEST_NAME="${{inputs.test_type}} Test Output ${{inputs.gatetest_group}}-${BASE_BRANCH//\//-}"
+        echo "GC_TEST_NAME=${GC_TEST_NAME}" >> "${GITHUB_ENV}"
 
     - name: Get Asterisk
       uses: asterisk/asterisk-ci-actions/GetRepo@main
@@ -88,7 +91,7 @@ runs:
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
-        name: ${{inputs.test_type}} Test Output ${{inputs.gatetest_group}}-${{inputs.base_branch}}
+        name: ${{env.GC_TEST_NAME}}
         path: |
           ${{env.GC_TESTSUITE_DIR}}/logs
           ${{inputs.cache_dir}}
