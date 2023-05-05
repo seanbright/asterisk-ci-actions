@@ -1,0 +1,68 @@
+name: AsteriskReleaser
+inputs:
+  is_security:
+    description: 'Security or Hotfix?'
+    required: true
+    type: boolean
+    default: false
+  new_version:
+    description: |
+      New Version
+      Examples:
+        21.4.0-rc1, 21.4.0-rc2, 21.4.0, 21.4.1
+        certified/21.4-cert1-rc1, certified/21.4-cert1
+    required: true
+    type: string
+  start_version:
+    description: |
+      Last Version
+      Only use when you KNOW that the automated
+      process won't get it right.' 
+    required: false
+    type: string
+  push_live:
+    description: 'Push live?'
+    required: true
+    type: boolean
+    default: false
+  send_email:
+    description: 'Send announcement emails?'
+    required: true
+    type: boolean
+    default: false
+  repo:
+    type: string
+    required: true
+  asterisk_mail_list_ga:
+    type: string
+    required: true
+  asterisk_mail_list_rc:
+    type: string
+    required: true
+  asterisk_mail_list_cert_ga:
+    type: string
+    required: true
+  asterisk_mail_list_cert_rc:
+    type: string
+    required: true
+  asterisk_mail_list_sec:
+    type: string
+    required: true
+  gpg_private_key:
+    type: string
+    required: true
+  github_token:
+    type: string
+    required: true
+
+outputs:
+  mail_list:
+    description: 'Mailing list'
+  email_announcement:
+    description: 'Path to email announcement'
+
+runs:
+  using: "docker"
+  image: "docker://ghcr.io/asterisk/asteriskci-agent-rocky8:latest"
+  args:
+    - entrypointAsteriskReleaser.sh

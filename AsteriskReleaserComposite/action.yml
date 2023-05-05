@@ -1,0 +1,128 @@
+name: AsteriskReleaserComposite
+inputs:
+  is_security:
+    description: 'Security or Hotfix?'
+    required: true
+    type: boolean
+    default: false
+  new_version:
+    description: |
+      New Version
+      Examples:
+        21.4.0-rc1, 21.4.0-rc2, 21.4.0, 21.4.1
+        certified/21.4-cert1-rc1, certified/21.4-cert1
+    required: true
+    type: string
+  start_version:
+    description: |
+      Last Version
+      Only use when you KNOW that the automated
+      process won't get it right.' 
+    required: false
+    type: string
+  push_live:
+    description: 'Push live?'
+    required: true
+    type: boolean
+    default: false
+  send_email:
+    description: 'Send announcement emails?'
+    required: true
+    type: boolean
+    default: false
+  repo:
+    type: string
+    required: true
+  asterisk_mail_list_ga:
+    type: string
+    required: true
+  asterisk_mail_list_rc:
+    type: string
+    required: true
+  asterisk_mail_list_cert_ga:
+    type: string
+    required: true
+  asterisk_mail_list_cert_rc:
+    type: string
+    required: true
+  asterisk_mail_list_sec:
+    type: string
+    required: true
+  gpg_private_key:
+    type: string
+    required: true
+  github_token:
+    type: string
+    required: true
+  application_id:
+    type: string
+    required: true
+  application_private_key:
+    type: string
+    required: true
+  asteriskteamsa_username:
+    type: string
+    required: true
+  asteriskteamsa_token:
+    type: string
+    required: true
+  
+runs:
+  using: "composite"
+  steps:
+    - name: Get token needed push release artifacts
+      id: get_workflow_token
+      uses: peter-murray/workflow-application-token-action@v1
+      with:
+        application_id: ${{inputs.application_id}}
+        application_private_key: ${{inputs.application_private_key}}
+        organization: asterisk
+
+    - name: Run Releaser
+      id: releaser
+      uses: asterisk/asterisk-ci-actions/AsteriskReleaser@main
+      with:
+        is_security: ${{inputs.is_security}}
+        new_version: ${{inputs.new_version}}
+        start_version: ${{inputs.start_version}}
+        push_live: ${{inputs.push_live}}
+        send_email: ${{inputs.send_email}}
+        asterisk_mail_list_ga: ${{inputs.asterisk_mail_list_ga}}
+        asterisk_mail_list_rc: ${{inputs.asterisk_mail_list_rc}}
+        asterisk_mail_list_cert_ga: ${{inputs.asterisk_mail_list_cert_ga}}
+        asterisk_mail_list_cert_rc: ${{inputs.asterisk_mail_list_cert_rc}}
+        asterisk_mail_list_sec: ${{inputs.asterisk_mail_list_sec}}
+        repo: ${{inputs.repo}}
+        gpg_private_key: ${{inputs.gpg_private_key}}
+        github_token: ${{steps.get_workflow_token.outputs.token}}
+
+    - name: Dump
+      uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+      with:
+        action-inputs: ${{ toJSON(inputs)}}
+        action-vars: ${{ toJSON(steps.releaser.outputs)}}
+
+    - name: Save Output
+      id: save-output
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: Release Artifacts
+        path: asterisk-${{inputs.new_version}}
+
+    - name: Send Release Announcements
+      if: inputs.send_email && steps.releaser.outputs.mail_list != 'none'
+      uses: dawidd6/action-send-mail@v3
+      with:
+        server_address: smtp.gmail.com
+        server_port: 465
+        secure: true
+        username: ${{inputs.asteriskteamsa_username}}
+        password: ${{inputs.asteriskteamsa_token}}
+        subject: Asterisk Release ${{ inputs.new_version }}
+        to: ${{steps.releaser.outputs.mail_list}}
+        from: Asterisk Development Team <asteriskteam@digium.com>
+        body: "file://${{github.workspace}}/${{steps.releaser.outputs.email_announcement}}"
+        reply_to: no-reply@digium.com
+        ignore_cert: true
+        convert_markdown: false
