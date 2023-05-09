@@ -160,7 +160,7 @@ cp "${TMPFILE1}" "${DST_DIR}/release_notes.md"
 cat <<-EOF >> "${DST_DIR}/release_notes.md"
 
 ### For more details, see:
-https://github.com/asterisk/$(basename ${SRC_REPO})/releases/download/${END_TAG}/ChangeLog-${END_TAG}.md
+https://downloads.asterisk.org/pub/telephony/asterisk/releases/ChangeLog-${END_TAG}.md
 EOF
 
 

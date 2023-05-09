@@ -219,6 +219,7 @@ tag_parser() {
 		tagarray[release]=${BASH_REMATCH[6]}
 		tagarray[release_type]=${BASH_REMATCH[7]:-ga}
 		tagarray[release_num]=${BASH_REMATCH[8]}
+		tagarray[base_version]=${BASH_REMATCH[2]}.${BASH_REMATCH[3]}${BASH_REMATCH[4]}${BASH_REMATCH[5]}
 	else
 		return 1
 	fi

@@ -22,45 +22,43 @@ if [ "x${status}" == "x" ] ; then
 fi
 
 debug "Committing ChangeLog and Alembic scripts"
-if [ -f ChangeLog ] ; then
-	$ECHO_CMD git rm -f ChangeLog
+
+git add contrib/realtime
+
+cp ${DST_DIR}/.version .version
+git add .version
+
+if [ ! -d ChangeLogs ] ; then
+	mkdir -p ChangeLogs/historical
+	[ -f CHANGES ] && git mv CHANGES ChangeLogs/historical/
+	[ -f ChangeLog ] && git mv ChangeLog ChangeLogs/historical/
 fi
 
 if [ -f asterisk-*-summary.html ] ; then
 	git rm -f asterisk-*-summary.html asterisk-*-summary.txt >/dev/null 2>&1 || :
 fi
 
-$ECHO_CMD cp ${DST_DIR}/.version .version
+cp ${DST_DIR}/ChangeLog-${END_TAG}.md ChangeLogs/
+ln -sf ChangeLogs/ChangeLog-${END_TAG}.md CHANGES.md
+git add ChangeLogs/ChangeLog-${END_TAG}.md CHANGES.md
 
-[ -L CHANGES ] && $ECHO_CMD git rm CHANGES
-
-if [ -f CHANGES ] ; then
-	$ECHO_CMD cp CHANGES /tmp/asterisk/last_changes
-	$ECHO_CMD cp ${DST_DIR}/ChangeLog-${END_TAG}.md CHANGES.md
-	$ECHO_CMD cat /tmp/asterisk/last_changes >> CHANGES.md
-elif [ -f CHANGES.md ] ; then
-	$ECHO_CMD cp CHANGES.md /tmp/asterisk/last_changes
-	$ECHO_CMD cp ${DST_DIR}/ChangeLog-${END_TAG}.md CHANGES.md
-	$ECHO_CMD cat /tmp/asterisk/last_changes >> CHANGES.md
-else
-	$ECHO_CMD cp ${DST_DIR}/ChangeLog-${END_TAG}.md CHANGES.md
+if [ "${end_tag_array[release_type]}" == "ga" ] ; then
+	git rm -f ChangeLogs/ChangeLog-${end_tag_array[base_version]}-rc*
 fi
-$ECHO_CMD ln -sf CHANGES.md CHANGES
 
 if [ -f UPGRADE.txt ] ; then
 	header=$(head -1 UPGRADE.txt)
 	if [[ ! "$header" =~ OBSOLETE ]] ; then
-		$ECHO_CMD cp UPGRADE.txt /tmp/asterisk/last_upgrade
-		$ECHO_CMD cat <<-EOF >UPGRADE.txt
+		cp UPGRADE.txt /tmp/asterisk/last_upgrade
+		cat <<-EOF >UPGRADE.txt
 		===== WARNING, THIS FILE IS OBSOLETE AND WILL BE REMOVED IN A FUTURE VERSION =====
 		See 'Upgrade Notes' in the CHANGES file
 		
 		EOF
-		$ECHO_CMD cat /tmp/asterisk/last_upgrade >>UPGRADE.txt
+		cat /tmp/asterisk/last_upgrade >>UPGRADE.txt
 	fi
 fi
 
-$ECHO_CMD git add contrib/realtime .version CHANGES CHANGES.md UPGRADE.txt
-$ECHO_CMD git commit -a -m "Update for ${END_TAG}"
+git commit -a -m "Update for ${END_TAG}"
 
 debug "Done"
