@@ -74,9 +74,7 @@ if [ x"$CACHE_DIR" != x ] ; then
 fi
 
 if [ ${CCACHE_DISABLE:-0} -ne 1 ] ; then
-	echo "Setting up ccache"
-	begin_log "${OUTPUT_DIR}/ccache"
-	(	
+	begin_group "CCache Setup"
 		if [ x"$CACHE_DIR" != x ] ; then
 			mkdir -p $CACHE_DIR/ccache
 			export CCACHE_UMASK=002
@@ -96,24 +94,21 @@ if [ ${CCACHE_DISABLE:-0} -ne 1 ] ; then
 				fi
 			;;
 		esac
-	) >>"${log_to}" 2>>"${err_to}" || {	echo "::error::Ccache setup failed.  See ${err_to} for more details." ; exit 1 ; }
-	end_log
+	end_group
 fi
 
 MAKE=`which make`
 PKGCONFIG=`which pkg-config`
 _libdir=`${CIDIR}/findLibdir.sh`
 
-begin_log ${OUTPUT_DIR}/variables
-{
+begin_group "Build Environment"
 	runner ccache -s
 	runner ulimit -a
 	_version=$(./build_tools/make_version .)
 	for var in BRANCH_NAME MAINLINE_BRANCH OUTPUT_DIR CACHE_DIR CCACHE_DISABLE CCACHE_DIR _libdir _version ; do
-		declare -p $var || :
+		declare -p $var 2>/dev/null || :
 	done
-}  >>"$log_to" 2>>"$err_to"
-end_log
+end_group
 
 echo "Creating configure arguments"
 
@@ -133,18 +128,13 @@ fi
 export WGET_EXTRA_ARGS="--quiet"
 
 if [ $NO_CONFIGURE -eq 0 ] ; then
-	echo "Running configure"
-	begin_log "$OUTPUT_DIR/configure"
-	runner ./configure ${common_config_args} >>"${log_to}" 2>>"${err_to}" \
-		|| { echo "::error::Configure failed.  See ${err_to} for more details." ; exit 1 ; }
-	end_log
- 
+	begin_group "configure"
+	runner ./configure ${common_config_args}
+	end_group
 fi
 
 if [ $NO_MENUSELECT -eq 0 ] ; then
-	echo "Running menuselect"
-	begin_log "$OUTPUT_DIR/menuselect"
-	(
+	begin_group "Running Menuselect"
 		runner ${MAKE} menuselect.makeopts
 	
 		runner menuselect/menuselect `gen_mods enable DONT_OPTIMIZE BETTER_BACKTRACES` menuselect.makeopts
@@ -197,26 +187,19 @@ if [ $NO_MENUSELECT -eq 0 ] ; then
 		mod_enables+=" res_mwi_external res_ari_mailboxes res_mwi_external_ami res_stasis_mailbox"
 		mod_enables+=" CORE-SOUNDS-EN-GSM MOH-OPSOUND-GSM EXTRA-SOUNDS-EN-GSM"
 		runner menuselect/menuselect `gen_mods enable $mod_enables` menuselect.makeopts
-	) >>"${log_to}" 2>>"${err_to}" || { echo "::notice::Menuselect failed.  See ${err_to} for details." ; exit 1 ; }
-	end_log
+	end_group
 fi
 
 if [ $NO_MAKE -eq 0 ] ; then
-	echo "Building"
-	begin_log ${OUTPUT_DIR}/build
-	(
+	begin_group "Building"
 		runner ${MAKE} -j8 full || runner ${MAKE} -j1 NOISY_BUILD=yes full
-			
-	) >>"${log_to}" 2>>"${err_to}" || { echo "::error::Building failed.  See ${err_to} for more details." ; exit 1 ; } 
-	end_log
+	end_group
 fi
 
 runner rm -f ${LCOV_DIR}/*.info 2>/dev/null || :
 
 if [ $COVERAGE -eq 1 ] ; then
-	echo "Running lcov"
-	begin_log "${OUTPUT_DIR}/lcov"
-	(
+	begin_group "Running Coverage"
 		runner mkdir -p ${LCOV_DIR}
 	
 		# Zero counter data
@@ -228,9 +211,8 @@ if [ $COVERAGE -eq 1 ] ; then
 		# reported with 0% coverage for all sources.
 		runner lcov --quiet --directory . --no-external --capture --initial --rc lcov_branch_coverage=0 \
 			--output-file ${LCOV_DIR}/initial.info
-	) >>"${log_to}" 2>>"${err_to}" || { echo "::error::LCOV failed.  See ${err_to} for more details." ; exit 1 ; }
+	end_group
 fi
-end_log
 
 if [ $NO_ALEMBIC -eq 0 ] ; then
 	ALEMBIC=$(which alembic 2>/dev/null || : )
@@ -239,55 +221,49 @@ if [ $NO_ALEMBIC -eq 0 ] ; then
 		exit 1
 	fi
 
-	echo "Running alembic"
 	find contrib/ast-db-manage -name *.pyc -delete
-	begin_log "${OUTPUT_DIR}alembic"
-	(
+	begin_group "Alembic"
 		out=$(run_alembic -c config.ini.sample branches)
 		if [ "x$out" != "x" ] ; then
-			echo "Alembic branches were found for config" >>${err_to}
-			echo $out >>${err_to}
+			echo "::error::Alembic branches were found for config"
+			echo $out
 			exit 1
 		fi
 		
 		run_alembic -c config.ini.sample upgrade head --sql \
 			> "${OUTPUT_DIR}alembic-config.sql" \
-			2>"$err_to" || exit 1
+			|| { echo "::error::Failed to create alembic-config.sql" ; exit 1 ; }
 		echo "Alembic for 'config' OK"
 		
 		out=$(run_alembic -c cdr.ini.sample branches)
 		if [ "x$out" != "x" ] ; then
-			echo "Alembic branches were found for cdr" >>${err_to}
-			echo $out >>${err_to}
+			echo "::error::Alembic branches were found for cdr"
+			echo $out
 			exit 1
 		fi
 	
 		run_alembic -c cdr.ini.sample upgrade head --sql \
 			> "${OUTPUT_DIR}alembic-cdr.sql" \
-			2>"$err_to" || exit 1
+			|| { echo "::error::Failed to create alembic-cdr.sql" ; exit 1 ; }
 		echo "Alembic for 'cdr' OK"
 	
 		
 		out=$(run_alembic -c voicemail.ini.sample branches)
 		if [ "x$out" != "x" ] ; then
-			echo "Alembic branches were found for voicemail" >>${err_to}
-			echo $out >>${err_to}
+			echo "::error::Alembic branches were found for voicemail"
+			echo $out
 			exit 1
 		fi
 	
 		run_alembic -c voicemail.ini.sample upgrade head --sql \
 			> "${OUTPUT_DIR}alembic-voicemail.sql" \
-			2>"$err_to" || exit 1
+			|| { echo "::error::Failed to create alembic-voicemail.sql" ; exit 1 ; }
 		echo "Alembic for 'voicemail' OK"
-	) >>${log_to} 2>>${err_to} || {	echo "::error::Alembic failed.  See ${err_to} for more details" ; exit 1 ; }
-	end_log
+	end_group
 fi
 
 if [ -f "doc/core-en_US.xml" ] ; then
-	echo "Validating documentation"
-	begin_log "${OUTPUT_DIR}validate_docs"
-	(
+	begin_group "Document Validation"
 		runner ${MAKE} validate-docs || ${MAKE} NOISY_BUILD=yes validate-docs
-	)  >>${log_to} 2>>${err_to} || {	echo "::error::Document validation failed.  See ${err_to} for more details" ; exit 1 ; }
-	end_log
+	end_group
 fi

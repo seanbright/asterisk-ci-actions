@@ -27,31 +27,22 @@ _version=$(./build_tools/make_version .)
 
 destdir=${DESTDIR:+DESTDIR=$DESTDIR}
 
-begin_log "${OUTPUT_DIR}/variables"
-{
 declare -p _version
 declare -p destdir
-} >>"${log_to}"
 
-echo "Uninstalling existing build"
-begin_log "${OUTPUT_DIR}/uninstall"
-(
-[ $UNINSTALL -gt 0 ] && ${MAKE} ${destdir} uninstall
-[ $UNINSTALL_ALL -gt 0 ] && ${MAKE} ${destdir} uninstall-all
-) >>"$log_to" 2>>"$err_to"
-end_log
+begin_group "Unninstall existing"
+	[ $UNINSTALL -gt 0 ] && ${MAKE} ${destdir} uninstall
+	[ $UNINSTALL_ALL -gt 0 ] && ${MAKE} ${destdir} uninstall-all
+end_group
 
-echo "Installing"
-begin_log "${OUTPUT_DIR}/install"
-(
+begin_group "Installing"
 	${MAKE} ${destdir} install || ${MAKE} ${destdir} NOISY_BUILD=yes install || exit 1
 	${MAKE} ${destdir} samples install-headers 
 	if [ x"$DESTDIR" != x ] ; then
 		sed -i -r -e "s@\[directories\]\(!\)@[directories]@g" $DESTDIR/etc/asterisk/asterisk.conf
 		sed -i -r -e "s@ /(var|etc|usr)/@ $DESTDIR/\1/@g" $DESTDIR/etc/asterisk/asterisk.conf
 	fi
-) >>"${log_to}" 2>>"${err_to}" || { echo "::error::Install failed.  See ${err_to} for more details." ; exit 1 ; }
-end_log
+end_group
 
 set +e
 if [ x"$USER_GROUP" != x ] ; then

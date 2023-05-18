@@ -28,19 +28,13 @@ runner() {
 	( set -x ; ${@} )
 }
 
-declare -x log_to
-declare -x err_to
-
-begin_log() {
-	base=$1
-	log_to="${base}.txt"
-	err_to="${base}.err"
-	[ -f "${err_to}" ] && rm "${err_to}" || :
-	[ -f "${log_to}" ] && rm "${log_to}" || : 
+begin_group() {
+	echo "::group::$1"
+	trap end_group EXIT
 }
 
-end_log() {
-	log_to=/dev/stdout
-	err_to=/dev/stderr
+end_group() {
+	trap - EXIT
+	echo "::endgroup::"
 }
 
