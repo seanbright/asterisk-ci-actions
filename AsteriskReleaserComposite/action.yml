@@ -17,7 +17,7 @@ inputs:
     description: |
       Last Version
       Only use when you KNOW that the automated
-      process won't get it right.' 
+      process won't get it right.
     required: false
     type: string
   push_live:
@@ -121,8 +121,8 @@ runs:
         password: ${{inputs.asteriskteamsa_token}}
         subject: Asterisk Release ${{ inputs.new_version }}
         to: ${{steps.releaser.outputs.mail_list}}
-        from: Asterisk Development Team <asteriskteam@digium.com>
+        from: Asterisk Development Team <asteriskteamsa@sangoma.com>
         body: "file://${{github.workspace}}/${{steps.releaser.outputs.email_announcement}}"
-        reply_to: no-reply@digium.com
+        reply_to: no-reply@sangoma.com
         ignore_cert: true
         convert_markdown: false
