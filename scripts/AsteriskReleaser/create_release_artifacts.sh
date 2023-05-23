@@ -114,7 +114,7 @@ if ${PUSH_LIVE} ; then
 	$ECHO_CMD gh release create ${END_TAG} \
 		--verify-tag \
 		$( [ "${end_tag[release_type]}" != "ga" ] && echo "--prerelease" ) \
-		--notes-file ${DST_DIR}/release_notes.md \
+		--notes-file ${DST_DIR}/email_announcement.md \
 		--target ${end_tag[branch]} -t "Asterisk Release ${END_TAG}" \
 		${DST_DIR}/asterisk-${END_TAG}.* \
 		${DST_DIR}/ChangeLog-${END_TAG}.md \

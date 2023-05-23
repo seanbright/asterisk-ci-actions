@@ -43,10 +43,23 @@ fi
 # Get rid of any automated "cherry-picked" or "Change-Id" lines.
 sed -i -r -e '/^(\(cherry.+|Change-Id.+)/d' "${TMPFILE2}"
 
+
+# NOTE:  There are two spaces at the end of each
+# link line.  They force newlines when rendered
+# are are intentional.
+
 cat <<-EOF >"${TMPFILE1}"
 
 Change Log for Release ${END_TAG}
 ========================================
+
+Links:
+----------------------------------------
+
+ - [Full ChangeLog](https://downloads.asterisk.org/pub/telephony/asterisk/releases/ChangeLog-${END_TAG}.md)  
+ - [GitHub Diff](https://github.com/asterisk/asterisk/compare/${START_TAG}...${END_TAG})  
+ - [Tarball](https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-${END_TAG}.tar.gz)  
+ - [Downloads](https://downloads.asterisk.org/pub/telephony/asterisk)  
 
 Summary:
 ----------------------------------------
@@ -151,11 +164,6 @@ fi
 
 debug "Save as release_notes.md"
 cp "${TMPFILE1}" "${DST_DIR}/release_notes.md"
-cat <<-EOF >> "${DST_DIR}/release_notes.md"
-
-### For more details, see:
-https://downloads.asterisk.org/pub/telephony/asterisk/releases/ChangeLog-${END_TAG}.md
-EOF
 
 
 debug "Getting shortlog for authors"
