@@ -107,7 +107,7 @@ runs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: Release Artifacts
+        name: asterisk-${{inputs.new_version}}
         path: asterisk-${{inputs.new_version}}
 
     - name: Send Release Announcements
