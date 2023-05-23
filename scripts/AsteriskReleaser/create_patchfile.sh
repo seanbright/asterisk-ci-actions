@@ -9,7 +9,7 @@ progdir="$(dirname $(realpath $0) )"
 source "${progdir}/common.sh"
 
 debug "Creating patchfile for ${END_TAG}"
-patchfile="asterisk-${END_TAG}.patch"
+patchfile="asterisk-${END_TAG}-patch"
 $ECHO_CMD git --no-pager -C "${SRC_REPO}" diff --no-color --output="${DST_DIR}/${patchfile}" ${START_TAG}..${END_TAG} || bail "Unable to create patchfile"
 $ECHO_CMD tar -C "${DST_DIR}" -czf "${DST_DIR}/${patchfile}.tar.gz" "${patchfile}" || bail "Unable to create tarfile"
 $ECHO_CMD rm "${DST_DIR}/${patchfile}" 2>/dev/null
