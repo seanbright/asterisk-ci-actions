@@ -21,7 +21,7 @@ ${SCRIPT_DIR}/version_validator.sh \
 	$( ${INPUT_IS_SECURITY} && echo "--security") \
 	${start_tag:+--start-tag=${start_tag}} --end-tag=${INPUT_NEW_VERSION}
 
-echo "Tags valid: ${start_tag} -> ${end_tag}"
+echo "Tags valid: ${start_tag} -> ${end_tag} Release Type: ${end_tag_array[release_type]}"
 cd ${GITHUB_WORKSPACE}
 mkdir -p ${REPO_DIR}
 mkdir -p ${STAGING_DIR}
@@ -41,7 +41,10 @@ start_tag=$(${SCRIPT_DIR}/get_start_tag.sh --src-repo=${REPO_DIR} \
 $( $INPUT_IS_SECURITY && echo "--security") \
 ${start_tag:+--start-tag=${start_tag}} --end-tag=${end_tag})
 
-echo "Start tag: <${start_tag}>"
+declare -A start_tag_array
+tag_parser ${start_tag} start_tag_array || bail "Unable to parse start tag '${start_tag}'"
+
+echo "Tags valid: ${start_tag} Release Type: ${start_tag_array[release_type]} -> ${end_tag} Release Type: ${end_tag_array[release_type]}"
 
 export GITHUB_TOKEN=${INPUT_GITHUB_TOKEN}
 export GH_TOKEN=${INPUT_GITHUB_TOKEN}

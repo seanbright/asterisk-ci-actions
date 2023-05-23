@@ -16,11 +16,6 @@ tag_parser ${END_TAG} end_tag_array
 
 cd "${SRC_REPO}"
 	
-status=$(git status --porcelain)
-if [ "x${status}" == "x" ] ; then
-	bail "Nothing to commit!"
-fi
-
 debug "Committing ChangeLog and Alembic scripts"
 
 git add contrib/realtime
@@ -57,6 +52,12 @@ if [ -f UPGRADE.txt ] ; then
 		EOF
 		cat /tmp/asterisk/last_upgrade >>UPGRADE.txt
 	fi
+fi
+
+status=$(git status --porcelain)
+if [ "x${status}" == "x" ] ; then
+	echo "Nothing new to commit!"
+	exit 0
 fi
 
 git commit -a -m "Update for ${END_TAG}"

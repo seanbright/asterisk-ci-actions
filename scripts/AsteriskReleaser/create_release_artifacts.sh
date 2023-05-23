@@ -23,13 +23,15 @@ if [ -z "${START_TAG}" ] ; then
 	bail "can't determine a start tag"
 fi		
 
+${ECHO_CMD} git -C "${SRC_REPO}" checkout ${end_tag[branch]}
+cd "${SRC_REPO}"
+
 if ${CHERRY_PICK} ; then
 	if [ "${end_tag[release]}" != "-rc1" ] ; then
 		debug "Automatic cherry-picking only needed when
 		creating an rc1. Skipping."
 	else
 		commitlist=$(mktemp)
-		${ECHO_CMD} git -C "${SRC_REPO}" checkout ${end_tag[branch]}
 		${ECHO_CMD} git -C "${SRC_REPO}" cherry ${end_tag[branch]} ${end_tag[source_branch]} |\
 			sed -n -r -e "s/^[+]\s?(.*)/\1/gp" > ${commitlist}
 		commitcount=$(wc -l ${commitlist} | sed -n -r -e "s/([0-9]+).*/\1/gp")
@@ -44,24 +46,25 @@ fi
 
 if ${ALEMBIC} ; then
 	debug "Creating Alembic scripts for ${END_TAG}"
-	$ECHO_CMD $progdir/create_alembic_scripts.sh --start-tag=${START_TAG} --end-tag=${END_TAG} \
+	$ECHO_CMD $progdir/create_alembic_scripts.sh \
+		--start-tag=${START_TAG} --end-tag=${END_TAG} \
 		--src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
-		$(booloption commit) $(booloption debug)
+		$(booloption debug)
 fi
 
+echo "${END_TAG}" > ${DST_DIR}/.version
 if ${CHANGELOG} ; then
 	debug "Creating ChangeLog for ${START_TAG} -> ${END_TAG}"
-	echo "${END_TAG}" > ${DST_DIR}/.version
 	$ECHO_CMD $progdir/create_changelog.sh --start-tag=${START_TAG} \
-		 --end-tag=${END_TAG} --src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
-		$(booloption commit) $(booloption debug)
+		--end-tag=${END_TAG} --src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
+		$(booloption debug)
 fi
 
 if ${COMMIT} ; then
 	${ALEMBIC} || ${CHANGELOG} || bail "There were no changes so so there's nothing to commit"
 	debug "Committing changes for ${END_TAG}"
 	$ECHO_CMD $progdir/commit_changes.sh --start-tag=${START_TAG} \
-		 --end-tag=${END_TAG} --src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
+		--end-tag=${END_TAG} --src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
 		$(booloption debug)
 fi
 

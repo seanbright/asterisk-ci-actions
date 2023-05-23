@@ -2,7 +2,7 @@
 set -e
 
 declare needs=( start_tag end_tag )
-declare wants=( src_repo dst_dir commit )
+declare wants=( src_repo dst_dir )
 declare tests=( start_tag src_repo dst_dir )
 
 # Since creating the changelog doesn't make any
