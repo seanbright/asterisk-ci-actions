@@ -129,26 +129,20 @@ EOF
 # save them to 'issues_to_close.txt' so we can label them
 # later without having to pull them all again.
 debug "Getting issues list"
-issuelist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#([0-9]+)/\2/gp" "${TMPFILE2}") )
+issuelist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#([0-9]+)/\2/gp" "${TMPFILE2}" | sort -n | tr '\n' ' ') )
 rm "${DST_DIR}/issues_to_close.txt" &>/dev/null || :
 
 if [ ${#issuelist[*]} -gt 0 ] ; then
-	echo "${issuelist[*]}" > "${DST_DIR}/issues_to_close.txt"
 	debug "Getting ${#issuelist[*]} issue titles from GitHub"
-	# The issues in issuelist are separated by newlines
-	# but we want them seaprated by commas for the jq query
-	# so we set IFS=, to make ${issuelist[*]} print them
-	# that way. 
-	IFS=,
 	# We want the issue number and the title formatted like:
 	#   - #2: Issue Title
 	# which GitHub can do for us using a jq format string.
 	gh --repo=asterisk/$(basename ${SRC_REPO}) issue list --state all \
-		--json number,title \
-		--jq "[ .[] | select(.number|IN(${issuelist[*]}))] | sort_by(.number) | .[] | \"  - #\" + ( .number | tostring) + \": \" + .title" \
-		>>"${TMPFILE1}"
-	# Reset IFS back to its normal special value
-	unset IFS
+		--search "is:issue ${issuelist[*]}" --json number,title \
+		--jq ". | sort_by(.number) | .[] | \"  - #\" + ( .number | tostring) + \": \" + .title" \
+		> "${DST_DIR}/issues_to_close.txt"
+		cat "${DST_DIR}/issues_to_close.txt" >>"${TMPFILE1}"
+		${DEBUG} && cat "${DST_DIR}/issues_to_close.txt"
 else
 	touch "${DST_DIR}/issues_to_close.txt"
 	debug "No issues"
