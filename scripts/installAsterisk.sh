@@ -53,5 +53,7 @@ if [ x"$USER_GROUP" != x ] ; then
 	chown -R $USER_GROUP $DESTDIR/var/log/asterisk
 	chown -R $USER_GROUP $DESTDIR/var/run/asterisk
 	chown -R $USER_GROUP $DESTDIR/etc/asterisk
+	chown -R $USER_GROUP tests/keys
+	chmod go-rw tests/keys/rsa_key1.key
 fi
 ldconfig
