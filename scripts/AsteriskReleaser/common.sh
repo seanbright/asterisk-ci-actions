@@ -208,9 +208,10 @@ tag_parser() {
 	local tagin=$1
 	local -n tagarray=$2
 	tagarray[certified]=false
+	tagarray[artifact_prefix]="asterisk"
+	tagarray[download_dir]="asterisk"
 	
-	if [[ "$tagin" =~  ^(certified/)?([0-9]+)[.]([0-9]+)(-cert|[.])([0-9]+)(-(rc|pre)([0-9]+))?$ ]]  ; then
-		[ "${BASH_REMATCH[1]}" == "certified/" ] && tagarray[certified]=true
+	if [[ "$tagin" =~  ^(certified-)?([0-9]+)[.]([0-9]+)(-cert|[.])([0-9]+)(-(rc|pre)([0-9]+))?$ ]]  ; then
 		tagarray[certprefix]=${BASH_REMATCH[1]}
 		tagarray[major]=${BASH_REMATCH[2]}
 		tagarray[minor]=${BASH_REMATCH[3]}
@@ -220,6 +221,16 @@ tag_parser() {
 		tagarray[release_type]=${BASH_REMATCH[7]:-ga}
 		tagarray[release_num]=${BASH_REMATCH[8]}
 		tagarray[base_version]=${BASH_REMATCH[2]}.${BASH_REMATCH[3]}${BASH_REMATCH[4]}${BASH_REMATCH[5]}
+		
+		tagarray[current_linkname]=${tagarray[major]}-current
+		[ "${BASH_REMATCH[1]}" == "certified-" ] && {
+			tagarray[certified]=true
+			tagarray[artifact_prefix]+="-certified"
+			tagarray[download_dir]="certified-asterisk"
+			tagarray[current_linkname]=${tagarray[major]}.${tagarray[minor]}-current
+		}
+		
+		
 	else
 		return 1
 	fi

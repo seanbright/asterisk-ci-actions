@@ -107,27 +107,3 @@ if ${LABEL_ISSUES} ; then
 		$(booloption debug)
 fi
 
-if ${PUSH_LIVE} ; then
-	debug "Pushing Asterisk Release ${END_TAG} live"
-	cd "${SRC_REPO}"
-	RC=0
-	$ECHO_CMD gh release create ${END_TAG} \
-		--verify-tag \
-		$( [ "${end_tag[release_type]}" != "ga" ] && echo "--prerelease" ) \
-		--notes-file ${DST_DIR}/email_announcement.md \
-		--target ${end_tag[branch]} -t "Asterisk Release ${END_TAG}" \
-		${DST_DIR}/asterisk-${END_TAG}.* \
-		${DST_DIR}/ChangeLog-${END_TAG}.md \
-		${DST_DIR}/README-${END_TAG}.md || RC=1
-	if [ $RC -eq 1 ] ; then
-		$ECHO_CMD gh release create ${END_TAG} \
-			--verify-tag \
-			$( [ "${end_tag[release_type]}" != "ga" ] && echo "--prerelease" ) \
-			--notes-file ${DST_DIR}/release_notes.md \
-			--target ${end_tag[branch]} -t "Asterisk Release ${END_TAG}" \
-			${DST_DIR}/asterisk-${END_TAG}.* \
-			${DST_DIR}/ChangeLog-${END_TAG}.md \
-			${DST_DIR}/README-${END_TAG}.md
-	fi
-fi
-

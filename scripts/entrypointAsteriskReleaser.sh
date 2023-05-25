@@ -64,8 +64,13 @@ ${SCRIPT_DIR}/create_release_artifacts.sh \
 	--start-tag=${start_tag} --end-tag=${end_tag} \
 	--cherry-pick --alembic --changelog --commit --tag \
 	--sign --tarball --patchfile \
-	$(${INPUT_PUSH_LIVE} && echo " --push --push-live")
-#
+	$(${INPUT_PUSH_LIVE} && echo " --push")
+
+if ${INPUT_PUSH_LIVE} ; then
+	${SCRIPT_DIR}/push_live.sh \
+		--src-repo=${REPO_DIR} --dst-dir=${STAGING_DIR} --debug \
+		--start-tag=${start_tag} --end-tag=${end_tag}
+fi
 
 echo "email_announcement=asterisk-${end_tag}/email_announcement.md" >> ${GITHUB_OUTPUT}
 

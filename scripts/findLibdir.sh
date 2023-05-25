@@ -6,6 +6,9 @@ case $ID in
 	centos)
 		echo /usr/lib64
 		;;
+	rocky)
+		echo /usr/lib64
+		;;
 	fedora)
 		echo /usr/lib64
 		;;
