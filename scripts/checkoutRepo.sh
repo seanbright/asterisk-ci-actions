@@ -30,7 +30,7 @@ fi
 
 mkdir -p ${DESTINATION}
 
-git clone --depth 5 -q -b ${BRANCH} \
+git clone -q -b ${BRANCH} \
 	${GITHUB_SERVER_URL}/${REPO} ${DESTINATION}
 git config --global --add safe.directory $(realpath ${DESTINATION})
 

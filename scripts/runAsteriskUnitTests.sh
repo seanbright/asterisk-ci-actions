@@ -56,6 +56,7 @@ run_tests_socket() {
 	sleep 1
 	$ASTERISK -rx "core show settings" -C $CONFFILE
 
+	begin_group "Running Unit Tests"
 	if [ x"${UNITTEST_COMMAND}" != x ] ; then
 		IFS=';'
 		for test in ${UNITTEST_COMMAND} ; do
@@ -65,6 +66,7 @@ run_tests_socket() {
 	else
 		$ASTERISK -rx "test execute all" -C $CONFFILE
 	fi
+	end_group
 
 	$ASTERISK -rx "test show results failed" -C $CONFFILE
 	$ASTERISK -rx "test generate results xml $OUTPUTFILE" -C $CONFFILE
@@ -133,14 +135,12 @@ EXPECT="$(which expect 2>/dev/null || : )"
 rm -rf $ASTETCDIR/extensions.{ael,lua} || :
 
 TESTRC=0
-begin_group "Running Unit Tests"
 
 if [ x"$EXPECT" != x -a $NO_EXPECT -eq 0 ] ; then
 	run_tests_expect || TESTRC=1
 else
 	run_tests_socket || TESTRC=1
 fi
-end_group
 
 # Cleanup "just in case"
 sudo killall -qe -ABRT $ASTERISK

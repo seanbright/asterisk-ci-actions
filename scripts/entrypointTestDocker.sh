@@ -1,4 +1,5 @@
 #!/usr/bin/bash
+
 set -x
 if [ "${INPUT_TEST_TYPE}" == "pass_fail" ] ; then
 	echo "Exiting with RC 1 (forced)"

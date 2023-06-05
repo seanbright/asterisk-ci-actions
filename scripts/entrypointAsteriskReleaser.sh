@@ -2,6 +2,9 @@
 #set -x
 set -e
 
+export GITHUB_TOKEN=${INPUT_GITHUB_TOKEN}
+export GH_TOKEN=${INPUT_GITHUB_TOKEN}
+
 echo "ACTION_PATH: ${GITHUB_ACTION_PATH}"
 [ -n "${GITHUB_ACTION_PATH}" ] && [ -d "${GITHUB_ACTION_PATH}" ] && ls -al ${GITHUB_ACTION_PATH}
 
@@ -45,9 +48,6 @@ declare -A start_tag_array
 tag_parser ${start_tag} start_tag_array || bail "Unable to parse start tag '${start_tag}'"
 
 echo "Tags valid: ${start_tag} Release Type: ${start_tag_array[release_type]} -> ${end_tag} Release Type: ${end_tag_array[release_type]}"
-
-export GITHUB_TOKEN=${INPUT_GITHUB_TOKEN}
-export GH_TOKEN=${INPUT_GITHUB_TOKEN}
 
 gh auth setup-git -h github.com
 

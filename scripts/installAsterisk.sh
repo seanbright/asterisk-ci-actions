@@ -12,12 +12,14 @@ if [ "${OUTPUT_DIR: -1}" != "/" ] ; then
 	OUTPUT_DIR+=/
 fi
 
-mkdir -p "$OUTPUT_DIR" 2> /dev/null
+set -e
+
+mkdir -p "$OUTPUT_DIR" 2> /dev/null :: :
 
 MAKE=`which make`
 
 if [ x"$DESTDIR" != x ] ; then
-	mkdir -p "$DESTDIR"
+	mkdir -p "$DESTDIR" || :
 fi
 
 if [[ "$BRANCH_NAME" =~ devel(opment)?/([0-9]+)/.+ ]] ; then
@@ -30,23 +32,21 @@ destdir=${DESTDIR:+DESTDIR=$DESTDIR}
 declare -p _version
 declare -p destdir
 
-begin_group "Unninstall existing"
-	[ $UNINSTALL -gt 0 ] && ${MAKE} ${destdir} uninstall
-	[ $UNINSTALL_ALL -gt 0 ] && ${MAKE} ${destdir} uninstall-all
-end_group
+echo "Unninstall existing"
+[ $UNINSTALL -gt 0 ] && ${MAKE} ${destdir} uninstall || :
+[ $UNINSTALL_ALL -gt 0 ] && ${MAKE} ${destdir} uninstall-all || :
 
-begin_group "Installing"
-	${MAKE} ${destdir} install || ${MAKE} ${destdir} NOISY_BUILD=yes install || exit 1
-	${MAKE} ${destdir} samples install-headers 
-	if [ x"$DESTDIR" != x ] ; then
-		sed -i -r -e "s@\[directories\]\(!\)@[directories]@g" $DESTDIR/etc/asterisk/asterisk.conf
-		sed -i -r -e "s@ /(var|etc|usr)/@ $DESTDIR/\1/@g" $DESTDIR/etc/asterisk/asterisk.conf
-	fi
-end_group
+echo "Installing"
+${MAKE} ${destdir} install || ${MAKE} ${destdir} NOISY_BUILD=yes install || exit 1
+${MAKE} ${destdir} samples install-headers 
+if [ x"$DESTDIR" != x ] ; then
+	sed -i -r -e "s@\[directories\]\(!\)@[directories]@g" $DESTDIR/etc/asterisk/asterisk.conf
+	sed -i -r -e "s@ /(var|etc|usr)/@ $DESTDIR/\1/@g" $DESTDIR/etc/asterisk/asterisk.conf
+fi
 
-set +e
 if [ x"$USER_GROUP" != x ] ; then
 	echo "Setting permissions"
+	set +e
 	chown -R $USER_GROUP $DESTDIR/var/cache/asterisk
 	chown -R $USER_GROUP $DESTDIR/var/lib/asterisk
 	chown -R $USER_GROUP $DESTDIR/var/spool/asterisk
