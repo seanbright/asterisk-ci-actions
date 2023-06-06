@@ -9,6 +9,9 @@ inputs:
   cherry_pick_regex:
     required: true
     type: string
+  include_branches:
+    required: false
+    type: string
   github_token:
     description: 'GitHub API Access Token.'
     default: ${{ github.token }}
@@ -31,12 +34,13 @@ runs:
       env:
         GITHUB_TOKEN:      ${{inputs.github_token}}
         GH_TOKEN:          ${{inputs.github_token}}
+        INCLUDE_BRANCHES:    ${{inputs.include_branches}}
       run: |
         echo "${{env.GITHUB_ACTION}} Get branches"
         branchlist=$(gh api /repos/${{inputs.repo}}/issues/${{inputs.pr_number}}/comments \
           --jq '.[].body | match("${{inputs.cherry_pick_regex}}"; "g") | .captures[0].string' | tr '\n' ' ')
-        echo $branchlist
-        eval declare -a BRANCHES=( $branchlist )
+        echo $branchlist ${INCLUDE_BRANCHES//,/ }
+        eval declare -a BRANCHES=( $branchlist ${INCLUDE_BRANCHES//,/ } )
         declare -p BRANCHES
         branch_count=0
         json="["
