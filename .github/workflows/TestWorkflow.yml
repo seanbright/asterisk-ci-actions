@@ -2,6 +2,17 @@ name: Test Workflow
 run-name: "Test workflow started by ${{ github.actor }}"
 on:
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry-Run?'
+        required: false
+        type: boolean
+        default: false
+      debug:
+        description: 'Debug?'
+        required: false
+        type: boolean
+        default: false
 
 env:
   ASTERISK_REPO:     ${{github.repository}}
@@ -10,12 +21,45 @@ env:
   MODULES_BLACKLIST: ${{vars.GATETEST_MODULES_BLACKLIST}} ${{vars.UNITTEST_MODULES_BLACKLIST}}
 
 jobs:
-  AsteriskBuilds:
+  Job1:
     runs-on: ubuntu-latest
+#    outputs:
+#      branches: ${{ steps.step1.outputs.branches }}
     steps:
-      - name: SetupIPV6
-        uses: asterisk/asterisk-ci-actions/EnableIPv6InRunner@main
+      - name: DumpEnvironment
+        if: ${{ inputs.debug == 'true' }}
+        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+        with:
+          action-vars: ${{toJSON(inputs)}}
 
-      - name: Test Action
-        uses: asterisk/asterisk-ci-actions/TestAction@main
+      - name: step1
+        id: step1
+        env:
+          GH_TOKEN:   ${{ secrets.GITHUB_TOKEN }}
+          DRY_RUN:    ${{inputs.dry_run}}
+        run: | 
+          $DRY_RUN && echo "was dry-run from env"
+          ${{inputs.dry_run}} && echo "was dry-run from inputs"
+          $DRY_RUN || echo "was NOT dry-run from env"
+          ${{inputs.dry_run}} || echo "was NOT dry-run from inputs"
+          exit 0
 
+
+#  Job2Matrix:
+#    needs: [ Job1 ]
+#    continue-on-error: false
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        branch: ${{ fromJSON(needs.Job1.outputs.branches) }}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Run Unit Tests for branches ${{ needs.Job1.outputs.branches }}
+#        env:
+#          BRANCHES:  ${{ needs.Job1.outputs.branches }}
+#        run: |
+#        
+#          echo "Branch: ${{matrix.branch}}"
+#          echo "$BRANCHES" | jq -c .
+#          
+#

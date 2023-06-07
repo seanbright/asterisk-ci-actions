@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 CIDIR=$(dirname $(readlink -fn $0))
-GITHUB=0
-NO_EXPECT=0
 OUTPUT_DIR=/tmp/asterisk_ci/
 
 source $CIDIR/ci.functions
@@ -21,30 +19,6 @@ asterisk_corefile_glob() {
 	else
 		echo "${pattern%%%*}*"
 	fi
-}
-
-run_tests_expect() {
-
-$EXPECT <<-EOF
-	spawn sudo $ASTERISK ${USER_GROUP:+-U ${USER_GROUP%%:*} -G ${USER_GROUP##*:}} -fcng -C $CONFFILE
-	match_max 512
-	set timeout 600
-	expect -notransfer "Asterisk Ready."
-	send "core show settings\r"
-	expect -notransfer "CLI>"
-	send "${UNITTEST_COMMAND:-test execute all}\r"
-	expect -notransfer -ex "Test(s) Executed"
-	expect -notransfer "CLI>"
-	send "test show results failed\r"
-	expect -notransfer "CLI>"
-	send "test generate results xml ${OUTPUTFILE}\r"
-	expect -notransfer "CLI>"
-	send "core stop now\r"
-	expect -notransfer "Executing last minute cleanups"
-	wait
-EOF
-	xmlstarlet sel -t -v "//failure" $OUTPUTFILE && return 1
-	return 0
 }
 
 run_tests_socket() {
@@ -136,11 +110,7 @@ rm -rf $ASTETCDIR/extensions.{ael,lua} || :
 
 TESTRC=0
 
-if [ x"$EXPECT" != x -a $NO_EXPECT -eq 0 ] ; then
-	run_tests_expect || TESTRC=1
-else
-	run_tests_socket || TESTRC=1
-fi
+run_tests_socket || TESTRC=1
 
 # Cleanup "just in case"
 sudo killall -qe -ABRT $ASTERISK

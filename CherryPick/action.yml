@@ -7,45 +7,54 @@ inputs:
     required: true
     type: number
   branch:
-    required: true
+    required: false
     type: string
+  branches:
+    required: false
+    type: string
+  push:
+    required: false
+    type: boolean
+    default: false
   github_token:
-    description: 'GitHub API Access Token.'
     type: string
     required: true
-  access_app_id:
-    type: string
-    required: true
-  access_app_key:
-    type: string
-    required: true
+  debug:
+    required: false
+    type: boolean
+    default: false
 
 runs:
   using: "composite"
   steps:
-    - name: DumpEnvironment
-      uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
-      with:
-        action-inputs: ${{toJSON(inputs)}}
-
-    - name: Get Token needed to push commits
-      id: get_workflow_token
-      uses: peter-murray/workflow-application-token-action@v1
-      with:
-        application_id: ${{inputs.access_app_id}}
-        application_private_key: ${{inputs.access_app_key}}
-        organization: asterisk
-
     - name: CherryPick
       shell: bash
       env:
-#        GITHUB_TOKEN: ${{steps.get_workflow_token.outputs.token}}
-#        GH_TOKEN: ${{steps.get_workflow_token.outputs.token}}
+        BRANCH: ${{inputs.branch}}
+        BRANCHES: ${{inputs.branches}}
         GITHUB_TOKEN: ${{inputs.github_token}}
         GH_TOKEN: ${{inputs.github_token}}
       run: |
         SCRIPT_DIR=$(dirname ${GITHUB_ACTION_PATH})/scripts
         export GH_TOKEN
         export GITHUB_TOKEN
-        ${SCRIPT_DIR}/cherryPick.sh --repo=${{inputs.repo}} --branch=${{inputs.branch}} \
-          --pr-number=${{inputs.pr_number}} 
+        if [ -z "${BRANCH}" ] && [ -z "${BRANCHES}" ] ; then
+          echo "::error::Either 'branch' or 'branches' must be supplied"
+          exit 1
+        fi
+        if [ -n "${BRANCH}" ] && [ -n "${BRANCHES}" ] ; then
+          echo "::error::You can't specify both 'branch' and 'branches' at the same time"
+          exit 1
+        fi
+        if [ -n "${BRANCHES}" ] ; then
+          words=$( echo "${BRANCHES}" | wc -w )
+          if [ $words -ne 1 ] ; then
+            echo "::error::'branches' can't contain whitespace"
+            exit 1
+          fi
+        fi
+        ${SCRIPT_DIR}/cherryPick.sh --repo=${{inputs.repo}} \
+          ${BRANCH:+--branch=$BRANCH} \
+          ${BRANCHES:+--branches="$BRANCHES"} \
+          --pr-number=${{inputs.pr_number}} \
+          --push=${{inputs.push}} || exit 1

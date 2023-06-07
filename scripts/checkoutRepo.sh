@@ -5,32 +5,35 @@ source ${SCRIPT_DIR}/ci.functions
 set -x
 set -e
 
-if [ "x${REPO}" == "x" ] ; then
+if [ -z "${REPO}" ] ; then
 	echo "::error::Missing repo"
 	exit 1
 fi
 
-if [ "x${DESTINATION}" == "x" ] ; then
+if [ -z "${DESTINATION}" ] ; then
 	echo "::error::Missing destination"
 	exit 1
 fi
 
-if [ "x${PR_NUMBER}" == "x" ] ; then
+if [ -z "${PR_NUMBER}" ] ; then
 	echo "::error::Missing PR number"
 	exit 1
 fi
 
-if [ "x${BRANCH}" == "x" ] ; then
+if [ -z "${BRANCH}" ] ; then
 	echo "::error::Missing branch"
 	exit 1
 fi
 
 : ${IS_CHERRY_PICK:=false}
-
+: ${NO_TAGS:=false}
 
 mkdir -p ${DESTINATION}
 
-git clone -q -b ${BRANCH} \
+no_tags=""
+${NO_TAGS} && no_tags="--no-tags"
+
+git clone -q -b ${BRANCH} --depth 10 --no-tags \
 	${GITHUB_SERVER_URL}/${REPO} ${DESTINATION}
 git config --global --add safe.directory $(realpath ${DESTINATION})
 
@@ -44,28 +47,14 @@ if [ ${PR_NUMBER} -le 0 ] ; then
 fi
 
 cd ${DESTINATION}
-git fetch origin refs/pull/${PR_NUMBER}/head
+
 if ! ${IS_CHERRY_PICK} ; then
+	git fetch origin refs/pull/${PR_NUMBER}/head
 	# We're just checking out the PR
 	git checkout FETCH_HEAD
 	exit 0
+else
+	${SCRIPT_DIR}/cherryPick.sh --no-clone --repo=${REPO} \
+		--pr-number=${PR_NUMBER} --branch=${BRANCH} \
+		--repo-dir=${DESTINATION}
 fi
-
-# We're cherry-picking
-# We should already be on the branch we're cherry-picking to.
-
-echo "Cherry-picking commits"
-IFS=$'|'
-while read SHA MESSAGE NAME EMAIL ; do
-	# We need to set ourselves up as the original author.
-	git config --global user.email "$EMAIL"
-	git config --global user.name "$NAME"
-	# The SHA should already be downloaded in FETCH_HEAD
-	# so we should be able to just cherry-pick it. 
-	echo "Cherry-picking ${SHA} : ${MESSAGE}"
-	git cherry-pick ${SHA} || {
-		echo "::error::Unable to cherry-pick commit"
-		exit 1
-	}
-	echo "Success"
-done < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + "|" + (.commit.message | split("\n")[0]) + "|" + .commit.author.name + "|" + .commit.author.email + "|"')

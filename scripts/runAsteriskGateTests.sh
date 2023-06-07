@@ -15,7 +15,7 @@ if [ -n "$TESTSUITE_DIR" ] ; then
 fi
 ./cleanup-test-remnants.sh
 
-if [ $REALTIME -eq 1 ] ; then
+if $REALTIME ; then
 	$CIDIR/setupRealtime.sh --initialize-db=${INITIALIZE_DB:?0}
 fi
 
@@ -45,7 +45,7 @@ else
 	[ $failures -gt 0 ] && TESTRC=1
 fi
 
-if [ $REALTIME -eq 1 ] ; then
+if $REALTIME ; then
 	$CIDIR/teardownRealtime.sh --cleanup-db=${CLEANUP_DB:?0}
 fi
 

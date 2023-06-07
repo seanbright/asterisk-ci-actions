@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 CIDIR=$(dirname $(readlink -fn $0))
-GITHUB=0
-UNINSTALL=0
-UNINSTALL_ALL=0
+GITHUB=false
+UNINSTALL=false
+UNINSTALL_ALL=false
 OUTPUT_DIR=/tmp/asterisk_ci/
 
 source $CIDIR/ci.functions
@@ -32,9 +32,9 @@ destdir=${DESTDIR:+DESTDIR=$DESTDIR}
 declare -p _version
 declare -p destdir
 
-echo "Unninstall existing"
-[ $UNINSTALL -gt 0 ] && ${MAKE} ${destdir} uninstall || :
-[ $UNINSTALL_ALL -gt 0 ] && ${MAKE} ${destdir} uninstall-all || :
+echo "Uninstall existing"
+$UNINSTALL && ${MAKE} ${destdir} uninstall || :
+$UNINSTALL_ALL && ${MAKE} ${destdir} uninstall-all || :
 
 echo "Installing"
 ${MAKE} ${destdir} install || ${MAKE} ${destdir} NOISY_BUILD=yes install || exit 1

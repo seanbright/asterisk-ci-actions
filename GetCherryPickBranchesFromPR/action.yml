@@ -43,14 +43,14 @@ runs:
         eval declare -a BRANCHES=( $branchlist ${INCLUDE_BRANCHES//,/ } )
         declare -p BRANCHES
         branch_count=0
-        json="["
+        json='['
         for branch in ${BRANCHES[@]} ; do
           echo "Will cherry-pick to branch $branch"
-          [ $branch_count -ne 0 ] && json+=","
-          json+="'$branch'"
+          [ $branch_count -ne 0 ] && json+=','
+          json+="\"$branch\""
           branch_count+=1
         done
-        json+="]"
+        json+=']'
         echo "branches=$json" >> "$GITHUB_OUTPUT"
         echo "branch_count=$branch_count" >> "$GITHUB_OUTPUT"
         if [ $branch_count -eq 0 ] ; then

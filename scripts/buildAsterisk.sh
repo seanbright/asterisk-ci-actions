@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 
 CIDIR=$(dirname $(readlink -fn $0))
-GITHUB=0
-COVERAGE=0
-REF_DEBUG=0
-DISABLE_BINARY_MODULES=0
-NO_CONFIGURE=0
-NO_MENUSELECT=0
-NO_MAKE=0
-NO_ALEMBIC=0
-NO_DEV_MODE=0
+GITHUB=false
+COVERAGE=false
+REF_DEBUG=false
+DISABLE_BINARY_MODULES=false
+NO_CONFIGURE=false
+NO_MENUSELECT=false
+NO_MAKE=false
+NO_ALEMBIC=false
+NO_DEV_MODE=false
 OUTPUT_DIR=/tmp/asterisk_ci/
+TESTED_ONLY=false
 
 source $CIDIR/ci.functions
 
@@ -69,32 +70,8 @@ if [ -z $LCOV_DIR ]; then
 	LCOV_DIR="${OUTPUT_DIR}/lcov"
 fi
 
-if [ x"$CACHE_DIR" != x ] ; then
+if [ -n "$CACHE_DIR" ] ; then
 	mkdir -p $CACHE_DIR/sounds $CACHE_DIR/externals 2> /dev/null
-fi
-
-if [ ${CCACHE_DISABLE:-0} -ne 1 ] ; then
-	echo "Setting up ccache"
-	if [ x"$CACHE_DIR" != x ] ; then
-		mkdir -p $CACHE_DIR/ccache
-		export CCACHE_UMASK=002
-		export CCACHE_DIR=$CACHE_DIR/ccache
-	fi
-	case ":${PATH:-}:" in
-		*:/usr/lib*/ccache:*)
-			echo "Enabling ccache"
-		 ;;
-		*)
-			if [ -d /usr/lib64/ccache ] ; then
-				echo "Enabling ccache at /usr/lib64/ccache with $CCACHE_DIR"
-				export PATH="/usr/lib64/ccache${PATH:+:$PATH}"
-			elif [ -d /usr/lib/ccache ] ; then
-				echo "Enabling ccache at /usr/lib/ccache with $CCACHE_DIR"
-				export PATH="/usr/lib/ccache${PATH:+:$PATH}"
-			fi
-		;;
-	esac
-	runner ccache -s
 fi
 
 MAKE=`which make`
@@ -112,32 +89,32 @@ echo "Creating configure arguments"
 common_config_args="--prefix=/usr ${_libdir:+--libdir=${_libdir}} --sysconfdir=/etc --with-pjproject-bundled"
 $PKGCONFIG 'jansson >= 2.11' || common_config_args+=" --with-jansson-bundled"
 common_config_args+=" ${CACHE_DIR:+--with-sounds-cache=${CACHE_DIR}/sounds --with-externals-cache=${CACHE_DIR}/externals}"
-if [ $NO_DEV_MODE -eq 0 ] ; then
+if ! $NO_DEV_MODE ; then
 	common_config_args+=" --enable-dev-mode"
 fi
-if [ $COVERAGE -eq 1 ] ; then
+if $COVERAGE ; then
 	common_config_args+=" --enable-coverage"
 fi
-if [ "$BRANCH_NAME" == "master" -o $DISABLE_BINARY_MODULES -eq 1 ] ; then
+if [ "$BRANCH_NAME" == "master" -o $DISABLE_BINARY_MODULES ] ; then
 	common_config_args+=" --disable-binary-modules"
 fi
 
 export WGET_EXTRA_ARGS="--quiet"
 
-if [ $NO_CONFIGURE -eq 0 ] ; then
+if ! $NO_CONFIGURE ; then
 	echo "Running configure"
 	runner ./configure ${common_config_args}
 fi
 
-if [ $NO_MENUSELECT -eq 0 ] ; then
+if ! $NO_MENUSELECT ; then
 	runner ${MAKE} menuselect.makeopts
 
 	runner menuselect/menuselect `gen_mods enable DONT_OPTIMIZE BETTER_BACKTRACES` menuselect.makeopts
-	if [ $NO_DEV_MODE -eq 0 ] ; then
+	if ! $NO_DEV_MODE ; then
 		runner menuselect/menuselect `gen_mods enable MALLOC_DEBUG DO_CRASH TEST_FRAMEWORK` menuselect.makeopts
 	fi
 	runner menuselect/menuselect `gen_mods disable COMPILE_DOUBLE BUILD_NATIVE` menuselect.makeopts
-	if [ $REF_DEBUG -eq 1 ] ; then
+	if $REF_DEBUG ; then
 		runner menuselect/menuselect --enable REF_DEBUG menuselect.makeopts
 	fi
 
@@ -149,13 +126,13 @@ if [ $NO_MENUSELECT -eq 0 ] ; then
 		cat_enables+=" MENUSELECT_PBX MENUSELECT_RES MENUSELECT_UTILS"
 	fi
 
-	if [ $NO_DEV_MODE -eq 0 ] ; then
+	if ! $NO_DEV_MODE ; then
 		cat_enables+=" MENUSELECT_TESTS"
 	fi
 	runner menuselect/menuselect `gen_cats enable $cat_enables` menuselect.makeopts
 
 	mod_disables="codec_ilbc res_digium_phone"
-	if [ $TESTED_ONLY -eq 1 ] ; then
+	if $TESTED_ONLY ; then
 		# These modules are not tested at all.  They are loaded but nothing is ever done
 		# with them, no testsuite tests depend on them.
 		mod_disables+=" app_adsiprog app_alarmreceiver app_celgenuserevent app_db app_dictate"
@@ -184,13 +161,13 @@ if [ $NO_MENUSELECT -eq 0 ] ; then
 	runner menuselect/menuselect `gen_mods enable $mod_enables` menuselect.makeopts
 fi
 
-if [ $NO_MAKE -eq 0 ] ; then
+if ! $NO_MAKE ; then
 	runner ${MAKE} -j8 full || runner ${MAKE} -j1 NOISY_BUILD=yes full
 fi
 
 runner rm -f ${LCOV_DIR}/*.info 2>/dev/null || :
 
-if [ $COVERAGE -eq 1 ] ; then
+if $COVERAGE ; then
 	runner mkdir -p ${LCOV_DIR}
 
 	# Zero counter data
@@ -204,7 +181,7 @@ if [ $COVERAGE -eq 1 ] ; then
 		--output-file ${LCOV_DIR}/initial.info
 fi
 
-if [ $NO_ALEMBIC -eq 0 ] ; then
+if ! $NO_ALEMBIC ; then
 	echo "Running Alembic"
 	ALEMBIC=$(which alembic 2>/dev/null || : )
 	if [ x"$ALEMBIC" = x ] ; then
