@@ -45,10 +45,8 @@ runs:
       run: |
         echo "Result: $RESULT"
         if [[ "$RESULT" =~ (success|skipped) ]] ; then
-          ADMIN=""
-          ${{inputs.force}} && ADMIN="--admin"
           gh pr merge --repo ${{inputs.repo}} --${{inputs.method}} \
-            $ADMIN ${{inputs.pr_number}} || {
+            --admin ${{inputs.pr_number}} || {
             echo "::error::Merge failed!"
             exit 1
           }
