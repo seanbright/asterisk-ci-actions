@@ -20,8 +20,21 @@ inputs:
       process won't get it right.
     required: false
     type: string
-  push_live:
-    description: 'Push live?'
+  push_release_branches:
+    description: |
+      Push release branches live?
+    required: true
+    type: boolean
+    default: false
+  create_github_release:
+    description: |
+      Create the GitHub release?
+    required: true
+    type: boolean
+    default: false
+  push_tarballs:
+    description: |
+      Push tarballs to downloads server?
     required: true
     type: boolean
     default: false
@@ -66,6 +79,18 @@ inputs:
   asteriskteamsa_token:
     type: string
     required: true
+  deploy_ssh_priv_key:
+    type: string
+    required: true
+  deploy_ssh_username:
+    type: string
+    required: true
+  deploy_host:
+    type: string
+    required: true
+  deploy_dir:
+    type: string
+    required: true
   
 runs:
   using: "composite"
@@ -85,7 +110,9 @@ runs:
         is_security: ${{inputs.is_security}}
         new_version: ${{inputs.new_version}}
         start_version: ${{inputs.start_version}}
-        push_live: ${{inputs.push_live}}
+        push_release_branches: ${{inputs.push_release_branches}}
+        create_github_release: ${{inputs.create_github_release}}
+        push_tarballs: ${{inputs.push_tarballs}}
         send_email: ${{inputs.send_email}}
         asterisk_mail_list_ga: ${{inputs.asterisk_mail_list_ga}}
         asterisk_mail_list_rc: ${{inputs.asterisk_mail_list_rc}}
@@ -95,12 +122,16 @@ runs:
         repo: ${{inputs.repo}}
         gpg_private_key: ${{inputs.gpg_private_key}}
         github_token: ${{steps.get_workflow_token.outputs.token}}
+        deploy_ssh_priv_key: ${{inputs.deploy_ssh_priv_key}}
+        deploy_ssh_username: ${{inputs.deploy_ssh_username}}
+        deploy_host: ${{inputs.deploy_host}}
+        deploy_dir: ${{inputs.deploy_dir}}
 
-    - name: Dump
-      uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
-      with:
-        action-inputs: ${{ toJSON(inputs)}}
-        action-vars: ${{ toJSON(steps.releaser.outputs)}}
+#    - name: Dump
+#      uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+#      with:
+#        action-inputs: ${{ toJSON(inputs)}}
+#        action-vars: ${{ toJSON(steps.releaser.outputs)}}
 
     - name: Save Output
       id: save-output

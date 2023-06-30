@@ -20,8 +20,21 @@ inputs:
       process won't get it right.' 
     required: false
     type: string
-  push_live:
-    description: 'Push live?'
+  push_release_branches:
+    description: |
+      Push release branches live?
+    required: true
+    type: boolean
+    default: false
+  create_github_release:
+    description: |
+      Create the GitHub release?
+    required: true
+    type: boolean
+    default: false
+  push_tarballs:
+    description: |
+      Push tarballs to downloads server?
     required: true
     type: boolean
     default: false
@@ -52,6 +65,18 @@ inputs:
     type: string
     required: true
   github_token:
+    type: string
+    required: true
+  deploy_ssh_priv_key:
+    type: string
+    required: true
+  deploy_ssh_username:
+    type: string
+    required: true
+  deploy_host:
+    type: string
+    required: true
+  deploy_dir:
     type: string
     required: true
 

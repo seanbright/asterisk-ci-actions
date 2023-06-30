@@ -51,11 +51,15 @@ echo "Tags valid: ${start_tag} Release Type: ${start_tag_array[release_type]} ->
 
 gh auth setup-git -h github.com
 
-set +x
 echo $"${INPUT_GPG_PRIVATE_KEY}" > gpg.key
-#set -x
 gpg --import gpg.key
 rm gpg.key
+
+eval $(ssh-agent -s)
+echo $"${INPUT_DEPLOY_SSH_PRIV_KEY}" | ssh-add -
+export DEPLOY_SSH_USERNAME=${INPUT_DEPLOY_SSH_USERNAME}
+export DEPLOY_HOST=${INPUT_DEPLOY_HOST}
+export DEPLOY_DIR=${INPUT_DEPLOY_DIR}
 
 echo "Running create_release_artifacts.sh"
 ${SCRIPT_DIR}/create_release_artifacts.sh \
@@ -64,13 +68,16 @@ ${SCRIPT_DIR}/create_release_artifacts.sh \
 	--start-tag=${start_tag} --end-tag=${end_tag} \
 	--cherry-pick --alembic --changelog --commit --tag \
 	--sign --tarball --patchfile \
-	$(${INPUT_PUSH_LIVE} && echo " --push")
+	$(${INPUT_PUSH_RELEASE_BRANCHES} && echo " --push-branches")
 
-if ${INPUT_PUSH_LIVE} ; then
+if ${INPUT_CREATE_GITHUB_RELEASE} ; then
 	${SCRIPT_DIR}/push_live.sh \
 		--src-repo=${REPO_DIR} --dst-dir=${STAGING_DIR} --debug \
-		--start-tag=${start_tag} --end-tag=${end_tag}
+		--start-tag=${start_tag} --end-tag=${end_tag} \
+		$(${INPUT_PUSH_TARBALLS} && echo " --push-tarballs")
 fi
+
+eval $(ssh-agent -k)
 
 echo "email_announcement=asterisk-${end_tag}/email_announcement.md" >> ${GITHUB_OUTPUT}
 

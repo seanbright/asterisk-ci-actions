@@ -3,6 +3,9 @@
 # Bail on any error
 set -e -B
 
+# deploy failsafe
+DST_DIR=/home/asterisk-build
+
 declare needs=( end_tag )
 declare wants=( dst_dir )
 declare tests=( dst_dir )
@@ -19,6 +22,7 @@ patterns1="{${end_tag_array[artifact_prefix]}-${END_TAG}{.{md5,sha1,sha256,tar.g
 files=$(eval echo $patterns1)
 urls=$(eval echo "https://github.com/asterisk/asterisk/releases/download/${END_TAG}/$patterns1")
 
+cd $DST_DIR
 cd telephony/${end_tag_array[download_dir]}/pending
 # Fetch the files and fail if any can't be downloaded.
 curl --fail-early -f -L --remote-name-all $urls

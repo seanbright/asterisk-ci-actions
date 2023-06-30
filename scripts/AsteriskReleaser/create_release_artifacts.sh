@@ -3,7 +3,7 @@ set -e
 
 declare needs=( end_tag )
 declare wants=( src_repo dst_dir security norc alembic
-				changelog commit tag push tarball patchfile
+				changelog commit tag push_branches tarball patchfile
 				close_issues sign full_monty dry_run )
 declare tests=( src_repo dst_dir )
 
@@ -91,7 +91,7 @@ if ${PATCHFILE} ; then
 		$(booloption sign) $(booloption debug)
 fi
 
-if ${PUSH} ; then
+if ${PUSH_BRANCHES} ; then
 	debug "Pushing commits upstream"
 	$ECHO_CMD git -C "${SRC_REPO}" checkout ${end_tag[branch]}
 	$ECHO_CMD git -C "${SRC_REPO}" push
@@ -101,7 +101,7 @@ fi
 
 if ${LABEL_ISSUES} ; then
 	debug "Labelling closed issues for ${END_TAG}"
-	$ECHO_CMD $progdir/label_issue s.sh \
+	$ECHO_CMD $progdir/label_issues.sh \
 		--start-tag=${START_TAG} --end-tag=${END_TAG} \
 		--src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
 		$(booloption debug)
