@@ -58,9 +58,16 @@ $PUSH_TARBALLS || exit 0
 
 debug "Pushing Asterisk Release ${END_TAG} live"
 
-scp -p "${progdir}/common.sh" "${progdir}/downloads_host_publish.sh" \
+cat >/tmp/ssh_config <<EOF
+UserKnownHostsFile /tmp/known_hosts
+CheckHostIP no
+StrictHostKeyChecking no
+UpdateHostKeys no
+EOF
+
+scp -F /tmp/ssh_config -p "${progdir}/common.sh" "${progdir}/downloads_host_publish.sh" \
 	${DEPLOY_SSH_USERNAME}@${DEPLOY_HOST}:/home/${DEPLOY_SSH_USERNAME}/
 
-ssh ${DEPLOY_SSH_USERNAME}@${DEPLOY_HOST} \
+ssh -F /tmp/ssh_config ${DEPLOY_SSH_USERNAME}@${DEPLOY_HOST} \
 	/home/${DEPLOY_SSH_USERNAME}/downloads_host_publish.sh \
 	--end-tag=${END_TAG} --dst-dir=${DEPLOY_DIR}

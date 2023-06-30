@@ -18,14 +18,16 @@ tag_parser ${END_TAG} end_tag_array || bail "Unable to parse end tag '${END_TAG}
 ${DEBUG} && declare -p end_tag_array
 
 # Set up what to fetch from github
-patterns1="{${end_tag_array[artifact_prefix]}-${END_TAG}{.{md5,sha1,sha256,tar.gz,tar.gz.asc},.patch.{md5,sha1,sha256,tar.gz,tar.gz.asc}},{ChangeLog,README}-${END_TAG}.md}"
+patterns1="{${end_tag_array[artifact_prefix]}-${END_TAG}{.{md5,sha1,sha256,tar.gz,tar.gz.asc},-patch.{md5,sha1,sha256,tar.gz,tar.gz.asc}},{ChangeLog,README}-${END_TAG}.md}"
 files=$(eval echo $patterns1)
 urls=$(eval echo "https://github.com/asterisk/asterisk/releases/download/${END_TAG}/$patterns1")
 
 cd $DST_DIR
+mkdir -p telephony/${end_tag_array[download_dir]}/pending
 cd telephony/${end_tag_array[download_dir]}/pending
+
 # Fetch the files and fail if any can't be downloaded.
-curl --fail-early -f -L --remote-name-all $urls
+curl --no-progress-meter --fail-early -f -L --remote-name-all $urls
 
 # If we do get them all, move them into the releases directory.
 rsync -vaH --remove-source-files * ../releases/
