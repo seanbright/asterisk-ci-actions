@@ -103,11 +103,18 @@ export WGET_EXTRA_ARGS="--quiet"
 
 if ! $NO_CONFIGURE ; then
 	echo "Running configure"
-	runner ./configure ${common_config_args}
+	SUCCESS=true
+	runner ./configure ${common_config_args} > /dev/null || SUCCESS=false
+	$SUCCESS || { SUCCESS=true ; runner ./configure ${common_config_args} NOISY_BUILD=yes || SUCCESS=false ; }
+	cp config.{status,log} makeopts ${OUTPUT_DIR}/ || :
+	$SUCCESS || exit 1
 fi
 
 if ! $NO_MENUSELECT ; then
-	runner ${MAKE} menuselect.makeopts
+	SUCCESS=true
+	runner ${MAKE} menuselect.makeopts || SUCCESS=false
+	cp menuselect-tree menuselect.{makedeps,makeopts} ${OUTPUT_DIR}/
+	$SUCCESS || exit 1
 
 	runner menuselect/menuselect `gen_mods enable DONT_OPTIMIZE BETTER_BACKTRACES` menuselect.makeopts
 	if ! $NO_DEV_MODE ; then
@@ -129,7 +136,10 @@ if ! $NO_MENUSELECT ; then
 	if ! $NO_DEV_MODE ; then
 		cat_enables+=" MENUSELECT_TESTS"
 	fi
-	runner menuselect/menuselect `gen_cats enable $cat_enables` menuselect.makeopts
+	runner menuselect/menuselect `gen_cats enable $cat_enables` menuselect.makeopts || SUCCESS=false
+	cp menuselect.makedeps ${OUTPUT_DIR}/menuselect.makedeps.postcats
+	cp menuselect.makeopts ${OUTPUT_DIR}/menuselect.makeopts.postcats
+	$SUCCESS || exit 1
 
 	mod_disables="codec_ilbc res_digium_phone"
 	if $TESTED_ONLY ; then
@@ -153,12 +163,18 @@ if ! $NO_MENUSELECT ; then
 	fi
 	mod_disables+=" ${MODULES_BLACKLIST//,/ }"
 
-	runner menuselect/menuselect `gen_mods disable $mod_disables` menuselect.makeopts
+	runner menuselect/menuselect `gen_mods disable $mod_disables` menuselect.makeopts || SUCCESS=false
+	cp menuselect.makedeps ${OUTPUT_DIR}/menuselect.makedeps.moddisables
+	cp menuselect.makeopts ${OUTPUT_DIR}/menuselect.makeopts.moddisables
+	$SUCCESS || exit 1
 
 	mod_enables="app_voicemail app_directory"
 	mod_enables+=" res_mwi_external res_ari_mailboxes res_mwi_external_ami res_stasis_mailbox"
 	mod_enables+=" CORE-SOUNDS-EN-GSM MOH-OPSOUND-GSM EXTRA-SOUNDS-EN-GSM"
-	runner menuselect/menuselect `gen_mods enable $mod_enables` menuselect.makeopts
+	runner menuselect/menuselect `gen_mods enable $mod_enables` menuselect.makeopts || SUCCESS=false
+	cp menuselect.makedeps ${OUTPUT_DIR}/menuselect.makedeps.modenables
+	cp menuselect.makeopts ${OUTPUT_DIR}/menuselect.makeopts.modenables
+	$SUCCESS || exit 1
 fi
 
 if ! $NO_MAKE ; then
