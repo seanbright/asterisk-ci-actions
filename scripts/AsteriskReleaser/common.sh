@@ -35,6 +35,9 @@ options+=(
 	      [branch]="--branch=<branch> # Release branch"
 	        [norc]="--norc            # There were no release candidates for this release"
 	    [security]="--security        # This is a security release"
+	  [advisories]="--advisories=<adv>[,<adv> ...]   # A comma separated list of advisories"
+	[adv_url_base]="--adv-url-base=<adv_url_base>    # The URL base for security advisories"
+	      [hotfix]="--hotfix          # This is a hotfix but not security release"
 	 [cherry_pick]="--cherry-pick     # Cherry-pick commits for rc1 releases"
 	     [alembic]="--alembic         # Create alembic sql scripts"
 	   [changelog]="--changelog       # Create changelog"
@@ -100,6 +103,9 @@ DST_DIR=
 BRANCH=
 NORC=false
 SECURITY=false
+ADVISORIES=
+ADV_URL_BASE=
+HOTFIX=false
 CHERRY_PICK=false
 ALEMBIC=false
 CHANGELOG=false
@@ -148,6 +154,9 @@ for a in "$@" ; do
 		args+=( "$a" )
 	fi
 done
+
+{ $SECURITY || $HOTFIX ; } && NORC=true
+
 
 debug "$@"
 
@@ -215,7 +224,7 @@ tag_parser() {
 	tagarray[certified]=false
 	tagarray[artifact_prefix]="asterisk"
 	tagarray[download_dir]="asterisk"
-	
+
 	if [[ "$tagin" =~  ^(certified-)?([0-9]+)[.]([0-9]+)(-cert|[.])([0-9]+)(-(rc|pre)([0-9]+))?$ ]]  ; then
 		tagarray[certprefix]=${BASH_REMATCH[1]}
 		tagarray[major]=${BASH_REMATCH[2]}
@@ -226,22 +235,26 @@ tag_parser() {
 		tagarray[release_type]=${BASH_REMATCH[7]:-ga}
 		tagarray[release_num]=${BASH_REMATCH[8]}
 		tagarray[base_version]=${BASH_REMATCH[2]}.${BASH_REMATCH[3]}${BASH_REMATCH[4]}${BASH_REMATCH[5]}
-		
+
 		tagarray[current_linkname]=${tagarray[major]}-current
 		[ "${BASH_REMATCH[1]}" == "certified-" ] && {
 			tagarray[certified]=true
-			tagarray[artifact_prefix]+="-certified"
 			tagarray[download_dir]="certified-asterisk"
 			tagarray[current_linkname]=${tagarray[major]}.${tagarray[minor]}-current
 		}
-		
-		
+
+		tagarray[tag]=$tagin
 	else
 		return 1
 	fi
-	tagarray[branch]="releases/${tagarray[certprefix]}${tagarray[major]}"
-	tagarray[source_branch]="${tagarray[certprefix]}${tagarray[major]}"
-	${tagarray[certified]} && tagarray[startpatch]=1 || tagarray[startpatch]=0
-	tagarray[tag]=$tagin
+	if ${tagarray[certified]} ; then
+		tagarray[branch]="releases/certified-${tagarray[major]}.${tagarray[minor]}"
+		tagarray[source_branch]="certified/${tagarray[major]}.${tagarray[minor]}"
+		tagarray[startpatch]=1
+	else
+		tagarray[branch]="releases/${tagarray[major]}"
+		tagarray[source_branch]="${tagarray[major]}"
+		tagarray[startpatch]=0
+	fi
 	return 0
 }

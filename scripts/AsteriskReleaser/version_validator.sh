@@ -7,7 +7,7 @@ declare -A options=(
 SAVE_GITHUB_ENV=false
 
 declare needs=( end_tag )
-declare wants=( start_tag src_repo certified security )
+declare wants=( start_tag src_repo certified security hotfix norc )
 declare tests=( src_repo )
 
 progdir="$(dirname $(realpath $0) )"
@@ -30,7 +30,7 @@ fi
 
 $progdir/get_start_tag.sh ${START_TAG:+--start-tag=${START_TAG}} \
 	--end-tag=${END_TAG} --src-repo="${SRC_REPO}" \
-	$(booloption SECURITY) $(booloption CERTIFIED) \
-	$(booloption SAVE_GITHUB_ENV)
+	$(booloption SECURITY) $(booloption HOTFIX) $(booloption NORC) \
+	$(booloption CERTIFIED) $(booloption SAVE_GITHUB_ENV)
 
 exit 0

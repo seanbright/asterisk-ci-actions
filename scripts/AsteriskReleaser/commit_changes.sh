@@ -2,7 +2,7 @@
 set -e
 
 declare needs=( start_tag end_tag )
-declare wants=( src_repo dst_dir )
+declare wants=( src_repo dst_dir security norc hotfix )
 declare tests=( start_tag src_repo dst_dir )
 
 # Since creating the changelog doesn't make any
@@ -38,7 +38,10 @@ ln -sf ChangeLogs/ChangeLog-${END_TAG}.md CHANGES.md
 git add ChangeLogs/ChangeLog-${END_TAG}.md CHANGES.md
 
 if [ "${end_tag_array[release_type]}" == "ga" ] ; then
-	git rm -f ChangeLogs/ChangeLog-${end_tag_array[base_version]}-rc*
+	if ! { $SECURITY || $NORC || $HOTFIX ; }; then
+		# Security releases have no RCs.
+		git rm -f ChangeLogs/ChangeLog-${end_tag_array[base_version]}-rc*
+	fi
 fi
 
 if [ -f UPGRADE.txt ] ; then

@@ -2,7 +2,7 @@
 set -e
 
 declare needs=( start_tag end_tag )
-declare wants=( src_repo dst_dir )
+declare wants=( src_repo dst_dir security advisories adv_url_base )
 declare tests=( start_tag src_repo dst_dir )
 
 # Since creating the changelog doesn't make any
@@ -206,6 +206,33 @@ fi
 
 # The 2 spaces after the first line in each paragraph force line breaks.
 # They're there on purpose.
+if $SECURITY ; then
+cat <<-EOF >"${DST_DIR}/email_announcement.md"
+The Asterisk Development Team would like to announce security release  
+${end_tag_array[certprefix]:+Certified }Asterisk ${end_tag_array[major]}.${end_tag_array[minor]}${end_tag_array[patchsep]}${end_tag_array[patch]}.
+
+The release artifacts are available for immediate download at  
+https://github.com/asterisk/$(basename ${SRC_REPO})/releases/tag/${END_TAG}
+and
+https://downloads.asterisk.org/pub/telephony/${end_tag_array[certprefix]:+certified-}asterisk
+
+EOF
+	if [ -n "$ADVISORIES" ] ; then
+		IFS=$','
+		echo "The following security advisories were resolved in this release:" >> "${DST_DIR}/email_announcement.md"
+
+		for a in $ADVISORIES ; do
+			if [ -n "$ADV_URL_BASE" ] ; then
+				echo "${ADV_URL_BASE}/$a" >> "${DST_DIR}/email_announcement.md"
+			else
+				echo "$a" >> "${DST_DIR}/email_announcement.md"
+			fi
+		done
+		echo "" >> "${DST_DIR}/email_announcement.md"
+		unset IFS
+	fi
+else
+
 cat <<-EOF >"${DST_DIR}/email_announcement.md"
 The Asterisk Development Team would like to announce  
 ${rt}${end_tag_array[certprefix]:+Certified }Asterisk ${end_tag_array[major]}.${end_tag_array[minor]}${end_tag_array[patchsep]}${end_tag_array[patch]}.
@@ -221,7 +248,7 @@ and would have not been possible without your participation.
 Thank You!
 
 EOF
-
+fi
 cat "${DST_DIR}/release_notes.md" >>"${DST_DIR}/email_announcement.md"
 
 debug "Create the README"

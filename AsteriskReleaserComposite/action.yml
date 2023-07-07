@@ -1,7 +1,23 @@
 name: AsteriskReleaserComposite
 inputs:
   is_security:
-    description: 'Security or Hotfix?'
+    description: |
+      Security?
+      (Implies no RCs)
+    required: true
+    type: boolean
+    default: false
+  advisories:
+    description: |
+      Comma separated list of advisories.
+      NO SPACES
+      Example: GHSA-4xjp-22g4-9fxm,GHSA-4xjp-22g4-zzzz
+    required: false
+    type: string
+  is_hotfix:
+    description: |
+      Hotfix?
+      (A patch release but not security.  No RCs)
     required: true
     type: boolean
     default: false
@@ -61,6 +77,9 @@ inputs:
   asterisk_mail_list_sec:
     type: string
     required: true
+  sec_adv_url_base:
+    type: string
+    required: true
   gpg_private_key:
     type: string
     required: true
@@ -108,6 +127,8 @@ runs:
       uses: asterisk/asterisk-ci-actions/AsteriskReleaser@main
       with:
         is_security: ${{inputs.is_security}}
+        advisories: ${{inputs.advisories}}
+        is_hotfix: ${{inputs.is_hotfix}}
         new_version: ${{inputs.new_version}}
         start_version: ${{inputs.start_version}}
         push_release_branches: ${{inputs.push_release_branches}}
@@ -119,6 +140,7 @@ runs:
         asterisk_mail_list_cert_ga: ${{inputs.asterisk_mail_list_cert_ga}}
         asterisk_mail_list_cert_rc: ${{inputs.asterisk_mail_list_cert_rc}}
         asterisk_mail_list_sec: ${{inputs.asterisk_mail_list_sec}}
+        sec_adv_url_base: ${{inputs.sec_adv_url_base}}
         repo: ${{inputs.repo}}
         gpg_private_key: ${{inputs.gpg_private_key}}
         github_token: ${{steps.get_workflow_token.outputs.token}}

@@ -1,7 +1,23 @@
 name: AsteriskReleaser
 inputs:
   is_security:
-    description: 'Security or Hotfix?'
+    description: |
+      Security?
+      (Implies no RCs)
+    required: true
+    type: boolean
+    default: false
+  advisories:
+    description: |
+      Comma separated list of advisories.
+      NO SPACES
+      Example: GHSA-4xjp-22g4-9fxm,GHSA-4xjp-22g4-zzzz
+    required: false
+    type: string
+  is_hotfix:
+    description: |
+      Hotfix?
+      (A patch release but not security.  No RCs)
     required: true
     type: boolean
     default: false
@@ -59,6 +75,9 @@ inputs:
     type: string
     required: true
   asterisk_mail_list_sec:
+    type: string
+    required: true
+  sec_adv_url_base:
     type: string
     required: true
   gpg_private_key:

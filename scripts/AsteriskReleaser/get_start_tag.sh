@@ -9,7 +9,7 @@ SAVE_GITHUB_ENV=false
 TAG_OUTPUT_PREFIX=
 
 declare needs=( end_tag )
-declare wants=( start_tag src_repo security norc save_github_env)
+declare wants=( start_tag src_repo security norc hotfix save_github_env)
 declare tests=( src_repo )
 
 progdir="$(dirname $(realpath $0) )"
@@ -75,7 +75,7 @@ if [ "${new[minor]}" != "${last[minor]}" ] ; then
 			( not 'rc' or 'pre', etc)."
 		fi
 	if [ "${new[release_type]}" != "rc" ] ; then
-		if ! { ${NORC} || ${SECURITY} ; } ; then
+		if ! { ${NORC} || ${SECURITY} || ${HOTFIX} ; } ; then
 			bail "(${last[tag]} -> ${new[tag]}): This seems to be a new minor
 				version but the new release type isn't 'rc' and neither the
 				'--no-rc' nor the '--security' options were specified."
@@ -113,7 +113,7 @@ if [ "${new[patch]}" != "${last[patch]}" ] ; then
 			( not 'rc' or 'pre', etc)."
 	fi
 	if [ "${new[release_type]}" != "rc" ] ; then
-		if ! { ${NORC} || ${SECURITY} ; } ; then
+		if ! { ${NORC} || ${SECURITY} || ${HOTFIX} ; } ; then
 			bail "(${last[tag]} -> ${new[tag]}): This seems to be a new patch
 				version but the new release type isn't 'rc' and neither the
 				'--no-rc' nor the '--security' options were specified."

@@ -30,7 +30,7 @@ ${ECHO_CMD} git -C "${SRC_REPO}" archive --format=tar \
 	--prefix="${end_tag_array[artifact_prefix]}-${END_TAG}/sounds/" \
 	$(find "${SRC_REPO}/sounds/" -name "asterisk*.tar.gz" -printf " --add-file=sounds/%P") \
 	--prefix="${end_tag_array[artifact_prefix]}-${END_TAG}/" "${END_TAG}" || bail "Unable to create tarball"
-${ECHO_CMD} tar --delete -f "${DST_DIR}/${end_tag_array[artifact_prefix]}-${END_TAG}.tar" ${end_tag_array[artifact_prefix]}-${END_TAG}/.github
+${ECHO_CMD} tar --delete -f "${DST_DIR}/${end_tag_array[artifact_prefix]}-${END_TAG}.tar" ${end_tag_array[artifact_prefix]}-${END_TAG}/.github || :
 ${ECHO_CMD} gzip -f "${DST_DIR}/${end_tag_array[artifact_prefix]}-${END_TAG}.tar"
 
 pushd "${DST_DIR}" &>/dev/null

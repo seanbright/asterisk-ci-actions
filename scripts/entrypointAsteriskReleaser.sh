@@ -22,6 +22,7 @@ start_tag="${INPUT_START_VERSION}"
 echo "Validating tags"
 ${SCRIPT_DIR}/version_validator.sh \
 	$( ${INPUT_IS_SECURITY} && echo "--security") \
+	$( ${INPUT_IS_HOTFIX} && echo "--hotfix") \
 	${start_tag:+--start-tag=${start_tag}} --end-tag=${INPUT_NEW_VERSION}
 
 echo "Tags valid: ${start_tag} -> ${end_tag} Release Type: ${end_tag_array[release_type]}"
@@ -42,6 +43,7 @@ git config --global user.name "Asterisk Development Team"
 
 start_tag=$(${SCRIPT_DIR}/get_start_tag.sh --src-repo=${REPO_DIR} \
 $( $INPUT_IS_SECURITY && echo "--security") \
+$( $INPUT_IS_HOTFIX && echo "--hotfix") \
 ${start_tag:+--start-tag=${start_tag}} --end-tag=${end_tag})
 
 declare -A start_tag_array
@@ -65,6 +67,9 @@ echo "Running create_release_artifacts.sh"
 ${SCRIPT_DIR}/create_release_artifacts.sh \
 	--src-repo=${REPO_DIR} --dst-dir=${STAGING_DIR} --debug \
 	$(${INPUT_IS_SECURITY} && echo "--security") \
+	$(${INPUT_IS_HOTFIX} && echo "--hotfix") \
+	$([ -n "${INPUT_ADVISORIES}" ] && echo "--advisories=${INPUT_ADVISORIES}") \
+	$([ -n "${INPUT_SEC_ADV_URL_BASE}" ] && echo "--adv-url-base=${INPUT_SEC_ADV_URL_BASE}") \
 	--start-tag=${start_tag} --end-tag=${end_tag} \
 	--cherry-pick --alembic --changelog --commit --tag \
 	--sign --tarball --patchfile \

@@ -2,7 +2,8 @@
 set -e
 
 declare needs=( end_tag )
-declare wants=( src_repo dst_dir security norc alembic
+declare wants=( src_repo dst_dir security hotfix norc advisories
+				adv_url_base alembic
 				changelog commit tag push_branches tarball patchfile
 				close_issues sign full_monty dry_run )
 declare tests=( src_repo dst_dir )
@@ -17,7 +18,7 @@ ${DEBUG} && declare -p end_tag
 if [ -z "${START_TAG}" ] ; then
 	START_TAG=$($progdir/get_start_tag.sh \
 		--end-tag=${END_TAG} --src-repo="${SRC_REPO}" \
-		$(booloption security) $(booloption norc) $(booloption debug) )
+		$(booloption security) $(booloption hotfix) $(booloption norc) $(booloption debug) )
 fi
 if [ -z "${START_TAG}" ] ; then
 	bail "can't determine a start tag"
@@ -57,6 +58,9 @@ if ${CHANGELOG} ; then
 	debug "Creating ChangeLog for ${START_TAG} -> ${END_TAG}"
 	$ECHO_CMD $progdir/create_changelog.sh --start-tag=${START_TAG} \
 		--end-tag=${END_TAG} --src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
+		$(booloption security) $(booloption hotfix) $(booloption norc) \
+		$([ -n "$ADVISORIES" ] && echo "--advisories=$ADVISORIES") \
+		$([ -n "$ADV_URL_BASE" ] && echo "--adv-url-base=$ADV_URL_BASE") \
 		$(booloption debug)
 fi
 
@@ -65,6 +69,7 @@ if ${COMMIT} ; then
 	debug "Committing changes for ${END_TAG}"
 	$ECHO_CMD $progdir/commit_changes.sh --start-tag=${START_TAG} \
 		--end-tag=${END_TAG} --src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
+		$(booloption security) $(booloption hotfix) $(booloption norc) \
 		$(booloption debug)
 fi
 

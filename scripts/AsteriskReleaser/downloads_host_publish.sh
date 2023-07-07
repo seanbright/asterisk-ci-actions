@@ -54,6 +54,15 @@ cd releases
 ln -sfr $files ../
 
 # Create the -current links
+if ${end_tag_array[certified]} ; then
+   	from=${end_tag_array[major]}.${end_tag_array[minor]}${end_tag_array[patchsep]}${end_tag_array[patch]}
+   	to=current
+else
+   	from=.${end_tag_array[minor]}${end_tag_array[patchsep]}${end_tag_array[patch]}
+   	to=-current
+fi
+
 for f in $files ; do
-	ln -sfr $f ../${f/${END_TAG}/${end_tag_array[current_linkname]}}
+   	ln -sfr $f ../${f/${from}/${to}}
 done
+
