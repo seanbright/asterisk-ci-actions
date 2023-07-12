@@ -26,7 +26,7 @@ outputs:
     value: ${{ steps.getbranches.outputs.branches }}
   forced_none:
     description: "PR had 'cherry-pick-to: none'"
-    value: ${{ steps.getbranches.outputs.branches }}
+    value: ${{ steps.getbranches.outputs.forced_none }}
 
 runs:
   using: "composite"
