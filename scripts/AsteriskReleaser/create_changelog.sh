@@ -94,15 +94,16 @@ awk 'BEGIN{RS="@#@#@#@"; ORS="#@#@#@#"} /UserNote/' "${TMPFILE2}" |\
 # doc/CHANGES-staging.  They will be deleted
 # after the first GA release after the GitHub
 # migration
-changefiles=$(find ${SRC_REPO}/doc/CHANGES-staging -name '*.txt')
-if [ "x${changefiles}" != "x" ] ; then
-	for changefile in ${changefiles} ; do
-		git -C "${SRC_REPO}" log -1 --format="- ### %s" -- ${changefile} >>"${TMPFILE1}"
-		sed -n -r -e '/^Subject:/d ; /^$/d ; s/^/  /p' ${changefile} >>"${TMPFILE1}"
-		echo ""  >>"${TMPFILE1}"
-	done
+if [ -d "${SRC_REPO}/doc/CHANGES-staging" ] ; then
+	changefiles=$(find "${SRC_REPO}/doc/CHANGES-staging" -name '*.txt')
+	if [ "x${changefiles}" != "x" ] ; then
+		for changefile in ${changefiles} ; do
+			git -C "${SRC_REPO}" log -1 --format="- ### %s" -- "${changefile}" >>"${TMPFILE1}"
+			sed -n -r -e '/^Subject:/d ; /^$/d ; s/^/  /p' "${changefile}" >>"${TMPFILE1}"
+			echo ""  >>"${TMPFILE1}"
+		done
+	fi
 fi
-
 
 debug "Creating upgrade notes"
 cat <<-EOF >>"${TMPFILE1}"
@@ -120,15 +121,16 @@ awk 'BEGIN{RS="@#@#@#@"; ORS="#@#@#@#"} /UpgradeNote/' "${TMPFILE2}" |\
 # doc/UPGRADE-staging.  They will be deleted
 # after the first GA release after the GitHub
 # migration
-changefiles=$(find ${SRC_REPO}/doc/UPGRADE-staging -name '*.txt')
-if [ "x${changefiles}" != "x" ] ; then
-	for changefile in ${changefiles} ; do
-		git -C "${SRC_REPO}" log -1 --format="- ### %s" -- ${changefile} >>"${TMPFILE1}"
-		sed -n -r -e '/^Subject:/d ; /^$/d ; s/^/  /p' ${changefile} >>"${TMPFILE1}"
-		echo ""  >>"${TMPFILE1}"
-	done
+if [ -d "${SRC_REPO}/doc/UPGRADE-staging" ] ; then
+	changefiles=$(find "${SRC_REPO}/doc/UPGRADE-staging" -name '*.txt')
+	if [ "x${changefiles}" != "x" ] ; then
+		for changefile in ${changefiles} ; do
+			git -C "${SRC_REPO}" log -1 --format="- ### %s" -- "${changefile}" >>"${TMPFILE1}"
+			sed -n -r -e '/^Subject:/d ; /^$/d ; s/^/  /p' "${changefile}" >>"${TMPFILE1}"
+			echo ""  >>"${TMPFILE1}"
+		done
+	fi
 fi
-
 
 cat <<-EOF >>"${TMPFILE1}"
 
