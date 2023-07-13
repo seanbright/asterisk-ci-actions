@@ -152,12 +152,14 @@ if [ ${#issuelist[*]} -gt 0 ] ; then
 	# We want the issue number and the title formatted like:
 	#   - #2: Issue Title
 	# which GitHub can do for us using a jq format string.
-	gh --repo=asterisk/$(basename ${SRC_REPO}) issue list --state all \
-		--search "is:issue ${issuelist[*]}" --json number,title \
-		--jq ". | sort_by(.number) | .[] | \"  - #\" + ( .number | tostring) + \": \" + .title" \
-		> "${DST_DIR}/issues_to_close.txt"
-		cat "${DST_DIR}/issues_to_close.txt" >>"${TMPFILE1}"
-		${DEBUG} && cat "${DST_DIR}/issues_to_close.txt"
+	for issue in ${issuelist[*]} ; do
+		gh --repo=asterisk/$(basename ${SRC_REPO}) issue view $issue \
+			--json number,title \
+			--jq ". | \"  - #\" + ( .number | tostring) + \": \" + .title" \
+			>> "${DST_DIR}/issues_to_close.txt"
+	done
+	cat "${DST_DIR}/issues_to_close.txt" >>"${TMPFILE1}"
+	${DEBUG} && cat "${DST_DIR}/issues_to_close.txt"
 else
 	touch "${DST_DIR}/issues_to_close.txt"
 	debug "No issues"
