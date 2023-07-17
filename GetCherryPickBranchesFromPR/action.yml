@@ -50,7 +50,7 @@ runs:
         fi
         eval declare -a BRANCHES=( ${branchlist/none/} ${INCLUDE_BRANCHES//,/ } )
         declare -p BRANCHES
-        branch_count=0
+        declare -i branch_count=0
         json='['
         for branch in ${BRANCHES[@]} ; do
           echo "Will cherry-pick to branch $branch"
@@ -64,5 +64,5 @@ runs:
         if [ $branch_count -eq 0 ] ; then
           echo "::notice::No branches needing cherry picks identified"
         else
-          echo "::notice::Branches that will have cherry-picks testeds: $json"
+          echo "::notice::Branches identified for cherry-picks: $json"
         fi
