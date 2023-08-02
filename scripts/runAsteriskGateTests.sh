@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 CIDIR=$(dirname $(readlink -fn $0))
-REALTIME=0
+REALTIME=false
 TEST_TIMEOUT=600
 source $CIDIR/ci.functions
 ASTETCDIR=$DESTDIR/etc/asterisk
