@@ -2,7 +2,7 @@
 set -e
 
 declare needs=( end_tag )
-declare wants=( src_repo dst_dir sign dry_run )
+declare wants=( product src_repo dst_dir sign dry_run )
 declare tests=( end_tag src_repo dst_dir )
 
 progdir="$(dirname $(realpath $0) )"
@@ -15,12 +15,14 @@ ${DEBUG} && declare -p end_tag_array
 debug "Creating tarball for ${END_TAG}"
 # Before we create the tarball, we need to retrieve
 # a few basic sounds files.
+if [ "${PRODUCT}" == "asterisk" ] ; then
 debug "Downloading sound files"
 ${ECHO_CMD} make -C "${SRC_REPO}/sounds" \
 	MENUSELECT_CORE_SOUNDS=CORE-SOUNDS-EN-GSM \
 	MENUSELECT_MOH=MOH-OPSOUND-WAV \
 	WGET='wget -q' \
 	DOWNLOAD='wget -q' all || bail "Unable to download sounds tarballs"
+fi
 
 # Git creates the tarball for us but we need to tell it
 # to include the unversioned sounds files just downloaded.
@@ -30,7 +32,9 @@ ${ECHO_CMD} git -C "${SRC_REPO}" archive --format=tar \
 	--prefix="${end_tag_array[artifact_prefix]}-${END_TAG}/sounds/" \
 	$(find "${SRC_REPO}/sounds/" -name "asterisk*.tar.gz" -printf " --add-file=sounds/%P") \
 	--prefix="${end_tag_array[artifact_prefix]}-${END_TAG}/" "${END_TAG}" || bail "Unable to create tarball"
+
 ${ECHO_CMD} tar --delete -f "${DST_DIR}/${end_tag_array[artifact_prefix]}-${END_TAG}.tar" ${end_tag_array[artifact_prefix]}-${END_TAG}/.github || :
+
 ${ECHO_CMD} gzip -f "${DST_DIR}/${end_tag_array[artifact_prefix]}-${END_TAG}.tar"
 
 pushd "${DST_DIR}" &>/dev/null

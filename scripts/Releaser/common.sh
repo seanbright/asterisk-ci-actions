@@ -27,6 +27,7 @@ progname=$(basename -s .sh $0)
 [[ "$(declare -p options 2>/dev/null || : )" =~ "declare -A" ]] || declare -A options
 
 options+=(
+	     [product]="--product=[ asterisk | libpri ] # Defaults to asterisk"
 	[release_type]="--release-type=[ rc1 | rcn | ga | ganorc ]"
 	   [start_tag]="--start-tag=<tag>"
 	     [end_tag]="--end-tag=<tag>"
@@ -94,6 +95,7 @@ print_help() {
 	exit 1
 }
 
+export PRODUCT=asterisk
 VERSION_TYPE=
 RELEASE_TYPE=
 START_TAG=
@@ -222,8 +224,8 @@ tag_parser() {
 	local tagin=$1
 	local -n tagarray=$2
 	tagarray[certified]=false
-	tagarray[artifact_prefix]="asterisk"
-	tagarray[download_dir]="asterisk"
+	tagarray[artifact_prefix]="$PRODUCT"
+	tagarray[download_dir]="$PRODUCT"
 
 	if [[ "$tagin" =~  ^(certified-)?([0-9]+)[.]([0-9]+)(-cert|[.])([0-9]+)(-(rc|pre)([0-9]+))?$ ]]  ; then
 		tagarray[certprefix]=${BASH_REMATCH[1]}

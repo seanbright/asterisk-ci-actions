@@ -2,7 +2,7 @@
 set -e
 
 declare needs=( start_tag end_tag )
-declare wants=( src_repo dst_dir security norc hotfix )
+declare wants=( product src_repo dst_dir security norc hotfix alembic )
 declare tests=( start_tag src_repo dst_dir )
 
 # Since creating the changelog doesn't make any
@@ -18,7 +18,7 @@ cd "${SRC_REPO}"
 	
 debug "Committing ChangeLog and Alembic scripts"
 
-git add contrib/realtime
+${ALEMBIC} && git add contrib/realtime
 
 cp ${DST_DIR}/.version .version
 git add .version
@@ -29,8 +29,8 @@ if [ ! -d ChangeLogs ] ; then
 	[ -f ChangeLog ] && git mv ChangeLog ChangeLogs/historical/
 fi
 
-if [ -f asterisk-*-summary.html ] ; then
-	git rm -f asterisk-*-summary.html asterisk-*-summary.txt >/dev/null 2>&1 || :
+if [ -f ${PRODUCT}-*-summary.html ] ; then
+	git rm -f ${PRODUCT}-*-summary.html ${PRODUCT}-*-summary.txt >/dev/null 2>&1 || :
 fi
 
 cp ${DST_DIR}/ChangeLog-${END_TAG}.md ChangeLogs/

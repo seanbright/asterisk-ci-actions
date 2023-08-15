@@ -4,14 +4,16 @@
 set -e -B
 
 # deploy failsafe
-DST_DIR=/home/asterisk-build
 
 declare needs=( end_tag )
-declare wants=( dst_dir )
+declare wants=( dst_dir product )
 declare tests=( dst_dir )
 
 progdir="$(dirname $(realpath $0) )"
 source "${progdir}/common.sh"
+
+: ${DST_DIR:=/home/${PRODUCT}-build}
+
 
 declare -A end_tag_array
 tag_parser ${END_TAG} end_tag_array || bail "Unable to parse end tag '${END_TAG}'"
@@ -20,7 +22,7 @@ ${DEBUG} && declare -p end_tag_array
 # Set up what to fetch from github
 patterns1="{${end_tag_array[artifact_prefix]}-${END_TAG}{.{md5,sha1,sha256,tar.gz,tar.gz.asc},-patch.{md5,sha1,sha256,tar.gz,tar.gz.asc}},{ChangeLog,README}-${END_TAG}.md}"
 files=$(eval echo $patterns1)
-urls=$(eval echo "https://github.com/asterisk/asterisk/releases/download/${END_TAG}/$patterns1")
+urls=$(eval echo "https://github.com/asterisk/${PRODUCT}/releases/download/${END_TAG}/$patterns1")
 
 cd $DST_DIR
 mkdir -p telephony/${end_tag_array[download_dir]}/pending
@@ -48,7 +50,7 @@ fi
 # GA release
 
 # Remove previous links
-rm -f {asterisk,ChangeLog,README}-${tagarray[certprefix]}${end_tag_array[major]}.*
+rm -f {${PRODUCT},ChangeLog,README}-${tagarray[certprefix]}${end_tag_array[major]}.*
 
 # Create the direct links
 cd releases

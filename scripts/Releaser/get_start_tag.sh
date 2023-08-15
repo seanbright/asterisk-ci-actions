@@ -78,7 +78,7 @@ if [ "${new[minor]}" != "${last[minor]}" ] ; then
 		if ! { ${NORC} || ${SECURITY} || ${HOTFIX} ; } ; then
 			bail "(${last[tag]} -> ${new[tag]}): This seems to be a new minor
 				version but the new release type isn't 'rc' and neither the
-				'--no-rc' nor the '--security' options were specified."
+				'--hotfix' nor the '--security' options were specified."
 		fi
 	elif [ "${new[release_num]}" != "1" ] ; then 
 		bail "(${last[tag]} -> ${new[tag]}): This seems to be a new minor
@@ -116,7 +116,7 @@ if [ "${new[patch]}" != "${last[patch]}" ] ; then
 		if ! { ${NORC} || ${SECURITY} || ${HOTFIX} ; } ; then
 			bail "(${last[tag]} -> ${new[tag]}): This seems to be a new patch
 				version but the new release type isn't 'rc' and neither the
-				'--no-rc' nor the '--security' options were specified."
+				'--hotfix' nor the '--security' options were specified."
 		fi
 	elif [ "${new[release_num]}" != "1" ] ; then 
 		bail "(${last[tag]} -> ${new[tag]}): This seems to be a new patch

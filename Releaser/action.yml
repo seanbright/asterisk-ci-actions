@@ -1,5 +1,11 @@
-name: AsteriskReleaser
+name: Releaser
 inputs:
+  product:
+    description: |
+      Product name
+      (default: asterisk)
+    type: string
+    default: asterisk
   is_security:
     description: |
       Security?
@@ -62,19 +68,19 @@ inputs:
   repo:
     type: string
     required: true
-  asterisk_mail_list_ga:
+  mail_list_ga:
     type: string
     required: true
-  asterisk_mail_list_rc:
+  mail_list_rc:
     type: string
     required: true
-  asterisk_mail_list_cert_ga:
+  mail_list_cert_ga:
     type: string
     required: true
-  asterisk_mail_list_cert_rc:
+  mail_list_cert_rc:
     type: string
     required: true
-  asterisk_mail_list_sec:
+  mail_list_sec:
     type: string
     required: true
   sec_adv_url_base:
@@ -109,4 +115,4 @@ runs:
   using: "docker"
   image: "docker://ghcr.io/asterisk/asteriskci-agent-rocky8:latest"
   args:
-    - entrypointAsteriskReleaser.sh
+    - entrypointReleaser.sh

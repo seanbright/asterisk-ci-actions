@@ -8,11 +8,12 @@ export GH_TOKEN=${INPUT_GITHUB_TOKEN}
 echo "ACTION_PATH: ${GITHUB_ACTION_PATH}"
 [ -n "${GITHUB_ACTION_PATH}" ] && [ -d "${GITHUB_ACTION_PATH}" ] && ls -al ${GITHUB_ACTION_PATH}
 
-SCRIPT_DIR=${GITHUB_WORKSPACE}/$(basename ${GITHUB_ACTION_REPOSITORY})/scripts/AsteriskReleaser
+SCRIPT_DIR=${GITHUB_WORKSPACE}/$(basename ${GITHUB_ACTION_REPOSITORY})/scripts/Releaser
 REPO_DIR=${GITHUB_WORKSPACE}/$(basename ${INPUT_REPO})
-STAGING_DIR=${GITHUB_WORKSPACE}/asterisk-${INPUT_NEW_VERSION}
+STAGING_DIR=${GITHUB_WORKSPACE}/${INPUT_PRODUCT}-${INPUT_NEW_VERSION}
 
 source ${SCRIPT_DIR}/common.sh
+export PRODUCT=${INPUT_PRODUCT}
 
 end_tag="${INPUT_NEW_VERSION}"
 declare -A end_tag_array
@@ -23,6 +24,7 @@ echo "Validating tags"
 ${SCRIPT_DIR}/version_validator.sh \
 	$( ${INPUT_IS_SECURITY} && echo "--security") \
 	$( ${INPUT_IS_HOTFIX} && echo "--hotfix") \
+	--product=${PRODUCT} \
 	${start_tag:+--start-tag=${start_tag}} --end-tag=${INPUT_NEW_VERSION}
 
 echo "Tags valid: ${start_tag} -> ${end_tag} Release Type: ${end_tag_array[release_type]}"
@@ -42,9 +44,10 @@ git config --global user.email "asteriskteam@digium.com"
 git config --global user.name "Asterisk Development Team"
 
 start_tag=$(${SCRIPT_DIR}/get_start_tag.sh --src-repo=${REPO_DIR} \
-$( $INPUT_IS_SECURITY && echo "--security") \
-$( $INPUT_IS_HOTFIX && echo "--hotfix") \
-${start_tag:+--start-tag=${start_tag}} --end-tag=${end_tag})
+	--product=${PRODUCT} \
+	$( $INPUT_IS_SECURITY && echo "--security") \
+	$( $INPUT_IS_HOTFIX && echo "--hotfix") \
+	${start_tag:+--start-tag=${start_tag}} --end-tag=${end_tag})
 
 declare -A start_tag_array
 tag_parser ${start_tag} start_tag_array || bail "Unable to parse start tag '${start_tag}'"
@@ -70,13 +73,17 @@ ${SCRIPT_DIR}/create_release_artifacts.sh \
 	$(${INPUT_IS_HOTFIX} && echo "--hotfix") \
 	$([ -n "${INPUT_ADVISORIES}" ] && echo "--advisories=${INPUT_ADVISORIES}") \
 	$([ -n "${INPUT_SEC_ADV_URL_BASE}" ] && echo "--adv-url-base=${INPUT_SEC_ADV_URL_BASE}") \
+	--product=${PRODUCT} \
 	--start-tag=${start_tag} --end-tag=${end_tag} \
-	--cherry-pick --alembic --changelog --commit --tag \
+	--cherry-pick \
+	$([ "${PRODUCT}" == "asterisk" ] && echo "--alembic" || echo "") \
+	--changelog --commit --tag \
 	--sign --tarball --patchfile \
 	$(${INPUT_PUSH_RELEASE_BRANCHES} && echo " --push-branches")
 
 if ${INPUT_CREATE_GITHUB_RELEASE} ; then
 	${SCRIPT_DIR}/push_live.sh \
+		--product=${PRODUCT} \
 		--src-repo=${REPO_DIR} --dst-dir=${STAGING_DIR} --debug \
 		--start-tag=${start_tag} --end-tag=${end_tag} \
 		$(${INPUT_PUSH_TARBALLS} && echo " --push-tarballs")
@@ -94,18 +101,18 @@ if ! ${INPUT_SEND_EMAIL} ; then
 fi
 	
 if ${INPUT_IS_SECURITY} ; then
-	echo "mail_list=${INPUT_ASTERISK_MAIL_LIST_SEC}" >> ${GITHUB_OUTPUT}
+	echo "mail_list=${INPUT_MAIL_LIST_SEC}" >> ${GITHUB_OUTPUT}
 elif [ "${end_tag_array[release_type]}" == "rc" ] ; then
 	if ${end_tag_array[certified]} ; then
-		echo "mail_list=${INPUT_ASTERISK_MAIL_LIST_CERT_RC}" >> ${GITHUB_OUTPUT}
+		echo "mail_list=${INPUT_MAIL_LIST_CERT_RC}" >> ${GITHUB_OUTPUT}
 	else
-		echo "mail_list=${INPUT_ASTERISK_MAIL_LIST_RC}" >> ${GITHUB_OUTPUT}
+		echo "mail_list=${INPUT_MAIL_LIST_RC}" >> ${GITHUB_OUTPUT}
 	fi
 elif [ "${end_tag_array[release_type]}" == "ga" ] ; then
 	if ${end_tag_array[certified]} ; then
-		echo "mail_list=${INPUT_ASTERISK_MAIL_LIST_CERT_GA}" >> ${GITHUB_OUTPUT}
+		echo "mail_list=${INPUT_MAIL_LIST_CERT_GA}" >> ${GITHUB_OUTPUT}
 	else
-		echo "mail_list=${INPUT_ASTERISK_MAIL_LIST_GA}" >> ${GITHUB_OUTPUT}
+		echo "mail_list=${INPUT_MAIL_LIST_GA}" >> ${GITHUB_OUTPUT}
 	fi
 else
 	echo "mail_list=none" >> ${GITHUB_OUTPUT}

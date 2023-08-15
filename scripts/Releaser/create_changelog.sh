@@ -11,15 +11,17 @@ declare tests=( start_tag src_repo dst_dir )
 progdir="$(dirname $(realpath $0) )"
 source "${progdir}/common.sh"
 
-mkdir -p /tmp/asterisk
-TMPFILE1=/tmp/asterisk/ChangeLog-${END_TAG}.tmp1.md
-TMPFILE2=/tmp/asterisk/ChangeLog-${END_TAG}.tmp2.txt
+mkdir -p /tmp/${PRODUCT}
+TMPFILE1=/tmp/${PRODUCT}/ChangeLog-${END_TAG}.tmp1.md
+TMPFILE2=/tmp/${PRODUCT}/ChangeLog-${END_TAG}.tmp2.txt
 
 declare -A end_tag_array
 tag_parser ${END_TAG} end_tag_array
 
+debug "$(declare -p end_tag_array)"
 # We need to actually check out the branch we're generating
 # the changelog for so we can get to the files easily
+debug "Checking out ${end_tag_array[branch]}"
 git -C "${SRC_REPO}" checkout ${end_tag_array[branch]}  >/dev/null 2>&1 
 
 # This gets a somewhat machine readable list of commits
@@ -50,16 +52,16 @@ sed -i -r -e '/^(\(cherry.+|Change-Id.+)/d' "${TMPFILE2}"
 
 cat <<-EOF >"${TMPFILE1}"
 
-Change Log for Release ${END_TAG}
+Change Log for Release ${PRODUCT}-${END_TAG}
 ========================================
 
 Links:
 ----------------------------------------
 
- - [Full ChangeLog](https://downloads.asterisk.org/pub/telephony/asterisk/releases/ChangeLog-${END_TAG}.md)  
- - [GitHub Diff](https://github.com/asterisk/asterisk/compare/${START_TAG}...${END_TAG})  
- - [Tarball](https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-${END_TAG}.tar.gz)  
- - [Downloads](https://downloads.asterisk.org/pub/telephony/asterisk)  
+ - [Full ChangeLog](https://downloads.asterisk.org/pub/telephony/${PRODUCT}/releases/ChangeLog-${END_TAG}.md)  
+ - [GitHub Diff](https://github.com/asterisk/${PRODUCT}/compare/${START_TAG}...${END_TAG})  
+ - [Tarball](https://downloads.asterisk.org/pub/telephony/${PRODUCT}/${PRODUCT}-${END_TAG}.tar.gz)  
+ - [Downloads](https://downloads.asterisk.org/pub/telephony/${PRODUCT})  
 
 Summary:
 ----------------------------------------
@@ -239,12 +241,12 @@ else
 
 cat <<-EOF >"${DST_DIR}/email_announcement.md"
 The Asterisk Development Team would like to announce  
-${rt}${end_tag_array[certprefix]:+Certified }Asterisk ${end_tag_array[major]}.${end_tag_array[minor]}${end_tag_array[patchsep]}${end_tag_array[patch]}.
+${rt}${end_tag_array[certprefix]:+Certified }${PRODUCT}-${end_tag_array[major]}.${end_tag_array[minor]}${end_tag_array[patchsep]}${end_tag_array[patch]}.
 
 The release artifacts are available for immediate download at  
 https://github.com/asterisk/$(basename ${SRC_REPO})/releases/tag/${END_TAG}
 and
-https://downloads.asterisk.org/pub/telephony/${end_tag_array[certprefix]:+certified-}asterisk
+https://downloads.asterisk.org/pub/telephony/${end_tag_array[certprefix]:+certified-}${PRODUCT}
 
 This release resolves issues reported by the community  
 and would have not been possible without your participation.

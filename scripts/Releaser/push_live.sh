@@ -1,7 +1,7 @@
 #!/bin/bash
 
 declare needs=( end_tag )
-declare wants=( src_repo dst_dir start_tag push_tarballs )
+declare wants=( product src_repo dst_dir start_tag push_tarballs )
 declare tests=( src_repo dst_dir )
 
 progdir="$(dirname $(realpath $0) )"
@@ -11,7 +11,7 @@ declare -A end_tag
 tag_parser ${END_TAG} end_tag || bail "Unable to parse end tag '${END_TAG}'"
 ${DEBUG} && declare -p end_tag
 
-debug "Pushing Asterisk Release ${END_TAG} live"
+debug "Pushing ${PRODUCT} release ${END_TAG} live"
 cd "${SRC_REPO}"
 
 # Creating the release with all the assets seems to
@@ -42,7 +42,7 @@ if [ $RC -ne 0 ] ; then
 fi
 
 RC=0
-for f in ${DST_DIR}/asterisk-${END_TAG}* \
+for f in ${DST_DIR}/${PRODUCT}-${END_TAG}* \
 	${DST_DIR}/ChangeLog-${END_TAG}.md \
 	${DST_DIR}/README-${END_TAG}.md ; do
 	gh release upload ${END_TAG} --clobber $f || \
@@ -70,4 +70,4 @@ scp -F /tmp/ssh_config -p "${progdir}/common.sh" "${progdir}/downloads_host_publ
 
 ssh -F /tmp/ssh_config ${DEPLOY_SSH_USERNAME}@${DEPLOY_HOST} \
 	/home/${DEPLOY_SSH_USERNAME}/downloads_host_publish.sh \
-	--end-tag=${END_TAG} --dst-dir=${DEPLOY_DIR}
+	--product=${PRODUCT} --end-tag=${END_TAG} --dst-dir=${DEPLOY_DIR}

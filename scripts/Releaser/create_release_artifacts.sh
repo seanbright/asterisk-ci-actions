@@ -2,7 +2,7 @@
 set -e
 
 declare needs=( end_tag )
-declare wants=( src_repo dst_dir security hotfix norc advisories
+declare wants=( product src_repo dst_dir security hotfix norc advisories
 				adv_url_base alembic
 				changelog commit tag push_branches tarball patchfile
 				close_issues sign full_monty dry_run )
@@ -45,7 +45,7 @@ if ${CHERRY_PICK} ; then
 	fi
 fi
 
-if ${ALEMBIC} ; then
+if ${ALEMBIC} && [ "${PRODUCT}" == "asterisk" ] ; then
 	debug "Creating Alembic scripts for ${END_TAG}"
 	$ECHO_CMD $progdir/create_alembic_scripts.sh \
 		--start-tag=${START_TAG} --end-tag=${END_TAG} \
@@ -61,7 +61,7 @@ if ${CHANGELOG} ; then
 		$(booloption security) $(booloption hotfix) $(booloption norc) \
 		$([ -n "$ADVISORIES" ] && echo "--advisories=$ADVISORIES") \
 		$([ -n "$ADV_URL_BASE" ] && echo "--adv-url-base=$ADV_URL_BASE") \
-		$(booloption debug)
+		$(booloption debug) --product=${PRODUCT}
 fi
 
 if ${COMMIT} ; then
@@ -70,7 +70,7 @@ if ${COMMIT} ; then
 	$ECHO_CMD $progdir/commit_changes.sh --start-tag=${START_TAG} \
 		--end-tag=${END_TAG} --src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
 		$(booloption security) $(booloption hotfix) $(booloption norc) \
-		$(booloption debug)
+		--product=${PRODUCT} $(booloption alembic) $(booloption debug)
 fi
 
 if ${TAG} ; then
@@ -85,7 +85,8 @@ if ${TARBALL} ; then
 	$ECHO_CMD $progdir/create_tarball.sh \
 		--start-tag=${START_TAG} --end-tag=${END_TAG} \
 		--src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
-		$(booloption sign) $(booloption debug)
+		--product=${PRODUCT} $(booloption sign) \
+		$(booloption debug)
 fi
 
 if ${PATCHFILE} ; then
@@ -93,6 +94,7 @@ if ${PATCHFILE} ; then
 	$ECHO_CMD $progdir/create_patchfile.sh \
 		--start-tag=${START_TAG} --end-tag=${END_TAG} \
 		--src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
+		--product=${PRODUCT} \
 		$(booloption sign) $(booloption debug)
 fi
 

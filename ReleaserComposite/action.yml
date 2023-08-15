@@ -1,5 +1,11 @@
-name: AsteriskReleaserComposite
+name: ReleaserComposite
 inputs:
+  product:
+    description: |
+      Product name
+      (default: asterisk)
+    type: string
+    default: asterisk
   is_security:
     description: |
       Security?
@@ -62,19 +68,19 @@ inputs:
   repo:
     type: string
     required: true
-  asterisk_mail_list_ga:
+  mail_list_ga:
     type: string
     required: true
-  asterisk_mail_list_rc:
+  mail_list_rc:
     type: string
     required: true
-  asterisk_mail_list_cert_ga:
+  mail_list_cert_ga:
     type: string
     required: true
-  asterisk_mail_list_cert_rc:
+  mail_list_cert_rc:
     type: string
     required: true
-  asterisk_mail_list_sec:
+  mail_list_sec:
     type: string
     required: true
   sec_adv_url_base:
@@ -124,8 +130,9 @@ runs:
 
     - name: Run Releaser
       id: releaser
-      uses: asterisk/asterisk-ci-actions/AsteriskReleaser@main
+      uses: asterisk/asterisk-ci-actions/Releaser@main
       with:
+        product: ${{inputs.product}}
         is_security: ${{inputs.is_security}}
         advisories: ${{inputs.advisories}}
         is_hotfix: ${{inputs.is_hotfix}}
@@ -135,11 +142,11 @@ runs:
         create_github_release: ${{inputs.create_github_release}}
         push_tarballs: ${{inputs.push_tarballs}}
         send_email: ${{inputs.send_email}}
-        asterisk_mail_list_ga: ${{inputs.asterisk_mail_list_ga}}
-        asterisk_mail_list_rc: ${{inputs.asterisk_mail_list_rc}}
-        asterisk_mail_list_cert_ga: ${{inputs.asterisk_mail_list_cert_ga}}
-        asterisk_mail_list_cert_rc: ${{inputs.asterisk_mail_list_cert_rc}}
-        asterisk_mail_list_sec: ${{inputs.asterisk_mail_list_sec}}
+        mail_list_ga: ${{inputs.mail_list_ga}}
+        mail_list_rc: ${{inputs.mail_list_rc}}
+        mail_list_cert_ga: ${{inputs.mail_list_cert_ga}}
+        mail_list_cert_rc: ${{inputs.mail_list_cert_rc}}
+        mail_list_sec: ${{inputs.mail_list_sec}}
         sec_adv_url_base: ${{inputs.sec_adv_url_base}}
         repo: ${{inputs.repo}}
         gpg_private_key: ${{inputs.gpg_private_key}}
@@ -160,8 +167,8 @@ runs:
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: asterisk-${{inputs.new_version}}
-        path: asterisk-${{inputs.new_version}}
+        name: ${{inputs.product}}-${{inputs.new_version}}
+        path: ${{inputs.product}}-${{inputs.new_version}}
 
     - name: Send Release Announcements
       if: inputs.send_email && steps.releaser.outputs.mail_list != 'none'
@@ -172,7 +179,7 @@ runs:
         secure: true
         username: ${{inputs.asteriskteamsa_username}}
         password: ${{inputs.asteriskteamsa_token}}
-        subject: Asterisk Release ${{ inputs.new_version }}
+        subject: ${{inputs.product}} release ${{ inputs.new_version }}
         to: ${{steps.releaser.outputs.mail_list}}
         from: Asterisk Development Team <asteriskteamsa@sangoma.com>
         body: "file://${{github.workspace}}/${{steps.releaser.outputs.email_announcement}}"
