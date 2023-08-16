@@ -91,7 +91,7 @@ fi
 
 eval $(ssh-agent -k)
 
-echo "email_announcement=asterisk-${end_tag}/email_announcement.md" >> ${GITHUB_OUTPUT}
+echo "email_announcement=${PRODUCT}-${end_tag}/email_announcement.md" >> ${GITHUB_OUTPUT}
 
 # Determine the correct email list to send the announcement
 # to (if any).
