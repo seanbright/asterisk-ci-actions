@@ -58,7 +58,7 @@ runs:
       run: |
         echo "GC_TESTSUITE_DIR=$(basename ${{inputs.testsuite_repo}})" >> "${GITHUB_ENV}"
         BASE_BRANCH="${{inputs.base_branch}}"
-        GC_TEST_NAME="${{inputs.test_type}} Test Output ${{inputs.gatetest_group}}-${BASE_BRANCH//\//-}"
+        GC_TEST_NAME="${{inputs.test_type}}-${{inputs.gatetest_group}}-${BASE_BRANCH//\//-}"
         echo "GC_TEST_NAME=${GC_TEST_NAME}" >> "${GITHUB_ENV}"
 
     - name: Get Asterisk
