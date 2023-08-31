@@ -39,10 +39,18 @@ runs:
         docs_dir:            ${{inputs.docs_dir}}
         github_token:        ${{inputs.github_token}}
 
+    - name: Reformat Branch
+      id: reformat
+      env:
+        BRANCH: ${{inputs.base_branch}}
+      shell: bash
+      run: |
+        echo "docname=documentation-${BRANCH//\//-}" >>${GITHUB_OUTPUT}
+
     - name: Save Output
       id: save-output
       if: always()
       uses: actions/upload-artifact@v3
       with:
-        name: documentation-${{inputs.base_branch}}
+        name: ${{steps.reformat.outputs.docname}}
         path: ${{inputs.docs_dir}}
