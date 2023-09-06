@@ -22,7 +22,12 @@ if [ -z "${START_TAG}" ] ; then
 fi
 if [ -z "${START_TAG}" ] ; then
 	bail "can't determine a start tag"
-fi		
+fi
+
+debug "Start tag: ${START_TAG}"
+declare -A start_tag
+tag_parser ${START_TAG} start_tag || bail "Unable to parse start tag '${START_TAG}'"
+debug "$(declare -p start_tag)"
 
 ${ECHO_CMD} git -C "${SRC_REPO}" checkout ${end_tag[branch]}
 cd "${SRC_REPO}"
@@ -89,7 +94,7 @@ if ${TARBALL} ; then
 		$(booloption debug)
 fi
 
-if ${PATCHFILE} ; then
+if ${PATCHFILE} && [ "${start_tag[release_type]}" != "pre" ] ; then
 	debug "Creating patchfile for ${END_TAG}"
 	$ECHO_CMD $progdir/create_patchfile.sh \
 		--start-tag=${START_TAG} --end-tag=${END_TAG} \

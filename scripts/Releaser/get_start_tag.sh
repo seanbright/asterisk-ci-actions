@@ -26,7 +26,7 @@ declare -A last
 declare -A new
 
 tag_parser ${END_TAG} new || bail "Unable to parse end tag '${END_TAG}'"
-${DEBUG} && declare -p new
+debug "$(declare -p new)"
 debug "Checking out ${new[branch]}"
 cd "${SRC_REPO}"
 
@@ -38,7 +38,7 @@ fi
 
 debug "Parsing start tag ${START_TAG}"
 tag_parser ${START_TAG} last || bail "Unable to parse start tag '${START_TAG}'"
-${DEBUG} && declare -p last
+debug "$(declare -p last)"
 
 if [ "${new[tag]}" == "${last[tag]}" ] ; then
 	bail "(${last[tag]} -> ${new[tag]}): The end tag you specified
@@ -149,9 +149,15 @@ if [ "${new[release_type]}" == "rc" ] ; then
 		fi
 		# We need to get the last branch.  In the case of certified,
 		# it's brobably NOT branch_num - 1.
-		last_branch=$(git -C "${SRC_REPO}" for-each-ref --sort="v:refname" --format="%(refname:lstrip=3)" refs/heads/releases/${new[certprefix]} | tail -2 | head -1)
-		lastga=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l "${last_branch}.[0-9]*${new[patchsep]}[0-9]" | tail -1)
-		print_tag "${lastga}"
+		if ${last[certified]} ; then
+			last_branch=$(git -C "${SRC_REPO}" for-each-ref --sort="v:refname" --format="%(refname:lstrip=3)" refs/heads/releases/${new[certprefix]} | tail -2 | head -1)
+			lastga=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l "${last_branch}.[0-9]*${new[patchsep]}[0-9]" | tail -1)
+			debug "Using lastga '${lastga}' for certified"
+			print_tag "${lastga}"
+		else
+			debug "Using -pre1 '${last[tag]}' for non-certified"
+			print_tag "${last[tag]}"
+		fi
 		exit 0
 	fi
 	debug "good: rcn->rcn+1"
@@ -168,8 +174,13 @@ fi
 # It's RC to GA
 # We need to find the previous GA release tag
 debug "good: rcn->ga"
-
-lastga=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l "${new[major]}.[0-9]*${new[patchsep]}[0-9]" | tail -1)
-print_tag "${lastga}"
+if [ ${new[minor]} -eq 0 ] && [ ${new[patch]} -eq 0 ] ; then
+	debug "First GA of new major release.  Using -pre1 '${last[major]}.0.0-pre1'"
+	print_tag "${last[major]}.0.0-pre1"
+else
+	lastga=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l "${new[major]}.[0-9]*${new[patchsep]}[0-9]" | tail -1)
+	debug "Not first GA.  Using last GA: '${lastga}'"
+	print_tag "${lastga}"
+fi
 debug "Done"
 exit 0

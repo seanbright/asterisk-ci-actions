@@ -11,14 +11,19 @@ declare tests=( start_tag src_repo dst_dir )
 progdir="$(dirname $(realpath $0) )"
 source "${progdir}/common.sh"
 
-mkdir -p /tmp/${PRODUCT}
-TMPFILE1=/tmp/${PRODUCT}/ChangeLog-${END_TAG}.tmp1.md
-TMPFILE2=/tmp/${PRODUCT}/ChangeLog-${END_TAG}.tmp2.txt
+TMPDIR=/tmp/${PRODUCT}
+mkdir -p ${TMPDIR}
+TMPFILE1=${TMPDIR}/ChangeLog-${END_TAG}.tmp1.md
+TMPFILE2=${TMPDIR}/ChangeLog-${END_TAG}.tmp2.txt
+
+declare -A start_tag_array
+tag_parser ${START_TAG} start_tag_array
+debug "$(declare -p start_tag_array)"
 
 declare -A end_tag_array
 tag_parser ${END_TAG} end_tag_array
-
 debug "$(declare -p end_tag_array)"
+
 # We need to actually check out the branch we're generating
 # the changelog for so we can get to the files easily
 debug "Checking out ${end_tag_array[branch]}"
@@ -31,16 +36,43 @@ git -C "${SRC_REPO}" checkout ${end_tag_array[branch]}  >/dev/null 2>&1
 #
 # Each commit will start with @#@#@#@ on a separate line
 # and end with #@#@#@# on a separate line.  This makes them
-# easier to parse later on.  
+# easier to parse later on.
+
+echo -n "" >"${TMPFILE2}"
+
+# If this is a new major release, we need to get the commits
+# that are in the new release that aren't in the last GA
+# branch first.
+if [ "${start_tag_array[release_type]}" == "pre" ] ; then
+	debug "New major release: ${END_TAG}"
+	lastmajor=$(( ${end_tag_array[major]} - 1 ))
+	git -C "${SRC_REPO}" cherry -v $lastmajor ${end_tag_array[major]} | grep "^+ " >"${TMPDIR}/majorchanges1.txt"
+#	The "cherry" operation will include some cherry-picks that
+#   had minor changes between branches so we'll need to weed those out.
+#   Get a list of commits from the last branch:
+	echo -n "" >"${TMPDIR}/majorchanges2.txt"
+	git -C "${SRC_REPO}" --no-pager log --oneline $(( ${lastmajor} - 1 ))..$lastmajor > "${TMPDIR}/lastchanges.txt"
+#	Now only print the ones that aren't in that list.
+	while read PLUS SHA MSG ; do
+		[[ "$MSG" =~ ^((Add ChangeLog)|(Update for)) ]] && continue || :
+		grep -q "$MSG" "${TMPDIR}/lastchanges.txt" && continue || :
+		git -C "${SRC_REPO}" --no-pager log -1 \
+			--format='format:@#@#@#@%nSubject: %s%nAuthor: %an  %nDate:   %as  %n%n%b%n#@#@#@#%n' \
+			-E --grep "^((Add ChangeLog)|(Update for))" --invert-grep $SHA >>"${TMPFILE2}"
+	done < "${TMPDIR}/majorchanges1.txt"
+fi
+
 debug "Getting commit list for ${START_TAG}..HEAD"
 git -C "${SRC_REPO}" --no-pager log \
 	--format='format:@#@#@#@%nSubject: %s%nAuthor: %an  %nDate:   %as  %n%n%b%n#@#@#@#' \
-	-E --grep "^((Add ChangeLog)|(Update for))" --invert-grep ${START_TAG}..HEAD >"${TMPFILE2}"
+	-E --grep "^((Add ChangeLog)|(Update for))" --invert-grep ${START_TAG}..HEAD >>"${TMPFILE2}"
 
 if [ ! -s "${TMPFILE2}" ] ; then
 	bail "There are no commits in the range ${START_TAG}..HEAD.
 	Do you need to cherry pick?"
 fi
+
+echo "" >>"${TMPFILE2}"
 
 # Get rid of any automated "cherry-picked" or "Change-Id" lines.
 sed -i -r -e '/^(\(cherry.+|Change-Id.+)/d' "${TMPFILE2}"
@@ -101,7 +133,7 @@ if [ -d "${SRC_REPO}/doc/CHANGES-staging" ] ; then
 	if [ "x${changefiles}" != "x" ] ; then
 		for changefile in ${changefiles} ; do
 			git -C "${SRC_REPO}" log -1 --format="- ### %s" -- "${changefile}" >>"${TMPFILE1}"
-			sed -n -r -e '/^Subject:/d ; /^$/d ; s/^/  /p' "${changefile}" >>"${TMPFILE1}"
+			sed -n -r -e '/^(Subject|Master-Only):/d ; /^$/d ; s/^/  /p' "${changefile}" >>"${TMPFILE1}"
 			echo ""  >>"${TMPFILE1}"
 		done
 	fi
@@ -128,7 +160,7 @@ if [ -d "${SRC_REPO}/doc/UPGRADE-staging" ] ; then
 	if [ "x${changefiles}" != "x" ] ; then
 		for changefile in ${changefiles} ; do
 			git -C "${SRC_REPO}" log -1 --format="- ### %s" -- "${changefile}" >>"${TMPFILE1}"
-			sed -n -r -e '/^Subject:/d ; /^$/d ; s/^/  /p' "${changefile}" >>"${TMPFILE1}"
+			sed -n -r -e '/^(Subject|Master-Only):/d ; /^$/d ; s/^/  /p' "${changefile}" >>"${TMPFILE1}"
 			echo ""  >>"${TMPFILE1}"
 		done
 	fi
@@ -146,7 +178,7 @@ EOF
 # save them to 'issues_to_close.txt' so we can label them
 # later without having to pull them all again.
 debug "Getting issues list"
-issuelist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#([0-9]+)/\2/gp" "${TMPFILE2}" | sort -n | tr '\n' ' ') )
+issuelist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#([0-9]+)/\2/gp" "${TMPFILE2}" | sort -n | tr '[:space:]' ' ') )
 rm "${DST_DIR}/issues_to_close.txt" &>/dev/null || :
 
 if [ ${#issuelist[*]} -gt 0 ] ; then
