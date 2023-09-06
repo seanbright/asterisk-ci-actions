@@ -46,12 +46,15 @@ echo -n "" >"${TMPFILE2}"
 if [ "${start_tag_array[release_type]}" == "pre" ] ; then
 	debug "New major release: ${END_TAG}"
 	lastmajor=$(( ${end_tag_array[major]} - 1 ))
+	lastlastmajor=$(( ${lastmajor} - 1 ))
+	git -C "${SRC_REPO}" fetch origin ${lastlastmajor}:${lastlastmajor}
+	git -C "${SRC_REPO}" fetch origin ${lastmajor}:${lastmajor}
 	git -C "${SRC_REPO}" cherry -v $lastmajor ${end_tag_array[major]} | grep "^+ " >"${TMPDIR}/majorchanges1.txt"
 #	The "cherry" operation will include some cherry-picks that
 #   had minor changes between branches so we'll need to weed those out.
 #   Get a list of commits from the last branch:
 	echo -n "" >"${TMPDIR}/majorchanges2.txt"
-	git -C "${SRC_REPO}" --no-pager log --oneline $(( ${lastmajor} - 1 ))..$lastmajor > "${TMPDIR}/lastchanges.txt"
+	git -C "${SRC_REPO}" --no-pager log --oneline ${lastlastmajor}..$lastmajor > "${TMPDIR}/lastchanges.txt"
 #	Now only print the ones that aren't in that list.
 	while read PLUS SHA MSG ; do
 		[[ "$MSG" =~ ^((Add ChangeLog)|(Update for)) ]] && continue || :

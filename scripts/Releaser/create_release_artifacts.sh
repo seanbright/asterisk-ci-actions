@@ -104,6 +104,11 @@ if ${PATCHFILE} && [ "${start_tag[release_type]}" != "pre" ] ; then
 fi
 
 if ${PUSH_BRANCHES} ; then
+echo "
+************************************************
+    FUTURE FAILURES NOW REQUIRE RECOVERY
+************************************************
+"
 	debug "Pushing commits upstream"
 	$ECHO_CMD git -C "${SRC_REPO}" checkout ${end_tag[branch]}
 	$ECHO_CMD git -C "${SRC_REPO}" push

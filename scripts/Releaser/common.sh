@@ -224,6 +224,7 @@ tag_parser() {
 	local tagin=$1
 	local -n tagarray=$2
 	tagarray[certified]=false
+	tagarray[no_patches]=false
 	tagarray[artifact_prefix]="$PRODUCT"
 	tagarray[download_dir]="$PRODUCT"
 
@@ -254,6 +255,7 @@ tag_parser() {
 		tagarray[source_branch]="certified/${tagarray[major]}.${tagarray[minor]}"
 		tagarray[startpatch]=1
 	else
+		[[ $tagin =~ ^[0-9]+[.]0[.]0(-rc1)?$ ]] && tagarray[no_patches]=true || :
 		tagarray[branch]="releases/${tagarray[major]}"
 		tagarray[source_branch]="${tagarray[major]}"
 		tagarray[startpatch]=0
