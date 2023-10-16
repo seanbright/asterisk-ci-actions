@@ -1,0 +1,26 @@
+[
+  {
+    "created_at": "2023-04-12T13:10:32Z",
+    "name": "ASTERISK_REPO",
+    "updated_at": "2023-04-12T13:10:32Z",
+    "value": "asterisk/asterisk-gh-test"
+  },
+  {
+    "created_at": "2023-04-12T13:08:02Z",
+    "name": "CHERRY_PICK_REGEX",
+    "updated_at": "2023-04-12T13:08:02Z",
+    "value": "cherry-pick-to:[ ]*(([0-9.]+)|(certified/[0-9.]+)|(master))"
+  },
+  {
+    "created_at": "2023-04-12T13:08:38Z",
+    "name": "CHERRY_PICK_TEST_LABEL",
+    "updated_at": "2023-04-12T13:08:38Z",
+    "value": "cherry-pick-test"
+  },
+  {
+    "created_at": "2023-04-12T13:09:55Z",
+    "name": "UNITTEST_COMMAND",
+    "updated_at": "2023-04-12T13:43:19Z",
+    "value": "./self_test"
+  }
+]
