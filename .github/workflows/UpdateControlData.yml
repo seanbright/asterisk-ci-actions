@@ -1,0 +1,52 @@
+name: UpdateControlData
+run-name: "UpdateControlData"
+on:
+  workflow_dispatch:
+
+jobs:
+  UpdateControlData:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        repo: ${{ fromJSON(vars.CONTROLDATA_REPOS) }}
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          show-progress: false
+          set-safe-directory: true
+      - name: checkdata
+        env:
+          CONTROLDATA_BASE: "${{vars.CONTROLDATA_BASE}}"
+          CONTROLDATA_FILE: "${{matrix.repo}}.json"
+          REPO: ${{matrix.repo}}
+          GH_TOKEN:   ${{ secrets.ASTERISKTEAM_PAT }}
+        run: |
+          echo "Current Directory: $PWD"
+          csum1=""
+          if [ -f ./.github/control/${CONTROLDATA_FILE} ] ; then
+            csum1=$(md5sum ./.github/control/${CONTROLDATA_FILE})
+            cat ./.github/control/${CONTROLDATA_FILE}
+            echo "CSUM1: $csum1"
+          fi
+          echo "Retriving variables from repo"
+          gh api --jq .variables --paginate -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            /repos/asterisk/${REPO}/actions/variables | jq -s add > /tmp/${REPO}-vars.json
+          csum2=$(md5sum /tmp/${REPO}-vars.json)
+          cat /tmp/${REPO}-vars.json
+          echo "CSUM2: $csum2"
+          if [ "${csum1%% *}" == "${csum2%% *}" ] ; then
+            echo "No change for $REPO"
+            exit 0
+          fi
+          echo "Need to commit new version"
+          git config --global user.email "asteriskteam@digium.com"
+          git config --global user.name "Asterisk Development Team"
+          git pull
+          cp /tmp/${REPO}-vars.json ./.github/control/${CONTROLDATA_FILE}
+          git add ./.github/control/${CONTROLDATA_FILE}
+          git commit -a -m "Update control data for repo ${REPO}"
+          git push
+          exit 0
