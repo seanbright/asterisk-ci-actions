@@ -30,6 +30,7 @@ runs:
             let jsonout = {};
             for (const v of jsonin) {
               jsonout[v.name] = v.value;
+              core.setOutput(v.name, v.value);
             }
             core.setOutput('control_data', jsonout);
           } catch(err) {
