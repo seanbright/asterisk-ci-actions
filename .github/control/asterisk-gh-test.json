@@ -1,0 +1,293 @@
+{
+  "variables": [
+    {
+      "name": "ASTERISK_MAIL_FROM_TEAM",
+      "value": "Asterisk Development Team <asteriskteam@digium.com>",
+      "created_at": "2023-05-04T17:14:53Z",
+      "updated_at": "2023-05-04T17:15:01Z"
+    },
+    {
+      "name": "ASTERISK_MAIL_FROM_TEAM_SEC",
+      "value": "Asterisk Security Team <security@asterisk.org>",
+      "created_at": "2023-05-04T17:15:01Z",
+      "updated_at": "2023-05-04T17:15:01Z"
+    },
+    {
+      "name": "ASTERISK_MAIL_LIST_CERT_GA",
+      "value": "asteriskteam@sangoma.com",
+      "created_at": "2023-05-04T17:14:53Z",
+      "updated_at": "2023-05-04T17:15:02Z"
+    },
+    {
+      "name": "ASTERISK_MAIL_LIST_CERT_RC",
+      "value": "asteriskteam@sangoma.com",
+      "created_at": "2023-05-04T17:14:53Z",
+      "updated_at": "2023-05-04T17:15:01Z"
+    },
+    {
+      "name": "ASTERISK_MAIL_LIST_GA",
+      "value": "asteriskteam@sangoma.com",
+      "created_at": "2023-05-04T17:14:53Z",
+      "updated_at": "2023-05-04T17:15:01Z"
+    },
+    {
+      "name": "ASTERISK_MAIL_LIST_RC",
+      "value": "asteriskteam@sangoma.com",
+      "created_at": "2023-05-04T17:14:53Z",
+      "updated_at": "2023-05-04T17:15:01Z"
+    },
+    {
+      "name": "ASTERISK_MAIL_LIST_SEC_ADV",
+      "value": "asteriskteam@sangoma.com",
+      "created_at": "2023-05-04T17:14:53Z",
+      "updated_at": "2023-05-04T17:15:01Z"
+    },
+    {
+      "name": "CHERRY_PICK_CHECKS_FAILED_LABEL",
+      "value": "cherry-pick-checks-failed",
+      "created_at": "2023-05-02T17:04:50Z",
+      "updated_at": "2023-05-02T17:53:33Z"
+    },
+    {
+      "name": "CHERRY_PICK_CHECKS_PASSED_LABEL",
+      "value": "cherry-pick-checks-passed",
+      "created_at": "2023-05-02T17:04:26Z",
+      "updated_at": "2023-05-02T17:53:33Z"
+    },
+    {
+      "name": "CHERRY_PICK_GATES_FAILED_LABEL",
+      "value": "cherry-pick-gates-failed",
+      "created_at": "2023-05-02T17:04:26Z",
+      "updated_at": "2023-05-02T17:53:33Z"
+    },
+    {
+      "name": "CHERRY_PICK_GATES_PASSED_LABEL",
+      "value": "cherry-pick-gates-passed",
+      "created_at": "2023-05-02T17:04:26Z",
+      "updated_at": "2023-05-02T17:53:33Z"
+    },
+    {
+      "name": "CHERRY_PICK_REGEX",
+      "value": "cherry-pick-to:[ ]*(([0-9.]+)|(certified/[0-9.]+)|(master))",
+      "created_at": "2023-03-22T18:32:27Z",
+      "updated_at": "2023-03-23T14:38:23Z"
+    },
+    {
+      "name": "CHERRY_PICK_REMINDER",
+      "value": "<!--CPR-->REMINDER: If this PR applies to other branches, please add a comment with the appropriate \"cherry-pick-to\" headers as per the [Create a Pull Request](https://wiki.asterisk.org/wiki/display/AST/Code+Contribution#CodeContribution-CreateaPullRequest) process.  \r\n\r\nIf you don't want it cherry-picked, please add a comment stating \"No cherry-picks required\" so we don't keep asking.\r\n\r\nIf, after adding \"cherry-pick-to\" comments, you change your mind, please edit the comment to DELETE the header lines and add \"No cherry-picks required\".\r\n",
+      "created_at": "2023-06-05T15:52:03Z",
+      "updated_at": "2023-06-05T16:08:41Z"
+    },
+    {
+      "name": "CHERRY_PICK_TESTING_IN_PROGRESS",
+      "value": "cherry-pick-testing-in-progress",
+      "created_at": "2023-05-02T17:53:32Z",
+      "updated_at": "2023-05-02T17:53:32Z"
+    },
+    {
+      "name": "CHERRY_PICK_TEST_LABEL",
+      "value": "cherry-pick-test",
+      "created_at": "2023-03-27T14:22:49Z",
+      "updated_at": "2023-03-27T14:39:28Z"
+    },
+    {
+      "name": "CONFLUENCE_SPACE",
+      "value": "AST",
+      "created_at": "2023-04-06T13:20:29Z",
+      "updated_at": "2023-04-06T13:20:29Z"
+    },
+    {
+      "name": "CONFLUENCE_URL",
+      "value": "https://wiki.asterisk.org/wiki/rpc/xmlrpc",
+      "created_at": "2023-04-06T13:20:01Z",
+      "updated_at": "2023-04-06T13:20:01Z"
+    },
+    {
+      "name": "GATETEST_COMMANDS",
+      "value": "{\r\n\t\"ari1\": {\r\n\t\t\"name\": \"ari1\",\r\n\t\t\"dir\": \"tests/CI/output/ari1\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/rest_api/[abem]\"\r\n\t},\r\n\t\"ari2\": {\r\n\t\t\"name\": \"ari2\",\r\n\t\t\"dir\": \"tests/CI/output/ari2\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/rest_api/[c]\"\r\n\t},\r\n\t\"pjs1\": {\r\n\t\t\"name\": \"pjs1\",\r\n\t\t\"dir\": \"tests/CI/output/pjsip1\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/channels/pjsip/[cghmnopqu]\"\r\n\t},\r\n\t\"pjs2\": {\r\n\t\t\"name\": \"pjs2\",\r\n\t\t\"dir\": \"tests/CI/output/pjsip2\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/channels/pjsip/[adit]\"\r\n\t},\r\n\t\"pjs3\": {\r\n\t\t\"name\": \"pjs3\",\r\n\t\t\"dir\": \"tests/CI/output/pjsip3\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/channels/pjsip/[b]\"\r\n\t},\r\n\t\"pjs4\": {\r\n\t\t\"name\": \"pjs4\",\r\n\t\t\"dir\": \"tests/CI/output/pjsip4\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/channels/pjsip/[r]\"\r\n\t},\r\n\t\"pjs5\": {\r\n\t\t\"name\": \"pjs5\",\r\n\t\t\"dir\": \"tests/CI/output/pjsip5\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/channels/pjsip/[s]\"\r\n\t},\r\n\t\"channels\": {\r\n\t\t\"name\": \"channels\",\r\n\t\t\"dir\": \"tests/CI/output/channels\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/channels/local -t tests/channels/iax2\"\r\n\t},\r\n\t\"fax\": {\r\n\t\t\"name\": \"fax\",\r\n\t\t\"dir\": \"tests/CI/output/fax\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/fax\"\r\n\t},\r\n\t\"rtp_sorcery\": {\r\n\t\t\"name\": \"rtp_sorcery\",\r\n\t\t\"dir\": \"tests/CI/output/rtp_sorcery\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/rtp -t tests/sorcery\"\r\n\t},\r\n\t\"apps_funcs\": {\r\n\t\t\"name\": \"apps_funcs\",\r\n\t\t\"dir\": \"tests/CI/output/apps\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/apps -t tests/funcs\"\r\n\t},\r\n\t\"mgr_masq_pbx\": {\r\n\t\t\"name\": \"mgr_masq_pbx\",\r\n\t\t\"dir\": \"tests/CI/output/mgr_masq_pbx\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/manager -t tests/masquerade -t tests/pbx\"\r\n\t},\r\n\t\"pass_fail\": {\r\n\t\t\"name\": \"pass_fail\",\r\n\t\t\"dir\": \"tests/CI/output/pass_fail\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/channels/pjsip/subscriptions/presence\"\r\n\t},\r\n\t\"all_pass\": {\r\n\t\t\"name\": \"all_pass\",\r\n\t\t\"dir\": \"tests/CI/output/all_pass\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/channels/local\"\r\n\t}\r\n}\r\n",
+      "created_at": "2023-03-13T15:35:30Z",
+      "updated_at": "2023-04-25T13:41:04Z"
+    },
+    {
+      "name": "GATETEST_LIST",
+      "value": "['all_pass']",
+      "created_at": "2023-03-13T17:13:53Z",
+      "updated_at": "2023-06-06T10:40:35Z"
+    },
+    {
+      "name": "MERGE_APPROVED",
+      "value": "merge-approved",
+      "created_at": "2023-06-07T16:35:14Z",
+      "updated_at": "2023-06-07T16:35:14Z"
+    },
+    {
+      "name": "MERGE_APPROVED_LABEL",
+      "value": "merge-approved",
+      "created_at": "2023-06-07T16:46:18Z",
+      "updated_at": "2023-06-07T16:46:18Z"
+    },
+    {
+      "name": "MERGE_APPROVED_LABELS",
+      "value": "['merge-approved','merge-approved-force']",
+      "created_at": "2023-06-07T16:48:32Z",
+      "updated_at": "2023-06-07T16:48:32Z"
+    },
+    {
+      "name": "MERGE_FAILED_LABEL",
+      "value": "merge-failed",
+      "created_at": "2023-06-07T16:45:02Z",
+      "updated_at": "2023-06-07T16:45:02Z"
+    },
+    {
+      "name": "MERGE_IN_PROGRESS_LABEL",
+      "value": "merge-in-progress",
+      "created_at": "2023-06-07T18:08:14Z",
+      "updated_at": "2023-06-08T00:41:51Z"
+    },
+    {
+      "name": "NIGHTLYTEST_BRANCHES",
+      "value": "['18','20','master']",
+      "created_at": "2023-03-27T11:25:36Z",
+      "updated_at": "2023-04-11T18:46:04Z"
+    },
+    {
+      "name": "NIGHTLYTEST_LIST",
+      "value": "['ari1','ari2','pjs1','pjs2','pjs3','pjs4','pjs5','fax','channels']",
+      "created_at": "2023-03-27T11:27:21Z",
+      "updated_at": "2023-04-11T18:45:45Z"
+    },
+    {
+      "name": "PRE_MERGE_CHECKS_FAILED_LABEL",
+      "value": "pre-merge-checks-failed",
+      "created_at": "2023-06-06T19:09:31Z",
+      "updated_at": "2023-06-07T16:32:52Z"
+    },
+    {
+      "name": "PRE_MERGE_CHECKS_PASSED_LABEL",
+      "value": "pre-merge-checks-passed",
+      "created_at": "2023-06-06T19:09:14Z",
+      "updated_at": "2023-06-07T16:33:16Z"
+    },
+    {
+      "name": "PRE_MERGE_GATES_FAILED_LABEL",
+      "value": "pre-merge-gates-failed",
+      "created_at": "2023-06-06T19:09:48Z",
+      "updated_at": "2023-06-07T16:33:38Z"
+    },
+    {
+      "name": "PRE_MERGE_GATES_PASSED_LABEL",
+      "value": "pre-merge-gates-passed",
+      "created_at": "2023-06-06T19:10:01Z",
+      "updated_at": "2023-06-07T16:34:02Z"
+    },
+    {
+      "name": "PRE_MERGE_TESTING_IN_PROGRESS",
+      "value": "pre-merge-testing-in-progress",
+      "created_at": "2023-06-06T19:08:13Z",
+      "updated_at": "2023-06-07T16:34:29Z"
+    },
+    {
+      "name": "PR_COMMENT_KEYWORD_REGEX",
+      "value": "(check|recheck|regate|pregate)",
+      "created_at": "2023-03-09T20:04:09Z",
+      "updated_at": "2023-03-09T20:20:32Z"
+    },
+    {
+      "name": "PR_REVIEWERS",
+      "value": "asterisk/asterisk-dev",
+      "created_at": "2023-03-22T11:44:21Z",
+      "updated_at": "2023-03-22T11:47:49Z"
+    },
+    {
+      "name": "PR_SUBMIT_TESTING_IN_PROGRESS",
+      "value": "pr-submit-testing-in-progress",
+      "created_at": "2023-10-13T18:44:27Z",
+      "updated_at": "2023-10-13T18:44:27Z"
+    },
+    {
+      "name": "PR_SUBMIT_TESTS_FAILED",
+      "value": "pr-submit-tests-failed",
+      "created_at": "2023-10-13T18:40:14Z",
+      "updated_at": "2023-10-13T18:40:14Z"
+    },
+    {
+      "name": "PR_SUBMIT_TESTS_PASSED",
+      "value": "pr-submit-tests-passed",
+      "created_at": "2023-10-13T18:40:41Z",
+      "updated_at": "2023-10-13T18:40:41Z"
+    },
+    {
+      "name": "QUEUE_MERGE_COMMANDS",
+      "value": "['queue-merge','queue-merge-force']",
+      "created_at": "2023-06-06T12:36:49Z",
+      "updated_at": "2023-06-07T00:56:06Z"
+    },
+    {
+      "name": "TESTING_CHERRY_PICKS_LABEL",
+      "value": "testing-cherry-picks",
+      "created_at": "2023-05-02T17:04:26Z",
+      "updated_at": "2023-05-02T17:04:51Z"
+    },
+    {
+      "name": "TESTING_IN_PROGRESS",
+      "value": "testing-in-progress",
+      "created_at": "2023-05-02T17:53:32Z",
+      "updated_at": "2023-05-02T17:53:32Z"
+    },
+    {
+      "name": "TESTSUITE_REPO",
+      "value": "asterisk/testsuite-gh-test",
+      "created_at": "2023-03-13T18:34:52Z",
+      "updated_at": "2023-04-24T11:41:37Z"
+    },
+    {
+      "name": "TEST_CHECKS_FAILED_LABEL",
+      "value": "test-checks-failed",
+      "created_at": "2023-05-02T17:53:32Z",
+      "updated_at": "2023-05-02T17:53:32Z"
+    },
+    {
+      "name": "TEST_CHECKS_PASSED_LABEL",
+      "value": "test-checks-passed",
+      "created_at": "2023-05-02T17:53:32Z",
+      "updated_at": "2023-05-02T17:53:32Z"
+    },
+    {
+      "name": "TEST_GATES_FAILED_LABEL",
+      "value": "test-gates-failed",
+      "created_at": "2023-05-02T17:53:32Z",
+      "updated_at": "2023-05-02T17:53:32Z"
+    },
+    {
+      "name": "TEST_GATES_PASSED_LABEL",
+      "value": "test-gates-passed",
+      "created_at": "2023-05-02T17:53:32Z",
+      "updated_at": "2023-05-02T17:53:32Z"
+    },
+    {
+      "name": "UNITTEST_COMMAND",
+      "value": "test execute all",
+      "created_at": "2023-03-03T21:15:17Z",
+      "updated_at": "2023-03-29T19:01:06Z"
+    },
+    {
+      "name": "WIKIDOCS_ENABLE",
+      "value": "false",
+      "created_at": "2023-04-06T13:34:14Z",
+      "updated_at": "2023-04-06T13:34:14Z"
+    },
+    {
+      "name": "WIKIDOC_BRANCHES",
+      "value": "['18','20']",
+      "created_at": "2023-04-06T13:33:11Z",
+      "updated_at": "2023-04-06T13:33:11Z"
+    },
+    {
+      "name": "ZZUNITTEST_MODULES_BLACKLIST",
+      "value": "test_crypto",
+      "created_at": "2023-03-14T18:37:18Z",
+      "updated_at": "2023-06-08T15:31:53Z"
+    }
+  ],
+  "total_count": 48
+}
