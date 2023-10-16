@@ -1,0 +1,37 @@
+name: GetRepoControlData
+inputs:
+  repo:
+    required: true
+    type: string
+
+outputs:
+  control_data:
+    description: "Control Data"
+    value: ${{ steps.setvars.outputs.control_data }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: setvars
+      uses: actions/github-script@v6
+      env:
+        REPO: "${{inputs.repo}}"
+# Unfortunately, this has to be hardcoded because the
+# action doesn't have access to the "vars" context.
+        CONTROLDATA_BASE: "https://raw.githubusercontent.com/asterisk/asterisk-ci-actions/main/.github/control"
+        CONTROLDATA_FILE: "${{inputs.repo}}.json"
+      with:
+        retries: 5
+        script: |
+          try {
+            let url = `${process.env.CONTROLDATA_BASE}/${process.env.CONTROLDATA_FILE}` 
+            const result = await github.request(url);
+            let jsonin = JSON.parse(result.data);
+            let jsonout = {};
+            for (const v of jsonin) {
+              jsonout[v.name] = v.value;
+            }
+            core.setOutput('control_data', jsonout);
+          } catch(err) {
+            core.setFailed(`Unable to retrieve or parse data for ${process.env.REPO}: }${err}`);
+          }
