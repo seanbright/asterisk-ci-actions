@@ -122,8 +122,26 @@
   {
     "created_at": "2023-04-28T18:16:08Z",
     "name": "PR_REVIEWERS",
-    "updated_at": "2023-04-28T18:16:08Z",
-    "value": "asterisk/asterisk-dev"
+    "updated_at": "2023-10-17T18:28:14Z",
+    "value": "[\"asterisk/asterisk-dev\"]"
+  },
+  {
+    "created_at": "2023-10-17T14:43:06Z",
+    "name": "PR_SUBMIT_TESTING_IN_PROGRESS",
+    "updated_at": "2023-10-17T14:43:06Z",
+    "value": "pr-submit-testing-in-progress"
+  },
+  {
+    "created_at": "2023-10-17T14:43:56Z",
+    "name": "PR_SUBMIT_TESTS_FAILED",
+    "updated_at": "2023-10-17T14:43:56Z",
+    "value": "pr-submit-tests-failed"
+  },
+  {
+    "created_at": "2023-10-17T14:44:45Z",
+    "name": "PR_SUBMIT_TESTS_PASSED",
+    "updated_at": "2023-10-17T14:44:45Z",
+    "value": "pr-submit-tests-passed"
   },
   {
     "created_at": "2023-05-02T17:54:05Z",
