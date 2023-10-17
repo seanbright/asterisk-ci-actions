@@ -2,14 +2,14 @@ name: UpdateControlData
 run-name: "UpdateControlData"
 on:
   workflow_dispatch:
+    inputs:
+      repo:
+        required: true
+        type: string
 
 jobs:
   UpdateControlData:
     runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 1
-      matrix:
-        repo: ${{ fromJSON(vars.CONTROLDATA_REPOS) }}
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -20,7 +20,7 @@ jobs:
         env:
           CONTROLDATA_BASE: "${{vars.CONTROLDATA_BASE}}"
           CONTROLDATA_FILE: "${{matrix.repo}}.json"
-          REPO: ${{matrix.repo}}
+          REPO: ${{inputs.repo}}
           GH_TOKEN:   ${{ secrets.ASTERISKTEAM_PAT }}
         run: |
           echo "Current Directory: $PWD"
