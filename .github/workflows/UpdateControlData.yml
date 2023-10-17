@@ -19,7 +19,7 @@ jobs:
       - name: checkdata
         env:
           CONTROLDATA_BASE: "${{vars.CONTROLDATA_BASE}}"
-          CONTROLDATA_FILE: "${{matrix.repo}}.json"
+          CONTROLDATA_FILE: "${{inputs.repo}}.json"
           REPO: ${{inputs.repo}}
           GH_TOKEN:   ${{ secrets.ASTERISKTEAM_PAT }}
         run: |
@@ -30,7 +30,7 @@ jobs:
             cat ./.github/control/${CONTROLDATA_FILE}
             echo "CSUM1: $csum1"
           fi
-          echo "Retriving variables from repo"
+          echo "Retriving variables from repo $REPO"
           gh api --jq .variables --paginate -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             /repos/asterisk/${REPO}/actions/variables | jq -s add > /tmp/${REPO}-vars.json
