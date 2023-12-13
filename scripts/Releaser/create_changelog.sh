@@ -258,15 +258,17 @@ and
 https://downloads.asterisk.org/pub/telephony/${end_tag_array[certprefix]:+certified-}asterisk
 
 EOF
-	if [ -n "$ADVISORIES" ] ; then
+	if [ -n "${ADVISORIES}" ] ; then
 		IFS=$','
 		echo "The following security advisories were resolved in this release:" >> "${DST_DIR}/email_announcement.md"
 
-		for a in $ADVISORIES ; do
+		for a in "${ADVISORIES}" ; do
+			summary=$(gh api /repos/asterisk/$(basename ${SRC_REPO})/security-advisories/$a --jq '.summary' 2>/dev/null || echo "FAILED")
+			[[ "$summary" =~ FAILED$ ]] && summary=""
 			if [ -n "$ADV_URL_BASE" ] ; then
-				echo "${ADV_URL_BASE}/$a" >> "${DST_DIR}/email_announcement.md"
+				echo "${ADV_URL_BASE}/${a}${summary:+: ${summary}}" >> "${DST_DIR}/email_announcement.md"
 			else
-				echo "$a" >> "${DST_DIR}/email_announcement.md"
+				echo "${a}${summary:+: ${summary}}" >> "${DST_DIR}/email_announcement.md"
 			fi
 		done
 		echo "" >> "${DST_DIR}/email_announcement.md"

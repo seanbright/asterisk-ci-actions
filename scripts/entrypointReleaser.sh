@@ -28,6 +28,24 @@ ${SCRIPT_DIR}/version_validator.sh \
 	${start_tag:+--start-tag=${start_tag}} --end-tag=${INPUT_NEW_VERSION}
 
 echo "Tags valid: ${start_tag} -> ${end_tag} Release Type: ${end_tag_array[release_type]}"
+
+if [ -n "${INPUT_ADVISORIES}" ] ; then
+	IFS=$','
+	echo "Checking security advisories"
+	declare -i failed=0
+	for a in "${INPUT_ADVISORIES}" ; do
+		summary=$(gh api /repos/${INPUT_REPO}/security-advisories/$a --jq '.summary' 2>/dev/null || echo "FAILED")
+		if [[ "$summary" =~ FAILED$ ]] ; then
+			echo "Security advisory $a not found. Bad ID or maybe not published yet."
+			failed=1
+		else
+			echo "Security advisory $a found."
+		fi
+	done
+	[ $failed -gt 0 ] && { echo "One or more security advisories were not found" ; exit 1 ; }
+	unset IFS
+fi
+
 cd ${GITHUB_WORKSPACE}
 mkdir -p ${REPO_DIR}
 mkdir -p ${STAGING_DIR}
