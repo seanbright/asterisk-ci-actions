@@ -266,9 +266,9 @@ EOF
 			summary=$(gh api /repos/asterisk/$(basename ${SRC_REPO})/security-advisories/$a --jq '.summary' 2>/dev/null || echo "FAILED")
 			[[ "$summary" =~ FAILED$ ]] && summary=""
 			if [ -n "$ADV_URL_BASE" ] ; then
-				echo "${ADV_URL_BASE}/${a}${summary:+: ${summary}}" >> "${DST_DIR}/email_announcement.md"
+				echo "- [${summary}](${ADV_URL_BASE}/${a})" >> "${DST_DIR}/email_announcement.md"
 			else
-				echo "${a}${summary:+: ${summary}}" >> "${DST_DIR}/email_announcement.md"
+				echo "- [${summary}](${a})" >> "${DST_DIR}/email_announcement.md"
 			fi
 		done
 		echo "" >> "${DST_DIR}/email_announcement.md"
