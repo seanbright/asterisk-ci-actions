@@ -262,7 +262,7 @@ EOF
 		IFS=$','
 		echo "The following security advisories were resolved in this release:" >> "${DST_DIR}/email_announcement.md"
 
-		for a in "${ADVISORIES}" ; do
+		for a in ${ADVISORIES} ; do
 			summary=$(gh api /repos/asterisk/$(basename ${SRC_REPO})/security-advisories/$a --jq '.summary' 2>/dev/null || echo "FAILED")
 			[[ "$summary" =~ FAILED$ ]] && summary=""
 			if [ -n "$ADV_URL_BASE" ] ; then

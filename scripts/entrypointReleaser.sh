@@ -33,7 +33,7 @@ if [ -n "${INPUT_ADVISORIES}" ] ; then
 	IFS=$','
 	echo "Checking security advisories"
 	declare -i failed=0
-	for a in "${INPUT_ADVISORIES}" ; do
+	for a in ${INPUT_ADVISORIES} ; do
 		summary=$(gh api /repos/${INPUT_REPO}/security-advisories/$a --jq '.summary' 2>/dev/null || echo "FAILED")
 		if [[ "$summary" =~ FAILED$ ]] ; then
 			echo "Security advisory $a not found. Bad ID or maybe not published yet."
