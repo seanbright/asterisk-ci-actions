@@ -127,21 +127,6 @@ awk 'BEGIN{RS="@#@#@#@"; ORS="#@#@#@#"} /UserNote/' "${TMPFILE2}" |\
 	sed -n -r -e 's/Subject: (.*)/- ### \1/p' -e '/UserNote:/,/(UserNote|UpgradeNote|#@#@#@#)/!d ; s/UserNote:\s+//g ; s/#@#@#@#|UpgradeNote.*|UserNote.*//p ; s/^(.)/  \1/p' \
 		>>"${TMPFILE1}"
 
-# We need to check for any left over files in 
-# doc/CHANGES-staging.  They will be deleted
-# after the first GA release after the GitHub
-# migration
-if [ -d "${SRC_REPO}/doc/CHANGES-staging" ] ; then
-	changefiles=$(find "${SRC_REPO}/doc/CHANGES-staging" -name '*.txt')
-	if [ "x${changefiles}" != "x" ] ; then
-		for changefile in ${changefiles} ; do
-			git -C "${SRC_REPO}" log -1 --format="- ### %s" -- "${changefile}" >>"${TMPFILE1}"
-			sed -n -r -e '/^(Subject|Master-Only):/d ; /^$/d ; s/^/  /p' "${changefile}" >>"${TMPFILE1}"
-			echo ""  >>"${TMPFILE1}"
-		done
-	fi
-fi
-
 debug "Creating upgrade notes"
 cat <<-EOF >>"${TMPFILE1}"
 
@@ -153,21 +138,6 @@ EOF
 awk 'BEGIN{RS="@#@#@#@"; ORS="#@#@#@#"} /UpgradeNote/' "${TMPFILE2}" |\
 	sed -n -r -e 's/Subject: (.*)/- ### \1/p' -e '/UpgradeNote:/,/(UserNote|UpgradeNote|#@#@#@#)/!d  ; s/UpgradeNote:\s+//g ; s/#@#@#@#|UpgradeNote.*|UserNote.*//p; s/^(.)/  \1/p' \
 		>>"${TMPFILE1}"
-
-# We need to check for any left over files in 
-# doc/UPGRADE-staging.  They will be deleted
-# after the first GA release after the GitHub
-# migration
-if [ -d "${SRC_REPO}/doc/UPGRADE-staging" ] ; then
-	changefiles=$(find "${SRC_REPO}/doc/UPGRADE-staging" -name '*.txt')
-	if [ "x${changefiles}" != "x" ] ; then
-		for changefile in ${changefiles} ; do
-			git -C "${SRC_REPO}" log -1 --format="- ### %s" -- "${changefile}" >>"${TMPFILE1}"
-			sed -n -r -e '/^(Subject|Master-Only):/d ; /^$/d ; s/^/  /p' "${changefile}" >>"${TMPFILE1}"
-			echo ""  >>"${TMPFILE1}"
-		done
-	fi
-fi
 
 cat <<-EOF >>"${TMPFILE1}"
 
@@ -181,7 +151,7 @@ EOF
 # save them to 'issues_to_close.txt' so we can label them
 # later without having to pull them all again.
 debug "Getting issues list"
-issuelist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#([0-9]+)/\2/gp" "${TMPFILE2}" | sort -n | tr '[:space:]' ' ') )
+issuelist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#([0-9]+|GHSA)/\2/gp" "${TMPFILE2}" | sort -n | tr '[:space:]' ' ') )
 rm "${DST_DIR}/issues_to_close.txt" &>/dev/null || :
 
 if [ ${#issuelist[*]} -gt 0 ] ; then
@@ -190,10 +160,17 @@ if [ ${#issuelist[*]} -gt 0 ] ; then
 	#   - #2: Issue Title
 	# which GitHub can do for us using a jq format string.
 	for issue in ${issuelist[*]} ; do
-		gh --repo=asterisk/$(basename ${SRC_REPO}) issue view $issue \
-			--json number,title \
-			--jq ". | \"  - #\" + ( .number | tostring) + \": \" + .title" \
-			>> "${DST_DIR}/issues_to_close.txt"
+		if [[ $issue =~ ^GHSA ]] ; then
+			gh api /repos/asterisk/$(basename ${SRC_REPO})/security-advisories/$issue \
+				--json ghsa_id,summary \
+				--jq '. | "  - !" + .ghsa_id + ": " + .summary' \
+				>> "${DST_DIR}/issues_to_close.txt"
+		else
+			gh --repo=asterisk/$(basename ${SRC_REPO}) issue view $issue \
+				--json number,title \
+				--jq ". | \"  - #\" + ( .number | tostring) + \": \" + .title" \
+				>> "${DST_DIR}/issues_to_close.txt"
+		fi
 	done
 	cat "${DST_DIR}/issues_to_close.txt" >>"${TMPFILE1}"
 	${DEBUG} && cat "${DST_DIR}/issues_to_close.txt"
