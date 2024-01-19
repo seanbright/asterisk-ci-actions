@@ -2,7 +2,7 @@
 set -e
 
 declare needs=( start_tag end_tag )
-declare wants=( src_repo dst_dir security advisories adv_url_base )
+declare wants=( src_repo dst_dir hotfix security advisories adv_url_base )
 declare tests=( start_tag src_repo dst_dir )
 
 # Since creating the changelog doesn't make any
