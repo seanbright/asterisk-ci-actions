@@ -94,6 +94,7 @@ ${SCRIPT_DIR}/create_release_artifacts.sh \
 	--product=${PRODUCT} \
 	--start-tag=${start_tag} --end-tag=${end_tag} \
 	--cherry-pick \
+	$(${INPUT_FORCE_CHERRY_PICK} && echo " --force-cherry-pick" || echo "") \
 	$([ "${PRODUCT}" == "asterisk" ] && echo "--alembic" || echo "") \
 	--changelog --commit --tag \
 	--sign --tarball --patchfile \

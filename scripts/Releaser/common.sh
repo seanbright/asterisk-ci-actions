@@ -32,6 +32,7 @@ options+=(
 	   [start_tag]="--start-tag=<tag>"
 	     [end_tag]="--end-tag=<tag>"
 	    [src_repo]="--src-repo=<source repository>     # defaults to current directory"
+	     [gh_repo]='--gh-repo=<github repository>      # defaults asterisk/$(basename ${SRC_REPO})'
 	     [dst_dir]="--dest-dir=<destination directory> # defaults to ../staging"
 	      [branch]="--branch=<branch> # Release branch"
 	        [norc]="--norc            # There were no release candidates for this release"
@@ -40,6 +41,7 @@ options+=(
 	[adv_url_base]="--adv-url-base=<adv_url_base>    # The URL base for security advisories"
 	      [hotfix]="--hotfix          # This is a hotfix but not security release"
 	 [cherry_pick]="--cherry-pick     # Cherry-pick commits for rc1 releases"
+[force_cherry_pick]="--force-cherry-pick     # Force cherry-pick for non-rc releases"
 	     [alembic]="--alembic         # Create alembic sql scripts"
 	   [changelog]="--changelog       # Create changelog"
 	      [commit]="--commit          # Commit changelog/alembic scripts"
@@ -101,6 +103,7 @@ RELEASE_TYPE=
 START_TAG=
 END_TAG=
 SRC_REPO=
+GH_REPO=
 DST_DIR=
 BRANCH=
 NORC=false
@@ -109,6 +112,7 @@ ADVISORIES=
 ADV_URL_BASE=
 HOTFIX=false
 CHERRY_PICK=false
+FORCE_CHERRY_PICK=false
 ALEMBIC=false
 CHANGELOG=false
 COMMIT=false
@@ -166,6 +170,7 @@ $HELP && print_help
 
 [ -n "${SRC_REPO}" ] && SRC_REPO=$(realpath "${SRC_REPO}")
 [ -n "${DST_DIR}" ] && DST_DIR=$(realpath "${DST_DIR}")
+[ -z "${GH_REPO}" ] && GH_REPO=/asterisk/$(basename "${SRC_REPO}")
 
 for opt in "${needs[@]}" ; do
 	declare -n var=${opt^^}

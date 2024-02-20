@@ -42,6 +42,12 @@ inputs:
       process won't get it right.' 
     required: false
     type: string
+  force_cherry_pick:
+    description: |
+      Force cherry-pick for non-RC1 releases?
+    required: true
+    type: boolean
+    default: false
   push_release_branches:
     description: |
       Push release branches live?

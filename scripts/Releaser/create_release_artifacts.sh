@@ -2,8 +2,8 @@
 set -e
 
 declare needs=( end_tag )
-declare wants=( product src_repo dst_dir security hotfix norc advisories
-				adv_url_base alembic
+declare wants=( product src_repo gh_repo dst_dir security hotfix norc advisories
+				adv_url_base force_cherry_pick alembic
 				changelog commit tag push_branches tarball patchfile
 				close_issues sign full_monty dry_run )
 declare tests=( src_repo dst_dir )
@@ -33,10 +33,11 @@ ${ECHO_CMD} git -C "${SRC_REPO}" checkout ${end_tag[branch]}
 cd "${SRC_REPO}"
 
 if ${CHERRY_PICK} ; then
-	if [ "${end_tag[release]}" != "-rc1" ] ; then
+	if [ "${end_tag[release]}" != "-rc1" ] && ! ${FORCE_CHERRY_PICK} ; then
 		debug "Automatic cherry-picking only needed when
 		creating an rc1. Skipping."
 	else
+		${FORCE_CHERRY_PICK} && debug "Forcing cherry-pick" || :
 		commitlist=$(mktemp)
 		${ECHO_CMD} git -C "${SRC_REPO}" cherry ${end_tag[branch]} ${end_tag[source_branch]} |\
 			sed -n -r -e "s/^[+]\s?(.*)/\1/gp" > ${commitlist}
@@ -44,7 +45,7 @@ if ${CHERRY_PICK} ; then
 		[ $commitcount -eq 0 ] && bail "There were no commits to cherry-pick"
 		debug "Cherry picking $commitcount commit(s) from ${end_tag[source_branch]} to ${end_tag[branch]}"
 		echo git -C "${SRC_REPO}" cherry-pick -x $(< ${commitlist})
-		${ECHO_CMD} git -C "${SRC_REPO}" cherry-pick -x $(< ${commitlist})
+		${ECHO_CMD} git -C "${SRC_REPO}" cherry-pick --keep-redundant-commits -x $(< ${commitlist})
 		${ECHO_CMD} rm ${commitlist} &>/dev/null || :
 		debug "Done"
 	fi
@@ -62,7 +63,8 @@ echo "${END_TAG}" > ${DST_DIR}/.version
 if ${CHANGELOG} ; then
 	debug "Creating ChangeLog for ${START_TAG} -> ${END_TAG}"
 	$ECHO_CMD $progdir/create_changelog.sh --start-tag=${START_TAG} \
-		--end-tag=${END_TAG} --src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
+		--end-tag=${END_TAG} --src-repo="${SRC_REPO}" --gh-repo="${GH_REPO}" \
+		--dst-dir="${DST_DIR}" \
 		$(booloption security) $(booloption hotfix) $(booloption norc) \
 		$([ -n "$ADVISORIES" ] && echo "--advisories=$ADVISORIES") \
 		$([ -n "$ADV_URL_BASE" ] && echo "--adv-url-base=$ADV_URL_BASE") \

@@ -42,6 +42,12 @@ inputs:
       process won't get it right.
     required: false
     type: string
+  force_cherry_pick:
+    description: |
+      Force cherry-pick for non-RC1 releases?
+    required: true
+    type: boolean
+    default: false
   push_release_branches:
     description: |
       Push release branches live?
@@ -138,6 +144,7 @@ runs:
         is_hotfix: ${{inputs.is_hotfix}}
         new_version: ${{inputs.new_version}}
         start_version: ${{inputs.start_version}}
+        force_cherry_pick: ${{inputs.force_cherry_pick}}
         push_release_branches: ${{inputs.push_release_branches}}
         create_github_release: ${{inputs.create_github_release}}
         push_tarballs: ${{inputs.push_tarballs}}

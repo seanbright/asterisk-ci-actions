@@ -2,7 +2,7 @@
 set -e
 
 declare needs=( start_tag end_tag )
-declare wants=( src_repo dst_dir hotfix security advisories adv_url_base )
+declare wants=( src_repo gh_repo dst_dir hotfix security advisories adv_url_base )
 declare tests=( start_tag src_repo dst_dir )
 
 # Since creating the changelog doesn't make any
@@ -161,12 +161,12 @@ if [ ${#issuelist[*]} -gt 0 ] ; then
 	# which GitHub can do for us using a jq format string.
 	for issue in ${issuelist[*]} ; do
 		if [[ $issue =~ ^GHSA ]] ; then
-			gh api /repos/asterisk/$(basename ${SRC_REPO})/security-advisories/$issue \
+			gh api /repos/${GH_REPO}/security-advisories/$issue \
 				--json ghsa_id,summary \
 				--jq '. | "  - !" + .ghsa_id + ": " + .summary' \
 				>> "${DST_DIR}/issues_to_close.txt"
 		else
-			gh --repo=asterisk/$(basename ${SRC_REPO}) issue view $issue \
+			gh --repo=${GH_REPO} issue view $issue \
 				--json number,title \
 				--jq ". | \"  - #\" + ( .number | tostring) + \": \" + .title" \
 				>> "${DST_DIR}/issues_to_close.txt"
@@ -230,7 +230,7 @@ The Asterisk Development Team would like to announce security release
 ${end_tag_array[certprefix]:+Certified }Asterisk ${end_tag_array[major]}.${end_tag_array[minor]}${end_tag_array[patchsep]}${end_tag_array[patch]}.
 
 The release artifacts are available for immediate download at  
-https://github.com/asterisk/$(basename ${SRC_REPO})/releases/tag/${END_TAG}
+https://github.com/${GH_REPO}/releases/tag/${END_TAG}
 and
 https://downloads.asterisk.org/pub/telephony/${end_tag_array[certprefix]:+certified-}asterisk
 
@@ -240,7 +240,7 @@ EOF
 		echo "The following security advisories were resolved in this release:" >> "${DST_DIR}/email_announcement.md"
 
 		for a in ${ADVISORIES} ; do
-			summary=$(gh api /repos/asterisk/$(basename ${SRC_REPO})/security-advisories/$a --jq '.summary' 2>/dev/null || echo "FAILED")
+			summary=$(gh api /repos/${GH_REPO}/security-advisories/$a --jq '.summary' 2>/dev/null || echo "FAILED")
 			[[ "$summary" =~ FAILED$ ]] && summary=""
 			if [ -n "$ADV_URL_BASE" ] ; then
 				echo "- [${summary}](${ADV_URL_BASE}/${a})" >> "${DST_DIR}/email_announcement.md"
@@ -258,7 +258,7 @@ The Asterisk Development Team would like to announce
 ${rt}${end_tag_array[certprefix]:+Certified }${PRODUCT}-${end_tag_array[major]}.${end_tag_array[minor]}${end_tag_array[patchsep]}${end_tag_array[patch]}.
 
 The release artifacts are available for immediate download at  
-https://github.com/asterisk/$(basename ${SRC_REPO})/releases/tag/${END_TAG}
+https://github.com/${GH_REPO}/releases/tag/${END_TAG}
 and
 https://downloads.asterisk.org/pub/telephony/${end_tag_array[certprefix]:+certified-}${PRODUCT}
 
