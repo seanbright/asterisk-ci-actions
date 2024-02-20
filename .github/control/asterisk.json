@@ -32,8 +32,8 @@
   {
     "created_at": "2023-05-22T18:36:17Z",
     "name": "CHERRY_PICK_REMINDER",
-    "updated_at": "2023-08-09T18:01:48Z",
-    "value": "<!--CPR-->\r\nREMINDER: If this PR applies to other branches, please add a comment with the appropriate \"cherry-pick-to\" headers as per the [Create a Pull Request](https://wiki.asterisk.org/wiki/display/AST/Code+Contribution#CodeContribution-CreateaPullRequest) process.  \r\n\r\nIf you don't want it cherry-picked, please add a comment with `cherry-pick-to: none` so we don't keep asking.\r\n\r\nIf, after adding \"cherry-pick-to\" comments, you change your mind, please edit the comment to DELETE the header lines and add `cherry-pick-to: none`.\r\n\r\nThe currently active branches are now __18, 20, 21 and master__.\r\n\r\n"
+    "updated_at": "2023-10-17T18:54:31Z",
+    "value": "<!--CPR-->\r\nREMINDER: If this PR applies to other branches, please add a comment with the appropriate \"cherry-pick-to\" headers as per the [Create a Pull Request](https://docs.asterisk.org/Development/Policies-and-Procedures/Code-Contribution) process.  \r\n\r\nIf you don't want it cherry-picked, please add a comment with `cherry-pick-to: none` so we don't keep asking.\r\n\r\nIf, after adding \"cherry-pick-to\" comments, you change your mind, please edit the comment to DELETE the header lines and add `cherry-pick-to: none`.\r\n\r\nThe currently active branches are now __18, 20, 21 and master__.\r\n\r\n"
   },
   {
     "created_at": "2023-05-02T17:53:49Z",
@@ -84,6 +84,18 @@
     "value": "['ari1','ari2','pjs1','pjs2','pjs3','pjs4','pjs5','fax','channels']"
   },
   {
+    "created_at": "2024-01-24T18:10:17Z",
+    "name": "ISSUE_DAYS_BEFORE_CLOSE",
+    "updated_at": "2024-01-24T18:10:17Z",
+    "value": "14"
+  },
+  {
+    "created_at": "2024-01-24T18:09:56Z",
+    "name": "ISSUE_DAYS_BEFORE_STALE",
+    "updated_at": "2024-01-24T18:09:56Z",
+    "value": "7"
+  },
+  {
     "created_at": "2023-05-04T16:53:49Z",
     "name": "MAIL_FROM_TEAM",
     "updated_at": "2023-08-15T18:38:31Z",
@@ -98,32 +110,32 @@
   {
     "created_at": "2023-05-04T16:48:46Z",
     "name": "MAIL_LIST_CERT_GA",
-    "updated_at": "2023-08-15T18:38:52Z",
-    "value": "asterisk-dev@lists.digium.com,asterisk-users@lists.digium.com,asterisk-announce@lists.digium.com"
+    "updated_at": "2024-01-11T17:22:06Z",
+    "value": "asterisk-dev@groups.io,asterisk-dev@lists.digium.com,asterisk-users@lists.digium.com,asterisk-announce@lists.digium.com"
   },
   {
     "created_at": "2023-05-04T16:49:25Z",
     "name": "MAIL_LIST_CERT_RC",
-    "updated_at": "2023-08-15T18:39:03Z",
-    "value": "asterisk-dev@lists.digium.com"
+    "updated_at": "2024-01-11T17:22:22Z",
+    "value": "asterisk-dev@groups.io,asterisk-dev@lists.digium.com"
   },
   {
     "created_at": "2023-05-04T16:45:08Z",
     "name": "MAIL_LIST_GA",
-    "updated_at": "2023-08-15T18:39:16Z",
-    "value": "asterisk-dev@lists.digium.com,asterisk-users@lists.digium.com,asterisk-announce@lists.digium.com,asterisk+news@discoursemail.com"
+    "updated_at": "2024-01-11T17:22:40Z",
+    "value": "asterisk-dev@groups.io,asterisk-dev@lists.digium.com,asterisk-users@lists.digium.com,asterisk-announce@lists.digium.com,asterisk+news@discoursemail.com"
   },
   {
     "created_at": "2023-05-04T16:45:58Z",
     "name": "MAIL_LIST_RC",
-    "updated_at": "2023-08-15T18:39:26Z",
-    "value": "asterisk-dev@lists.digium.com"
+    "updated_at": "2024-01-11T17:22:57Z",
+    "value": "asterisk-dev@groups.io,asterisk-dev@lists.digium.com"
   },
   {
     "created_at": "2023-05-04T16:52:49Z",
     "name": "MAIL_LIST_SEC_ADV",
-    "updated_at": "2023-08-15T18:39:36Z",
-    "value": "asterisk-dev@lists.digium.com,asterisk-users@lists.digium.com,asterisk-announce@lists.digium.com,asterisk-security@lists.digium.com,voipsec@voipsa.org,fulldisclosure@seclists.org,asterisk+news@discoursemail.com"
+    "updated_at": "2024-01-11T17:23:16Z",
+    "value": "asterisk-dev@groups.io,asterisk-dev@lists.digium.com,asterisk-users@lists.digium.com,asterisk-announce@lists.digium.com,asterisk-security@lists.digium.com,voipsec@voipsa.org,fulldisclosure@seclists.org,asterisk+news@discoursemail.com"
   },
   {
     "created_at": "2023-06-08T19:06:48Z",
@@ -214,6 +226,18 @@
     "name": "PR_COMMENT_KEYWORD_REGEX",
     "updated_at": "2023-04-27T14:48:34Z",
     "value": "(check|recheck|regate|pregate)"
+  },
+  {
+    "created_at": "2024-01-24T18:10:50Z",
+    "name": "PR_DAYS_BEFORE_CLOSE",
+    "updated_at": "2024-01-24T18:10:50Z",
+    "value": "28"
+  },
+  {
+    "created_at": "2024-01-24T18:10:33Z",
+    "name": "PR_DAYS_BEFORE_STALE",
+    "updated_at": "2024-01-24T18:10:33Z",
+    "value": "14"
   },
   {
     "created_at": "2023-07-17T14:48:15Z",
