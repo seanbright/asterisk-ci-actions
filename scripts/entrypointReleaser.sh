@@ -86,7 +86,8 @@ export DEPLOY_DIR=${INPUT_DEPLOY_DIR}
 
 echo "Running create_release_artifacts.sh"
 ${SCRIPT_DIR}/create_release_artifacts.sh \
-	--src-repo=${REPO_DIR} --dst-dir=${STAGING_DIR} --debug \
+	--src-repo=${REPO_DIR} --dst-dir=${STAGING_DIR} \
+	--gh-repo=${INPUT_REPO} --debug \
 	$(${INPUT_IS_SECURITY} && echo "--security") \
 	$(${INPUT_IS_HOTFIX} && echo "--hotfix") \
 	$([ -n "${INPUT_ADVISORIES}" ] && echo "--advisories=${INPUT_ADVISORIES}") \

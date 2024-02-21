@@ -170,7 +170,7 @@ $HELP && print_help
 
 [ -n "${SRC_REPO}" ] && SRC_REPO=$(realpath "${SRC_REPO}")
 [ -n "${DST_DIR}" ] && DST_DIR=$(realpath "${DST_DIR}")
-[ -z "${GH_REPO}" ] && GH_REPO=/asterisk/$(basename "${SRC_REPO}")
+[ -z "${GH_REPO}" ] && GH_REPO=asterisk/$(basename "${SRC_REPO}")
 
 for opt in "${needs[@]}" ; do
 	declare -n var=${opt^^}
