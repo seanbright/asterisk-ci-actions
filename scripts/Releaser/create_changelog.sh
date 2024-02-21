@@ -60,14 +60,14 @@ if [ "${start_tag_array[release_type]}" == "pre" ] ; then
 		[[ "$MSG" =~ ^((Add ChangeLog)|(Update for)) ]] && continue || :
 		grep -q "$MSG" "${TMPDIR}/lastchanges.txt" && continue || :
 		git -C "${SRC_REPO}" --no-pager log -1 \
-			--format='format:@#@#@#@%nSubject: %s%nAuthor: %an  %nDate:   %as  %n%n%b%n#@#@#@#%n' \
+			--format='format:@#@#@#@%nSubject: %<(80,trunc)%s%nAuthor: %an  %nDate:   %as  %n%n%b%n#@#@#@#%n' \
 			-E --grep "^((Add ChangeLog)|(Update for))" --invert-grep $SHA >>"${TMPFILE2}"
 	done < "${TMPDIR}/majorchanges1.txt"
 fi
 
 debug "Getting commit list for ${START_TAG}..HEAD"
 git -C "${SRC_REPO}" --no-pager log \
-	--format='format:@#@#@#@%nSubject: %s%nAuthor: %an  %nDate:   %as  %n%n%b%n#@#@#@#' \
+	--format='format:@#@#@#@%nSubject: %<(80,trunc)%s%nAuthor: %an  %nDate:   %as  %n%n%b%n#@#@#@#' \
 	-E --grep "^((Add ChangeLog)|(Update for))" --invert-grep ${START_TAG}..HEAD >>"${TMPFILE2}"
 
 if [ ! -s "${TMPFILE2}" ] ; then
@@ -195,7 +195,7 @@ EOF
 # git shortlog can give us a list of commit authors
 # and the number of commits in the tag range.
 git -C "${SRC_REPO}" shortlog --grep "^Add ChangeLog" --invert-grep \
-	--group="author" --format="- %s" ${START_TAG}..HEAD |\
+	--group="author" --format="- %<(80,trunc)%s" ${START_TAG}..HEAD |\
 #	Undent the commits and make headings for the authors
 	sed -r -e "s/\s+-(.+)/  -\1/g" --e "s/^([^ ].+)/- ### \1/g" >>"${TMPFILE1}" 
 
@@ -234,6 +234,9 @@ https://github.com/${GH_REPO}/releases/tag/${END_TAG}
 and
 https://downloads.asterisk.org/pub/telephony/${end_tag_array[certprefix]:+certified-}asterisk
 
+Repository: https://github.com/${GH_REPO}
+Tag: ${END_TAG}
+
 EOF
 	if [ -n "${ADVISORIES}" ] ; then
 		IFS=$','
@@ -261,6 +264,9 @@ The release artifacts are available for immediate download at
 https://github.com/${GH_REPO}/releases/tag/${END_TAG}
 and
 https://downloads.asterisk.org/pub/telephony/${end_tag_array[certprefix]:+certified-}${PRODUCT}
+
+Repository: https://github.com/${GH_REPO}
+Tag: ${END_TAG}
 
 This release resolves issues reported by the community  
 and would have not been possible without your participation.
