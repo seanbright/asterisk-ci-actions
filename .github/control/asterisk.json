@@ -110,14 +110,14 @@
   {
     "created_at": "2023-05-04T16:48:46Z",
     "name": "MAIL_LIST_CERT_GA",
-    "updated_at": "2024-02-20T14:22:45Z",
-    "value": "asterisk-dev@groups.io,asterisk+news@discoursemail.com"
+    "updated_at": "2024-02-21T13:46:16Z",
+    "value": "asterisk-dev@groups.io,asterisk+news@discoursemail.com,switchvox-dev@digium.com"
   },
   {
     "created_at": "2023-05-04T16:49:25Z",
     "name": "MAIL_LIST_CERT_RC",
-    "updated_at": "2024-02-20T14:25:28Z",
-    "value": "asterisk-dev@groups.io,asterisk+development@discoursemail.com"
+    "updated_at": "2024-02-21T13:45:33Z",
+    "value": "asterisk-dev@groups.io,asterisk+development@discoursemail.com,switchvox-dev@digium.com"
   },
   {
     "created_at": "2023-05-04T16:45:08Z",
