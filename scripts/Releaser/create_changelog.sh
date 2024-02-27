@@ -93,10 +93,10 @@ Change Log for Release ${PRODUCT}-${END_TAG}
 Links:
 ----------------------------------------
 
- - [Full ChangeLog](https://downloads.asterisk.org/pub/telephony/${PRODUCT}/releases/ChangeLog-${END_TAG}.md)  
+ - [Full ChangeLog](https://downloads.asterisk.org/pub/telephony/${end_tag_array[download_dir]}/releases/ChangeLog-${END_TAG}.md)  
  - [GitHub Diff](https://github.com/asterisk/${PRODUCT}/compare/${START_TAG}...${END_TAG})  
- - [Tarball](https://downloads.asterisk.org/pub/telephony/${PRODUCT}/${PRODUCT}-${END_TAG}.tar.gz)  
- - [Downloads](https://downloads.asterisk.org/pub/telephony/${PRODUCT})  
+ - [Tarball](https://downloads.asterisk.org/pub/telephony/${end_tag_array[download_dir]}/${PRODUCT}-${END_TAG}.tar.gz)  
+ - [Downloads](https://downloads.asterisk.org/pub/telephony/${end_tag_array[download_dir]})  
 
 Summary:
 ----------------------------------------
@@ -232,7 +232,7 @@ ${end_tag_array[certprefix]:+Certified }Asterisk ${end_tag_array[major]}.${end_t
 The release artifacts are available for immediate download at  
 https://github.com/${GH_REPO}/releases/tag/${END_TAG}
 and
-https://downloads.asterisk.org/pub/telephony/${end_tag_array[certprefix]:+certified-}asterisk
+https://downloads.asterisk.org/pub/telephony/${end_tag_array[download_dir]}
 
 Repository: https://github.com/${GH_REPO}
 Tag: ${END_TAG}
@@ -263,7 +263,7 @@ ${rt}${end_tag_array[certprefix]:+Certified }${PRODUCT}-${end_tag_array[major]}.
 The release artifacts are available for immediate download at  
 https://github.com/${GH_REPO}/releases/tag/${END_TAG}
 and
-https://downloads.asterisk.org/pub/telephony/${end_tag_array[certprefix]:+certified-}${PRODUCT}
+https://downloads.asterisk.org/pub/telephony/${end_tag_array[download_dir]}
 
 Repository: https://github.com/${GH_REPO}
 Tag: ${END_TAG}
