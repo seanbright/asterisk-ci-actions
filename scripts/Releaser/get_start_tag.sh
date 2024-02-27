@@ -178,7 +178,17 @@ if [ ${new[minor]} -eq 0 ] && [ ${new[patch]} -eq 0 ] ; then
 	debug "First GA of new major release.  Using -pre1 '${last[major]}.0.0-pre1'"
 	print_tag "${last[major]}.0.0-pre1"
 else
-	lastga=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l "${new[major]}.[0-9]*${new[patchsep]}[0-9]" | tail -1)
+	# git tag -l doesn't do regex so we need to get a partial match list
+	# and further filter it to remove RCs, etc. so we're only left
+	# with GAs.  Since git does do a good job at sorting version strings
+	# the last GA entry will be the one we want.
+	prevtags=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l "${new[certprefix]}${new[major]}.[0-9]*${new[patchsep]}[0-9]*")
+	for t in ${prevtags} ; do
+		unset ta ; declare -A ta
+		tag_parser ${t} ta
+		[ ${ta[release_type]} != "ga" ] && continue
+		lastga=$t
+	done
 	debug "Not first GA.  Using last GA: '${lastga}'"
 	print_tag "${lastga}"
 fi
