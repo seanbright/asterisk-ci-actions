@@ -87,7 +87,11 @@ done
 echo "Creating configure arguments"
 
 common_config_args="--prefix=/usr ${_libdir:+--libdir=${_libdir}} --sysconfdir=/etc --with-pjproject-bundled"
-$PKGCONFIG 'jansson >= 2.11' || common_config_args+=" --with-jansson-bundled"
+
+source third-party/versions.mak
+[ -n "${JANSSON_VERSION}" ] && { $PKGCONFIG "jansson >= ${JANSSON_VERSION}" || common_config_args+=" --with-jansson-bundled" ; }
+[ -n "${LIBJWT_VERSION}" ] && { $PKGCONFIG "libjwt >= ${LIBJWT_VERSION}" || common_config_args+=" --with-libjwt-bundled" ; }
+
 common_config_args+=" ${CACHE_DIR:+--with-sounds-cache=${CACHE_DIR}/sounds --with-externals-cache=${CACHE_DIR}/externals}"
 if ! $NO_DEV_MODE ; then
 	common_config_args+=" --enable-dev-mode"
