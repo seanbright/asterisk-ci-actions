@@ -40,10 +40,10 @@ git -C "${SRC_REPO}" checkout ${end_tag_array[branch]}  >/dev/null 2>&1
 
 echo -n "" >"${TMPFILE2}"
 
-# If this is a new major release, we need to get the commits
-# that are in the new release that aren't in the last GA
-# branch first.
-if [ "${start_tag_array[release_type]}" == "pre" ] ; then
+# If this is a new non-certified major release, we need to
+# get the commits that are in the new release that aren't
+# in the last GA branch first.
+if ! ${start_tag_array[certified]} && [ "${start_tag_array[release_type]}" == "pre" ] ; then
 	debug "New major release: ${END_TAG}"
 	lastmajor=$(( ${end_tag_array[major]} - 1 ))
 	lastlastmajor=$(( ${lastmajor} - 1 ))
@@ -65,10 +65,22 @@ if [ "${start_tag_array[release_type]}" == "pre" ] ; then
 	done < "${TMPDIR}/majorchanges1.txt"
 fi
 
+# If this is a new certified major release/branch, we need to find
+# the last GA certified tag to produce the change log from.
+
+if ${start_tag_array[certified]} && [ "${start_tag_array[release_type]}" == "pre" ] ; then
+	new_start=$(git -C "${SRC_REPO}" --no-pager tag --sort="v:refname" --list "certified-*cert[0-9]" | tail -1)
+	START_TAG=$new_start
+	unset start_tag_array
+	declare -A start_tag_array
+	tag_parser ${START_TAG} start_tag_array
+	debug "$(declare -p start_tag_array)"
+fi
+
 debug "Getting commit list for ${START_TAG}..HEAD"
 git -C "${SRC_REPO}" --no-pager log \
 	--format='format:@#@#@#@%nSubject: %<(80,trunc)%s%nAuthor: %an  %nDate:   %as  %n%n%b%n#@#@#@#' \
-	-E --grep "^((Add ChangeLog)|(Update for))" --invert-grep ${START_TAG}..HEAD >>"${TMPFILE2}"
+	-E --grep "^(([.]github)|(Add\s+ChangeLog)|(Update[s]?\s+for)|(Update\s+CHANGES))" --invert-grep ${START_TAG}..HEAD >>"${TMPFILE2}"
 
 if [ ! -s "${TMPFILE2}" ] ; then
 	bail "There are no commits in the range ${START_TAG}..HEAD.
@@ -180,6 +192,24 @@ else
 	echo "None" >> "${TMPFILE1}"
 fi
 
+# For historical reasons, let's also look for "ASTERISK-" issues
+debug "Getting ASTERISK issues list"
+issuelist=( $(sed -n -r -e 's/^(ASTERISK-[0-9]+)\s*(#.*)?$/\1/gp' "${TMPFILE2}" | sort -n | tr '[:space:]' ' ') )
+rm "${DST_DIR}/asterisk_issues.txt" &>/dev/null || :
+if [ ${#issuelist[*]} -gt 0 ] ; then
+	debug "Getting ${#issuelist[*]} issue titles from issues-archive"
+	for issue in ${issuelist[*]} ; do
+		[[ $issue =~ ASTERISK-([0-9][0-9])[0-9]+ ]] && dir=${BASH_REMATCH[1]}
+		[ -z "$dir" ] && continue
+		ix=${TMPDIR}/index-${dir}.html
+		[ ! -f ${ix} ] && curl -s https://issues-archive.asterisk.org/${dir}/index.html > ${ix}
+		sed -n -r -e "s/.*${issue}<.a>:\s*([^<]+)<.td>.*/  - ${issue}: \1/gp" ${ix} \
+		| python3 -c 'import html, sys; [print(html.unescape(l), end="") for l in sys.stdin]' \
+		>> "${DST_DIR}/asterisk_issues.txt"
+	done
+	sort -u "${DST_DIR}/asterisk_issues.txt" >>"${TMPFILE1}"
+fi
+
 debug "Save as release_notes.md"
 cp "${TMPFILE1}" "${DST_DIR}/release_notes.md"
 
@@ -194,7 +224,8 @@ EOF
 
 # git shortlog can give us a list of commit authors
 # and the number of commits in the tag range.
-git -C "${SRC_REPO}" shortlog --grep "^Add ChangeLog" --invert-grep \
+git -C "${SRC_REPO}" shortlog \
+	-E --grep "^(([.]github)|(Add\s+ChangeLog)|(Update[s]?\s+for)|(Update\s+CHANGES))" --invert-grep \
 	--group="author" --format="- %<(80,trunc)%s" ${START_TAG}..HEAD |\
 #	Undent the commits and make headings for the authors
 	sed -r -e "s/\s+-(.+)/  -\1/g" --e "s/^([^ ].+)/- ### \1/g" >>"${TMPFILE1}" 
