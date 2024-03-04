@@ -33,8 +33,9 @@ mkdir -p ${DESTINATION}
 no_tags=""
 ${NO_TAGS} && no_tags="--no-tags"
 
-git clone -q -b ${BRANCH} --depth 10 --no-tags \
-	${GITHUB_SERVER_URL}/${REPO} ${DESTINATION}
+git clone -q -b master --depth 10 --no-tags \
+	https://x-access-token:${GIT_TOKEN}@github.com/${REPO} ${DESTINATION}
+
 git config --global --add safe.directory $(realpath ${DESTINATION})
 
 if [ ${PR_NUMBER} -le 0 ] ; then
