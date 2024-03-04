@@ -1,0 +1,26 @@
+name: CopyRepoVars
+run-name: "CopyRepoVars"
+on:
+  workflow_dispatch:
+    inputs:
+      src_repo:
+        description: |
+        Source asterisk org repo:
+        required: true
+        type: string
+      dst_repo:
+        description: |
+        Destination asterisk org repo:
+        required: true
+        type: string
+
+jobs:
+  CopyRepoVars:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Copy Variables
+        uses: asterisk/asterisk-ci-actions/CopyRepoVariables@main
+        with:
+          src_repo: ${{inputs.src_repo}}
+          dst_repo: ${{inputs.dst_repo}}
+          gh_secret: ${{secrets.ASTERISKTEAM_PAT}}
