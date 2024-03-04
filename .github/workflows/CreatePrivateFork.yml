@@ -1,0 +1,29 @@
+name: CreatePrivateFork
+run-name: "CreatePrivateFork"
+on:
+  workflow_dispatch:
+    inputs:
+      src_repo:
+        description: 'Source asterisk org repo:'
+        required: true
+        type: string
+      dst_repo:
+        description: 'Destination asterisk org repo:'
+        required: true
+        type: string
+
+jobs:
+  CreatePrivateFork:
+    runs-on: ubuntu-latest
+    steps:
+      - name: CreatePrivateFork
+        uses: asterisk/asterisk-ci-actions/CreatePrivateForkComposite@main
+        with:
+          src_repo: ${{inputs.src_repo}}
+          dst_repo: ${{inputs.dst_repo}}
+          github_token: ${{secrets.ASTERISKTEAM_PAT}}
+  UpdateControlData:
+    uses: ./.github/workflows/UpdateControlData.yml
+    with:
+      repo: ${{inputs.dst_repo}}
+    secrets: inherit

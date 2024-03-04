@@ -8,6 +8,13 @@ on:
           The repo in the asterisk org to copy the control data from:
         required: true
         type: string
+  workflow_call:
+    inputs:
+      repo:
+        description: |
+          The repo in the asterisk org to copy the control data from:
+        required: true
+        type: string
 
 jobs:
   UpdateControlData:

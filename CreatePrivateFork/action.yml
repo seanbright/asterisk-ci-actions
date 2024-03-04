@@ -1,0 +1,23 @@
+name: CreatePrivateFork
+inputs:
+  src_repo:
+    description: |
+    Source asterisk org repo:
+    required: true
+    type: string
+  dst_repo:
+    description: |
+    Destination asterisk org repo:
+    required: true
+    type: string
+  github_token:
+    description: 'GitHub API Access Token.'
+    default: ${{ github.token }}
+    required: false
+  
+  
+runs:
+  using: "docker"
+  image: "docker://ghcr.io/asterisk/asteriskci-agent-rocky8:latest"
+  args:
+    - entrypointCreatePrivateFork.sh

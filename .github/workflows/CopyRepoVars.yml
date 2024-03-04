@@ -23,4 +23,4 @@ jobs:
         with:
           src_repo: ${{inputs.src_repo}}
           dst_repo: ${{inputs.dst_repo}}
-          gh_secret: ${{secrets.ASTERISKTEAM_PAT}}
+          github_token: ${{secrets.ASTERISKTEAM_PAT}}
