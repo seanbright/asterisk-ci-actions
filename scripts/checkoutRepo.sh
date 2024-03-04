@@ -34,7 +34,7 @@ no_tags=""
 ${NO_TAGS} && no_tags="--no-tags"
 
 git clone -q -b master --depth 10 --no-tags \
-	https://x-access-token:${GIT_TOKEN}@github.com/${REPO} ${DESTINATION}
+	https://x-access-token:${GITHUB_TOKEN}@github.com/${REPO} ${DESTINATION}
 
 git config --global --add safe.directory $(realpath ${DESTINATION})
 
