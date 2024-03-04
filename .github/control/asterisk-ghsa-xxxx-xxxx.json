@@ -1,0 +1,266 @@
+[
+  {
+    "created_at": "2024-03-04T15:36:33Z",
+    "name": "CHERRY_PICK_CHECKS_FAILED_LABEL",
+    "updated_at": "2024-03-04T15:37:54Z",
+    "value": "cherry-pick-checks-failed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:33Z",
+    "name": "CHERRY_PICK_CHECKS_PASSED_LABEL",
+    "updated_at": "2024-03-04T15:37:54Z",
+    "value": "cherry-pick-checks-passed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:33Z",
+    "name": "CHERRY_PICK_GATES_FAILED_LABEL",
+    "updated_at": "2024-03-04T15:37:54Z",
+    "value": "cherry-pick-gates-failed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:33Z",
+    "name": "CHERRY_PICK_GATES_PASSED_LABEL",
+    "updated_at": "2024-03-04T15:37:54Z",
+    "value": "cherry-pick-gates-passed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:33Z",
+    "name": "CHERRY_PICK_REGEX",
+    "updated_at": "2024-03-04T15:37:54Z",
+    "value": "(?:^|\n)cherry-pick-to:[ ]*(([0-9.]+|certified/[0-9.]+|master)|(none))"
+  },
+  {
+    "created_at": "2024-03-04T15:36:34Z",
+    "name": "MAIL_LIST_GA",
+    "updated_at": "2024-03-04T15:37:55Z",
+    "value": "asterisk-dev@groups.io,asterisk+news@discoursemail.com"
+  },
+  {
+    "created_at": "2024-03-04T15:36:34Z",
+    "name": "MAIL_LIST_RC",
+    "updated_at": "2024-03-04T15:37:55Z",
+    "value": "asterisk-dev@groups.io,asterisk+development@discoursemail.com"
+  },
+  {
+    "created_at": "2024-03-04T15:36:34Z",
+    "name": "MAIL_LIST_SEC_ADV",
+    "updated_at": "2024-03-04T15:37:55Z",
+    "value": "asterisk-dev@groups.io,voipsec@voipsa.org,fulldisclosure@seclists.org,asterisk+news@discoursemail.com"
+  },
+  {
+    "created_at": "2024-03-04T15:36:34Z",
+    "name": "MERGE_APPROVED",
+    "updated_at": "2024-03-04T15:37:55Z",
+    "value": "merge-approved"
+  },
+  {
+    "created_at": "2024-03-04T15:36:34Z",
+    "name": "MERGE_APPROVED_LABEL",
+    "updated_at": "2024-03-04T15:37:55Z",
+    "value": "merge-approved"
+  },
+  {
+    "created_at": "2024-03-04T15:36:34Z",
+    "name": "MERGE_APPROVED_LABELS",
+    "updated_at": "2024-03-04T15:37:55Z",
+    "value": "['merge-approved','merge-approved-force']"
+  },
+  {
+    "created_at": "2024-03-04T15:36:34Z",
+    "name": "MERGE_FAILED_LABEL",
+    "updated_at": "2024-03-04T15:37:55Z",
+    "value": "merge-failed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:34Z",
+    "name": "MERGE_IN_PROGRESS_LABEL",
+    "updated_at": "2024-03-04T15:37:55Z",
+    "value": "merge-in-progress"
+  },
+  {
+    "created_at": "2024-03-04T15:36:34Z",
+    "name": "NIGHTLYTEST_BRANCHES",
+    "updated_at": "2024-03-04T15:37:55Z",
+    "value": "['18','20','21','master']"
+  },
+  {
+    "created_at": "2024-03-04T15:36:34Z",
+    "name": "NIGHTLYTEST_LIST",
+    "updated_at": "2024-03-04T15:37:55Z",
+    "value": "['ari1','ari2','pjs1','pjs2','pjs3','pjs4','pjs5','fax','channels']"
+  },
+  {
+    "created_at": "2024-03-04T15:36:35Z",
+    "name": "PRE_MERGE_CHECKS_FAILED_LABEL",
+    "updated_at": "2024-03-04T15:37:56Z",
+    "value": "pre-merge-checks-failed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:35Z",
+    "name": "PRE_MERGE_CHECKS_PASSED_LABEL",
+    "updated_at": "2024-03-04T15:37:56Z",
+    "value": "pre-merge-checks-passed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:35Z",
+    "name": "PRE_MERGE_GATES_FAILED_LABEL",
+    "updated_at": "2024-03-04T15:37:56Z",
+    "value": "pre-merge-gates-failed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:35Z",
+    "name": "PRE_MERGE_GATES_PASSED_LABEL",
+    "updated_at": "2024-03-04T15:37:56Z",
+    "value": "pre-merge-gates-passed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:35Z",
+    "name": "PRE_MERGE_TESTING_IN_PROGRESS",
+    "updated_at": "2024-03-04T15:37:56Z",
+    "value": "pre-merge-testing-in-progress"
+  },
+  {
+    "created_at": "2024-03-04T15:36:35Z",
+    "name": "PRODUCT_NAME",
+    "updated_at": "2024-03-04T15:37:57Z",
+    "value": "asterisk"
+  },
+  {
+    "created_at": "2024-03-04T15:36:35Z",
+    "name": "PR_ACCEPTANCE_TEST_LABEL",
+    "updated_at": "2024-03-04T15:37:57Z",
+    "value": "pr-acceptance-test"
+  },
+  {
+    "created_at": "2024-03-04T15:36:35Z",
+    "name": "PR_COMMENT_KEYWORD_REGEX",
+    "updated_at": "2024-03-04T15:37:57Z",
+    "value": "(check|recheck|regate|pregate)"
+  },
+  {
+    "created_at": "2024-03-04T15:36:35Z",
+    "name": "PR_DAYS_BEFORE_CLOSE",
+    "updated_at": "2024-03-04T15:37:57Z",
+    "value": "28"
+  },
+  {
+    "created_at": "2024-03-04T15:36:35Z",
+    "name": "PR_DAYS_BEFORE_STALE",
+    "updated_at": "2024-03-04T15:37:57Z",
+    "value": "14"
+  },
+  {
+    "created_at": "2024-03-04T15:37:57Z",
+    "name": "PR_JOB_START_DELAY_SEC",
+    "updated_at": "2024-03-04T15:37:57Z",
+    "value": "60"
+  },
+  {
+    "created_at": "2024-03-04T15:37:57Z",
+    "name": "PR_REVIEWERS",
+    "updated_at": "2024-03-04T15:37:57Z",
+    "value": "['asterisk/asterisk-dev']"
+  },
+  {
+    "created_at": "2024-03-04T15:37:57Z",
+    "name": "PR_SUBMIT_TESTING_IN_PROGRESS",
+    "updated_at": "2024-03-04T15:37:57Z",
+    "value": "pr-submit-testing-in-progress"
+  },
+  {
+    "created_at": "2024-03-04T15:37:57Z",
+    "name": "PR_SUBMIT_TESTS_FAILED",
+    "updated_at": "2024-03-04T15:37:57Z",
+    "value": "pr-submit-tests-failed"
+  },
+  {
+    "created_at": "2024-03-04T15:37:57Z",
+    "name": "PR_SUBMIT_TESTS_PASSED",
+    "updated_at": "2024-03-04T15:37:57Z",
+    "value": "pr-submit-tests-passed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "RECHECK_LABEL",
+    "updated_at": "2024-03-04T15:37:58Z",
+    "value": "recheck"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "SEC_ADV_URL_BASE",
+    "updated_at": "2024-03-04T15:37:58Z",
+    "value": "https://github.com/asterisk/asterisk/security/advisories"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "TESTING_CHERRY_PICKS_LABEL",
+    "updated_at": "2024-03-04T15:37:58Z",
+    "value": "testing-cherry-picks"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "TESTING_IN_PROGRESS",
+    "updated_at": "2024-03-04T15:37:58Z",
+    "value": "testing-in-progress"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "TESTSUITE_REPO",
+    "updated_at": "2024-03-04T15:37:58Z",
+    "value": "asterisk/testsuite"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "TEST_CHECKS_FAILED_LABEL",
+    "updated_at": "2024-03-04T15:37:58Z",
+    "value": "test-checks-failed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "TEST_CHECKS_PASSED_LABEL",
+    "updated_at": "2024-03-04T15:37:58Z",
+    "value": "test-checks-passed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "TEST_GATES_FAILED_LABEL",
+    "updated_at": "2024-03-04T15:37:58Z",
+    "value": "test-gates-failed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "TEST_GATES_PASSED_LABEL",
+    "updated_at": "2024-03-04T15:37:58Z",
+    "value": "test-gates-passed"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "UNITTEST_COMMAND",
+    "updated_at": "2024-03-04T15:37:58Z",
+    "value": "test execute all"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "UNITTEST_MODULES_BLACKLIST_NOT_USED",
+    "updated_at": "2024-03-04T15:37:59Z",
+    "value": "test_crypto"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "WIKIDOCS_ENABLE",
+    "updated_at": "2024-03-04T15:37:59Z",
+    "value": "true"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "WIKIDOC_BRANCHES",
+    "updated_at": "2024-03-04T15:37:59Z",
+    "value": "['16','18','19','20','21','certified/18.9']"
+  },
+  {
+    "created_at": "2024-03-04T15:36:36Z",
+    "name": "WIKIDOC_MANUAL_BRANCHES",
+    "updated_at": "2024-03-04T15:37:59Z",
+    "value": "['16','18','19','20','21','certified/18.9']"
+  }
+]
