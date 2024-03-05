@@ -27,8 +27,8 @@ inputs:
     description: 'Gate Group Number'
     type: number
     required: true
-  gatetest_commands:
-    description: 'Gate Commands'
+  gatetest_command:
+    description: 'Gate Command'
     type: string
     required: true
 

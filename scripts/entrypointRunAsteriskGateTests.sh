@@ -27,12 +27,12 @@ git clone --depth 1 --no-tags -q -b ${INPUT_BASE_BRANCH} \
 	${GITHUB_SERVER_URL}/${INPUT_TESTSUITE_REPO} ${TESTSUITE_DIR}
 git config --global --add safe.directory ${TESTSUITE_DIR}
 
-echo ${INPUT_GATETEST_COMMANDS} > /tmp/test_commands.json
-TEST_NAME=$(jq -j '.'${INPUT_GATETEST_GROUP}'.name' /tmp/test_commands.json)
-TEST_OPTIONS=$(jq -j '.'${INPUT_GATETEST_GROUP}'.options' /tmp/test_commands.json)
-TEST_TIMEOUT=$(jq -j '.'${INPUT_GATETEST_GROUP}'.timeout' /tmp/test_commands.json)
-TEST_CMD=$(jq -j '.'${INPUT_GATETEST_GROUP}'.testcmd' /tmp/test_commands.json)
-TEST_DIR=$(jq -j '.'${INPUT_GATETEST_GROUP}'.dir' /tmp/test_commands.json)
+echo ${INPUT_GATETEST_COMMAND} > /tmp/test_commands.json
+TEST_NAME=$(jq -j '.name' /tmp/test_commands.json)
+TEST_OPTIONS=$(jq -j '.options' /tmp/test_commands.json)
+TEST_TIMEOUT=$(jq -j '.timeout' /tmp/test_commands.json)
+TEST_CMD=$(jq -j '.testcmd' /tmp/test_commands.json)
+TEST_DIR=$(jq -j '.dir' /tmp/test_commands.json)
 
 cd ${TESTSUITE_DIR}
 

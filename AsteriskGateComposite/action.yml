@@ -39,8 +39,8 @@ inputs:
     description: 'Gate Group Number'
     type: number
     required: true
-  gatetest_commands:
-    description: 'Gate Commands'
+  gatetest_command:
+    description: 'Gate Command'
     type: string
     required: true
 
@@ -84,7 +84,7 @@ runs:
         github_token:      ${{inputs.github_token}}
         testsuite_repo:    ${{inputs.testsuite_repo}}
         gatetest_group:    ${{inputs.gatetest_group}}
-        gatetest_commands: ${{inputs.gatetest_commands}} 
+        gatetest_command:  ${{inputs.gatetest_command}} 
 
     - name: Save Output
       id: save-output
