@@ -50,7 +50,7 @@ runs:
     - name: Save Output
       id: save-output
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{steps.reformat.outputs.docname}}
         path: ${{inputs.docs_dir}}

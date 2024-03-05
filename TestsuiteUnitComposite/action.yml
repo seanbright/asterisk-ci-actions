@@ -66,7 +66,7 @@ runs:
     - name: Save Output
       id: save-output
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Unit Test Output
         path: cache/output
