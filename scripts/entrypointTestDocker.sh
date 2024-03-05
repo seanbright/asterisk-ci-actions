@@ -1,6 +1,11 @@
 #!/usr/bin/bash
 
 set -x
+
+ulimit -a
+
+sysctl kernel.core_pattern
+
 if [ "${INPUT_TEST_TYPE}" == "pass_fail" ] ; then
 	echo "Exiting with RC 1 (forced)"
 	echo "result=failure" >> $GITHUB_OUTPUT
