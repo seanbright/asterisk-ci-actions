@@ -60,8 +60,6 @@ runs:
         BASE_BRANCH="${{inputs.base_branch}}"
         GC_TEST_NAME="${{inputs.test_type}}-${{inputs.gatetest_group}}-${BASE_BRANCH//\//-}"
         echo "GC_TEST_NAME=${GC_TEST_NAME}" >> "${GITHUB_ENV}"
-        STEP_TIMEOUT=${{ fromJSON(inputs.gatetest_command).step_timeout_minutes }}
-        echo "STEP_TIMEOUT=${STEP_TIMEOUT}" >> "${GITHUB_ENV}"
 
     - name: Get Asterisk
       uses: asterisk/asterisk-ci-actions/GetRepo@main
@@ -77,7 +75,6 @@ runs:
 
     - id: runtests
       name: ${{inputs.test_type}} Test ${{inputs.gatetest_group}}-${{inputs.base_branch}}
-      timeout-minutes: ${{ env.STEP_TIMEOUT }}
       uses: asterisk/asterisk-ci-actions/RunAsteriskGateTests@main
       with:
         asterisk_repo:     ${{inputs.asterisk_repo}}
