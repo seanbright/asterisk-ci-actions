@@ -34,6 +34,13 @@ runs:
     - name: SetupIPV6
       uses: asterisk/asterisk-ci-actions/EnableIPv6InRunner@main
 
+    - name: SetTestName
+      shell: bash
+      run: |
+        BASE_BRANCH="${{inputs.base_branch}}"
+        UNIT_TEST_NAME="unittests-${BASE_BRANCH//\//-}"
+        echo "UNIT_TEST_NAME=${UNIT_TEST_NAME}" >> "${GITHUB_ENV}"
+
     - name: Get Asterisk
       uses: asterisk/asterisk-ci-actions/GetRepo@main
       with:
@@ -45,7 +52,7 @@ runs:
         github_token:      ${{inputs.github_token}}
         modules_blacklist: ${{inputs.modules_blacklist}}
 
-    - name: Run Unit Tests
+    - name: Run unittest-${{inputs.base_branch}}
       uses: asterisk/asterisk-ci-actions/RunAsteriskUnitTests@main
       with:
         asterisk_repo:    ${{inputs.asterisk_repo}}
@@ -59,5 +66,5 @@ runs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: Unit Test Output
+        name: ${{env.UNIT_TEST_NAME}}
         path: cache/output
