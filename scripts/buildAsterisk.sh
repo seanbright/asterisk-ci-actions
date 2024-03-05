@@ -120,9 +120,9 @@ if ! $NO_MENUSELECT ; then
 	cp menuselect-tree menuselect.{makedeps,makeopts} ${OUTPUT_DIR}/
 	$SUCCESS || exit 1
 
-	runner menuselect/menuselect `gen_mods enable DONT_OPTIMIZE BETTER_BACKTRACES` menuselect.makeopts
+	runner menuselect/menuselect `gen_mods enable DONT_OPTIMIZE` menuselect.makeopts
 	if ! $NO_DEV_MODE ; then
-		runner menuselect/menuselect `gen_mods enable MALLOC_DEBUG DO_CRASH TEST_FRAMEWORK` menuselect.makeopts
+		runner menuselect/menuselect `gen_mods enable DO_CRASH TEST_FRAMEWORK` menuselect.makeopts
 	fi
 	runner menuselect/menuselect `gen_mods disable COMPILE_DOUBLE BUILD_NATIVE` menuselect.makeopts
 	if $REF_DEBUG ; then
