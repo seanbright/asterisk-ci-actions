@@ -37,7 +37,8 @@ $UNINSTALL && ${MAKE} ${destdir} uninstall || :
 $UNINSTALL_ALL && ${MAKE} ${destdir} uninstall-all || :
 
 echo "Installing"
-${MAKE} ${destdir} install || ${MAKE} ${destdir} NOISY_BUILD=yes install || exit 1
+${MAKE} ${destdir} WGET_EXTRA_ARGS="--quiet" install \
+	|| ${MAKE} ${destdir} NOISY_BUILD=yes install || exit 1
 ${MAKE} ${destdir} samples install-headers 
 if [ x"$DESTDIR" != x ] ; then
 	sed -i -r -e "s@\[directories\]\(!\)@[directories]@g" $DESTDIR/etc/asterisk/asterisk.conf
