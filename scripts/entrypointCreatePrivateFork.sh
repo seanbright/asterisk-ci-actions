@@ -6,37 +6,56 @@ set -e
 
 export GITHUB_TOKEN=${INPUT_GITHUB_TOKEN}
 export GH_TOKEN=${INPUT_GITHUB_TOKEN}
+export GIT_TOKEN=${INPUT_GITHUB_TOKEN}
 
 SCRIPT_DIR=${GITHUB_WORKSPACE}/$(basename ${GITHUB_ACTION_REPOSITORY})/scripts
-REPO_DIR=${GITHUB_WORKSPACE}/$(basename ${INPUT_SRC_REPO})
+REPO_DIR=${GITHUB_WORKSPACE}/$(basename ${INPUT_DST_REPO})
 
+echo $GH_TOKEN | md5sum
 
 cd ${GITHUB_WORKSPACE}
 
-git clone -q -b master --no-tags \
-	https://x-access-token:${GITHUB_TOKEN}@github.com/asterisk/${INPUT_SRC_REPO} ${INPUT_DST_REPO}
+# Create the new repo and set it's parameters
+gh repo create asterisk/${INPUT_DST_REPO} --private
+gh repo edit asterisk/${INPUT_DST_REPO} --allow-forking=false --enable-auto-merge=false \
+	--enable-discussions=false --enable-issues=false --enable-merge-commit=false \
+	--enable-wiki=false
 
-git config --global --add safe.directory $(realpath ${INPUT_DST_REPO})
+# Do a bare clone of the source repo
+git clone --bare https://github.com/asterisk/${INPUT_SRC_REPO}.git ${REPO_DIR}
 
-cd ${INPUT_DST_REPO}
+# Make sure the directory is trusted
+git config --global --add safe.directory ${REPO_DIR}
 
-git remote rename origin upstream
+cd ${REPO_DIR}
 
-# We don't want to accidentally push anything to the public repo before
-# we're ready so set the "push" url to "nothing"
-git remote set-url --push upstream nothing
+# Push everything to the new repo
+git push --mirror https://x-access-token:${GITHUB_TOKEN}@github.com/asterisk/${INPUT_DST_REPO}.git &> /tmp/push || \
+	{ cat /tmp/push ; exit 1 ; }
 
-# Create the new PRIVATE repository from the clone and push the
-# current master branch up.
-gh repo create asterisk/${INPUT_DST_REPO} --private --disable-issues \
-	--disable-wiki --source=. --push
+cd ..
 
-# Set the default repo for subsequent gh commands to the private repo.
-gh repo set-default asterisk/${INPUT_DST_REPO}
+# We have to do a little dance here to get GitHub to recoginze
+# that we have actions on the master branch.
+sleep 5
+gh repo edit asterisk/${INPUT_DST_REPO} --default-branch=21
+sleep 10
+gh repo edit asterisk/${INPUT_DST_REPO} --default-branch=master
+# Let things settle a bit
+sleep 10
 
-# We need all the labels so the automation can run.
-gh label clone asterisk/${INPUT_SRC_REPO}
+# Make sure that resetting the default branch worked by seeing
+# if we can view the CreateDocs workflow.
+declare -i count=0
+while [ $count -le 5 ] ; do
+	gh -R asterisk/${INPUT_DST_REPO} workflow view CreateDocs >/dev/null && break
+	sleep 5
+	count+=1
+done
 
-# Just like the public repo, we want to disable merge commits
-gh repo edit --enable-merge-commit=false
-
+# Disable the workflows we never want to run in the private repo
+gh -R asterisk/${INPUT_DST_REPO} workflow disable CreateDocs
+gh -R asterisk/${INPUT_DST_REPO} workflow disable MergeApproved
+gh -R asterisk/${INPUT_DST_REPO} workflow disable NightlyTests
+gh -R asterisk/${INPUT_DST_REPO} workflow disable "Nightly Admin"
+gh -R asterisk/${INPUT_DST_REPO} workflow disable Releaser
