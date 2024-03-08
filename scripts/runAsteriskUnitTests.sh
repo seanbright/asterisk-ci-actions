@@ -10,17 +10,6 @@ fi
 
 ASTETCDIR=$DESTDIR/etc/asterisk
 
-asterisk_corefile_glob() {
-	local pattern=$(/sbin/sysctl -n kernel.core_pattern)
-
-	# If core_pattern is a pipe there isn't much we can do
-	if [[ ${pattern:0:1} == "|" ]] ; then
-		echo "core*"
-	else
-		echo "${pattern%%%*}*"
-	fi
-}
-
 run_tests_socket() {
 	sudo $ASTERISK ${USER_GROUP:+-U ${USER_GROUP%%:*} -G ${USER_GROUP##*:}} -gn -C $CONFFILE
 	for n in {1..5} ; do
@@ -99,6 +88,10 @@ cat <<-EOF >> "$ASTETCDIR/sorcery.conf"
 	resource_list=memory
 EOF
 
+
+coreglob=$(asterisk_corefile_glob)
+[[ "$coreglob" =~ asterisk ]] && rm -rf $coreglob || :
+
 ASTERISK="$DESTDIR/usr/sbin/asterisk"
 CONFFILE=$ASTETCDIR/asterisk.conf
 OUTPUTFILE=${OUTPUT_XML:-${OUTPUT_DIR}/unittests-results.xml}
@@ -119,15 +112,12 @@ runner rsync -vaH $DESTDIR/var/log/asterisk/. $OUTPUT_DIR
 
 [ x"$USER_GROUP" != x ] && sudo chown -R $USER_GROUP $OUTPUT_DIR
 
-for core in $(asterisk_corefile_glob)
-do
-	if [ -f "$core" ] && [ "${core##*.}" != "txt" ]
-	then
-		echo "*** Found a core file ($core) after running unit tests ***"
-		set -x
-		sudo $DESTDIR/var/lib/asterisk/scripts/ast_coredumper --outputdir=$OUTPUT_DIR --no-default-search $core
-		TESTRC=1
-	fi
-done
+coreglob=$(asterisk_corefile_glob)
+corefiles=$(find $(dirname $coreglob) -name $(basename $coreglob))
+if [ -n "$corefiles" ] ; then
+	echo "*** Found a core file after running unit tests ***"
+	sudo /var/lib/asterisk/scripts/ast_coredumper --outputdir=$OUTPUT_DIR --tarball-coredumps $coreglob
+	TESTRC=1
+fi
 
 exit $TESTRC

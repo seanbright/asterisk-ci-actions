@@ -78,6 +78,8 @@ MAKE=`which make`
 PKGCONFIG=`which pkg-config`
 _libdir=`${CIDIR}/findLibdir.sh`
 
+git config --global --add safe.directory $PWD
+
 runner ulimit -a
 _version=$(./build_tools/make_version .)
 for var in BRANCH_NAME MAINLINE_BRANCH OUTPUT_DIR CACHE_DIR CCACHE_DISABLE CCACHE_DIR _libdir _version ; do

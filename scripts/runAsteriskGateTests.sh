@@ -13,18 +13,20 @@ fi
 if [ -n "$TESTSUITE_DIR" ] ; then
 	pushd $TESTSUITE_DIR
 fi
+
 ./cleanup-test-remnants.sh
-[ -f /tmp/core* ] && rm -rf /tmp/core*
+coreglob=$(asterisk_corefile_glob)
+[[ "$coreglob" =~ asterisk ]] && rm -rf $coreglob || :
 
 if $REALTIME ; then
-	$CIDIR/setupRealtime.sh --initialize-db=${INITIALIZE_DB:?0}
+	$CIDIR/setupRealtime.sh --initialize-db=${INITIALIZE_DB:?0} || exit 1
 fi
 
 # check to see if venv scripts exist so we can use them
 if [ -f ./setupVenv.sh ] ; then
 	echo "Running in Virtual Environment"
 	# explicitly invoking setupVenv to capture output in case of failure
-	./setupVenv.sh >/dev/null
+	./setupVenv.sh &>/tmp/setupVenv.out || { cat /tmp/setupVenv.out ; exit 1 ; }
 	VENVPREFIX="runInVenv.sh python "
 else
 	echo "Running in Legacy Mode"
@@ -44,17 +46,20 @@ if [ ! -f ./asterisk-test-suite-report.xml ] ; then
 else
 	cp asterisk-test-suite-report.xml logs/ || :
 	failures=$(xmlstarlet sel -t -v "//testsuite/@failures" ./asterisk-test-suite-report.xml)
-	[ $failures -gt 0 ] && TESTRC=1
+	for f in $failures ; do
+		[ $f -gt 0 ] && TESTRC=1
+	done
 fi
 
 if $REALTIME ; then
 	$CIDIR/teardownRealtime.sh --cleanup-db=${CLEANUP_DB:?0}
 fi
 
-if [ -f /tmp/core* ] ; then
+coreglob=$(asterisk_corefile_glob)
+corefiles=$(find $(dirname $coreglob) -name $(basename $coreglob))
+if [ -n "$corefiles" ] ; then
 	echo "*** Found a core file after running unit tests ***"
-	/var/lib/asterisk/scripts/ast_coredumper --tarball-coredumps /tmp/core*
-	cp /tmp/core*.tar.gz ./logs/
+	/var/lib/asterisk/scripts/ast_coredumper --outputdir=./logs/ --tarball-coredumps $coreglob
 	TESTRC=1
 fi
 
