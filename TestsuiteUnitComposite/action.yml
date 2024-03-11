@@ -31,8 +31,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: SetupIPV6
-      uses: asterisk/asterisk-ci-actions/EnableIPv6InRunner@main
+    - name: SetupUbuntuRunner
+      uses: asterisk/asterisk-ci-actions/SetupUbuntuRunner@main
 
     - name: SetTestName
       shell: bash
