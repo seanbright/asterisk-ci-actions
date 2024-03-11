@@ -1,17 +1,41 @@
 #!/usr/bin/env bash
-CIDIR=$(dirname $(readlink -fn $0))
+SCRIPT_DIR=$(dirname $(readlink -fn $0))
 OUTPUT_DIR=/tmp/asterisk_ci/
 
-source $CIDIR/ci.functions
+source $SCRIPT_DIR/ci.functions
 
 if [ "${OUTPUT_DIR: -1}" != "/" ] ; then
 	OUTPUT_DIR+=/
 fi
 
-ASTETCDIR=$DESTDIR/etc/asterisk
+ASTETCDIR="$DESTDIR/etc/asterisk"
+ASTERISK="$DESTDIR/usr/sbin/asterisk"
+CONFFILE="$ASTETCDIR/asterisk.conf"
+
+[ ! -x "$ASTERISK" ] && { echo "Asterisk isn't installed." ; exit 1 ; }
+[ ! -f "$CONFFILE" ] && { echo "Asterisk samples aren't installed." ; exit 1 ; }
+
+coreglob=$(asterisk_corefile_glob)
+corefiles=$(find $(dirname $coreglob) -name $(basename $coreglob))
+if [ -n "$corefiles" ] ; then
+	echo "*** Found one or more core files before running tests ***"
+	echo "Search glob: ${coreglob}"
+	echo "Corefiles: ${corefiles}"
+	if [[ "$coreglob" =~ asterisk ]] ; then
+		echo "Removing matching corefiles: $corefiles"
+		rm -rf $corefiles || :
+	fi
+fi
+
+ASTERISK="$DESTDIR/usr/sbin/asterisk"
+CONFFILE=$ASTETCDIR/asterisk.conf
+OUTPUTFILE=${OUTPUT_XML:-${OUTPUT_DIR}/unittests-results.xml}
+EXPECT="$(which expect 2>/dev/null || : )"
+
+ulimit -a
 
 run_tests_socket() {
-	sudo $ASTERISK ${USER_GROUP:+-U ${USER_GROUP%%:*} -G ${USER_GROUP##*:}} -gn -C $CONFFILE
+	$ASTERISK ${USER_GROUP:+-U ${USER_GROUP%%:*} -G ${USER_GROUP##*:}} -gn -C $CONFFILE
 	for n in {1..5} ; do
 		sleep 3
 		$ASTERISK -rx "core waitfullybooted" -C $CONFFILE && break
@@ -88,16 +112,7 @@ cat <<-EOF >> "$ASTETCDIR/sorcery.conf"
 	resource_list=memory
 EOF
 
-
-coreglob=$(asterisk_corefile_glob)
-[[ "$coreglob" =~ asterisk ]] && rm -rf $coreglob || :
-
-ASTERISK="$DESTDIR/usr/sbin/asterisk"
-CONFFILE=$ASTETCDIR/asterisk.conf
-OUTPUTFILE=${OUTPUT_XML:-${OUTPUT_DIR}/unittests-results.xml}
-EXPECT="$(which expect 2>/dev/null || : )"
-
-[ x"$USER_GROUP" != x ] && sudo chown -R $USER_GROUP $OUTPUT_DIR
+[ x"$USER_GROUP" != x ] && chown -R $USER_GROUP $OUTPUT_DIR
 
 rm -rf $ASTETCDIR/extensions.{ael,lua} || :
 
@@ -106,18 +121,23 @@ TESTRC=0
 run_tests_socket || TESTRC=1
 
 # Cleanup "just in case"
-sudo killall -qe -ABRT $ASTERISK
+killall -qe -ABRT $ASTERISK
 
 runner rsync -vaH $DESTDIR/var/log/asterisk/. $OUTPUT_DIR
 
-[ x"$USER_GROUP" != x ] && sudo chown -R $USER_GROUP $OUTPUT_DIR
+[ x"$USER_GROUP" != x ] && chown -R $USER_GROUP $OUTPUT_DIR
 
 coreglob=$(asterisk_corefile_glob)
 corefiles=$(find $(dirname $coreglob) -name $(basename $coreglob))
 if [ -n "$corefiles" ] ; then
-	echo "*** Found a core file after running unit tests ***"
-	sudo /var/lib/asterisk/scripts/ast_coredumper --outputdir=$OUTPUT_DIR --tarball-coredumps $coreglob
+	echo "*** Found one or more core files after running tests ***"
+	echo "Search glob: ${coreglob}"
+	echo "Matching corefiles: ${corefiles}"
 	TESTRC=1
+	$SCRIPT_DIR/ast_coredumper.sh --no-conf-file --outputdir=$OUTPUT_DIR \
+		--tarball-coredumps --delete-coredumps-after $coreglob
+	# If the return code was 2, none of the coredumps actually came from asterisk.
+	[ $? -eq 2 ] && TESTRC=0
 fi
 
 exit $TESTRC

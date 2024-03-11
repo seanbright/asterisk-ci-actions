@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
-CIDIR=$(dirname $(readlink -fn $0))
+SCRIPT_DIR=$(dirname $(readlink -fn $0))
 REALTIME=false
 TEST_TIMEOUT=600
-source $CIDIR/ci.functions
-ASTETCDIR=$DESTDIR/etc/asterisk
+source $SCRIPT_DIR/ci.functions
+ASTETCDIR="$DESTDIR/etc/asterisk"
+ASTERISK="$DESTDIR/usr/sbin/asterisk"
+CONFFILE="$ASTETCDIR/asterisk.conf"
+
+[ ! -x "$ASTERISK" ] && { echo "Asterisk isn't installed." ; exit 1 ; }
+[ ! -f "$CONFFILE" ] && { echo "Asterisk samples aren't installed." ; exit 1 ; }
 
 if [ x"$WORK_DIR" != x ] ; then
 	export AST_WORK_DIR="$(readlink -f $WORK_DIR)"
@@ -16,10 +21,19 @@ fi
 
 ./cleanup-test-remnants.sh
 coreglob=$(asterisk_corefile_glob)
-[[ "$coreglob" =~ asterisk ]] && rm -rf $coreglob || :
+corefiles=$(find $(dirname $coreglob) -name $(basename $coreglob))
+if [ -n "$corefiles" ] ; then
+	echo "*** Found one or more core files before running tests ***"
+	echo "Search glob: ${coreglob}"
+	echo "Corefiles: ${corefiles}"
+	if [[ "$coreglob" =~ asterisk ]] ; then
+		echo "Removing matching corefiles: $corefiles"
+		rm -rf $corefiles || :
+	fi
+fi
 
 if $REALTIME ; then
-	$CIDIR/setupRealtime.sh --initialize-db=${INITIALIZE_DB:?0} || exit 1
+	$SCRIPT_DIR/setupRealtime.sh --initialize-db=${INITIALIZE_DB:?0} || exit 1
 fi
 
 # check to see if venv scripts exist so we can use them
@@ -52,15 +66,20 @@ else
 fi
 
 if $REALTIME ; then
-	$CIDIR/teardownRealtime.sh --cleanup-db=${CLEANUP_DB:?0}
+	$SCRIPT_DIR/teardownRealtime.sh --cleanup-db=${CLEANUP_DB:?0}
 fi
 
 coreglob=$(asterisk_corefile_glob)
 corefiles=$(find $(dirname $coreglob) -name $(basename $coreglob))
 if [ -n "$corefiles" ] ; then
-	echo "*** Found a core file after running unit tests ***"
-	/var/lib/asterisk/scripts/ast_coredumper --outputdir=./logs/ --tarball-coredumps $coreglob
+	echo "*** Found one or more core files after running tests ***"
+	echo "Search glob: ${coreglob}"
+	echo "Matching corefiles: ${corefiles}"
 	TESTRC=1
+	$SCRIPT_DIR/ast_coredumper.sh --no-conf-file --outputdir=./logs/ \
+		--tarball-coredumps --delete-coredumps-after $coreglob
+	# If the return code was 2, none of the coredumps actually came from asterisk.
+	[ $? -eq 2 ] && TESTRC=0
 fi
 
 if [ -n "$TESTSUITE_DIR" ] ; then

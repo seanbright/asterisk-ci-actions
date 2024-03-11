@@ -18,6 +18,11 @@ for a in "$@" ; do
 			l=${BASH_REMATCH[1]//-/_}
 			eval ${l^^}=true
 			;;
+		--no-*)
+			[[ $a =~ --no-(.+) ]]
+			l=${BASH_REMATCH[1]//-/_}
+			eval ${l^^}=false
+			;;
 		*)
 			POSITIONAL_ARGS+=($a)
 			;;

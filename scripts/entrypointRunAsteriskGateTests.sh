@@ -38,6 +38,6 @@ cd ${TESTSUITE_DIR}
 
 TESTRC=0
 ${SCRIPT_DIR}/runAsteriskGateTests.sh \
-  --timeout=${TEST_TIMEOUT} \
+  --test-timeout=${TEST_TIMEOUT} \
   --testsuite-command="${TEST_OPTIONS} ${TEST_CMD}" || TESTRC=1
 exit $TESTRC
