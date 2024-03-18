@@ -256,6 +256,8 @@ tag_parser() {
 		return 1
 	fi
 	if ${tagarray[certified]} ; then
+		[[ ${tagarray[patch]} == 1 ]] && \
+			( [[ ${tagarray[release_type]} == ga ]] || [[ ${tagarray[release]} == -rc1 ]] ) && tagarray[no_patches]=true || :
 		tagarray[branch]="releases/certified-${tagarray[major]}.${tagarray[minor]}"
 		tagarray[source_branch]="certified/${tagarray[major]}.${tagarray[minor]}"
 		tagarray[startpatch]=1
