@@ -162,52 +162,69 @@ EOF
 # number.  We're going to list the issues here but also
 # save them to 'issues_to_close.txt' so we can label them
 # later without having to pull them all again.
-debug "Getting issues list"
-issuelist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#([0-9]+|GHSA)/\2/gp" "${TMPFILE2}" | sort -n | tr '[:space:]' ' ') )
+
 rm "${DST_DIR}/issues_to_close.txt" &>/dev/null || :
 
+debug "Getting GitHub security advisory list"
+ghsalist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#(GHSA-[0-9a-z-]+)/\2/gp" "${TMPFILE2}" | sort -n | tr '[:space:]' ' ') )
+if [ ${#ghsalist[*]} -gt 0 ] ; then
+	debug "Getting ${#ghsalist[*]} issue titles from GitHub"
+	for issue in ${ghsalist[*]} ; do
+		gh api /repos/${GH_REPO}/security-advisories/$issue \
+			--json ghsa_id,summary \
+			--jq '. | "  - !" + .ghsa_id + ": " + .summary' \
+			>> "${DST_DIR}/issues_to_close.txt"
+	done
+fi
+
+debug "Getting GitHub issue list"
+issuelist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#([0-9]+)/\2/gp" "${TMPFILE2}" | sort -n | tr '[:space:]' ' ') )
 if [ ${#issuelist[*]} -gt 0 ] ; then
 	debug "Getting ${#issuelist[*]} issue titles from GitHub"
-	# We want the issue number and the title formatted like:
-	#   - #2: Issue Title
-	# which GitHub can do for us using a jq format string.
-	for issue in ${issuelist[*]} ; do
-		if [[ $issue =~ ^GHSA ]] ; then
-			gh api /repos/${GH_REPO}/security-advisories/$issue \
-				--json ghsa_id,summary \
-				--jq '. | "  - !" + .ghsa_id + ": " + .summary' \
-				>> "${DST_DIR}/issues_to_close.txt"
-		else
-			gh --repo=${GH_REPO} issue view $issue \
-				--json number,title \
-				--jq ". | \"  - #\" + ( .number | tostring) + \": \" + .title" \
-				>> "${DST_DIR}/issues_to_close.txt"
-		fi
+	# If the issue list is large, we can get rate limit issues
+	# so we're going to get the titles with a single graphql
+	# call.
+
+	query="query={ repository(name: \"${GH_REPO%%/*}\", owner: \"${GH_REPO##*/}\") { "
+
+	for n in ${issuelist[@]} ; do
+		query+="issue${n}: issue(number: ${n}) { number title } "
 	done
-	cat "${DST_DIR}/issues_to_close.txt" >>"${TMPFILE1}"
-	${DEBUG} && cat "${DST_DIR}/issues_to_close.txt"
-else
-	touch "${DST_DIR}/issues_to_close.txt"
-	debug "No issues"
-	echo "None" >> "${TMPFILE1}"
+	query+="}}"
+
+	gh api graphql --paginate -F "$query" \
+		--jq '[ .data.repository[] ] | sort_by(.number) | .[] | "  - #" + ( .number | tostring) + ": " + .title' >> "${DST_DIR}/issues_to_close.txt"
 fi
 
 # For historical reasons, let's also look for "ASTERISK-" issues
 debug "Getting ASTERISK issues list"
-issuelist=( $(sed -n -r -e 's/^(ASTERISK-[0-9]+)\s*(#.*)?$/\1/gp' "${TMPFILE2}" | sort -n | tr '[:space:]' ' ') )
-rm "${DST_DIR}/asterisk_issues.txt" &>/dev/null || :
-if [ ${#issuelist[*]} -gt 0 ] ; then
-	debug "Getting ${#issuelist[*]} issue titles from issues-archive"
-	for issue in ${issuelist[*]} ; do
-		[[ $issue =~ ASTERISK-([0-9][0-9])[0-9]+ ]] && dir=${BASH_REMATCH[1]}
-		[ -z "$dir" ] && continue
-		ix=${TMPDIR}/index-${dir}.html
-		[ ! -f ${ix} ] && curl -s https://issues-archive.asterisk.org/${dir}/index.html > ${ix}
-		sed -n -r -e "s/.*${issue}<.a>:\s*([^<]+)<.td>.*/  - ${issue}: \1/gp" ${ix} \
-		| python3 -c 'import html, sys; [print(html.unescape(l), end="") for l in sys.stdin]' \
-		>> "${DST_DIR}/asterisk_issues.txt"
-	done
-	sort -u "${DST_DIR}/asterisk_issues.txt" >>"${TMPFILE1}"
+astlist=( $(sed -n -r -e 's/^(ASTERISK-[0-9]+)\s*(#.*)?$/\1/gp' "${TMPFILE2}" | sort -n | tr '[:space:]' ' ') )
+
+if [ ${#astlist[*]} -gt 0 ] ; then
+	echo "" >>"${DST_DIR}/issues_to_close.txt"
+	echo " An additional ${#astlist[*]} ASTERISK-* issues were closed." >>"${DST_DIR}/issues_to_close.txt"
+
+#	debug "Getting ${#astlist[*]} issue titles from issues-archive"
+#	for issue in ${astlist[*]} ; do
+#		[[ $issue =~ ASTERISK-([0-9][0-9])[0-9]+ ]] && dir=${BASH_REMATCH[1]}
+#		[ -z "$dir" ] && continue
+#		ix=${TMPDIR}/index-${dir}.html
+#		[ ! -f ${ix} ] && curl -s https://issues-archive.asterisk.org/${dir}/index.html > ${ix}
+#		sed -n -r -e "s/.*${issue}<.a>:\s*([^<]+)<.td>.*/  - ${issue}: \1/gp" ${ix} \
+#		| python3 -c 'import html, sys; [print(html.unescape(l), end="") for l in sys.stdin]' \
+#		>> "${DST_DIR}/asterisk_issues.txt"
+#	done
+#	sort -u "${DST_DIR}/asterisk_issues.txt" >>"${DST_DIR}/issues_to_close.txt"
+
+fi
+
+if [ -f "${DST_DIR}/issues_to_close.txt" ] && [ $(cat "${DST_DIR}/issues_to_close.txt" | wc -l ) -gt 0 ] ; then
+	${DEBUG} && cat "${DST_DIR}/issues_to_close.txt"
+	cat "${DST_DIR}/issues_to_close.txt" >> ${TMPFILE1}
+else
+	touch "${DST_DIR}/issues_to_close.txt"
+	debug "No issues"
+	echo "None" >> "${TMPFILE1}"
 fi
 
 debug "Save as release_notes.md"
