@@ -1,29 +1,53 @@
 name: CloseStaleIssuesAndPRs
 on:
-  workflow_dispatch:
   workflow_call:
+    secrets:
+      ASTERISKTEAM_PAT:
+        required: true
 
 jobs:
-  CloseStaleIssues:
+  CloseStaleIssuesAndPRs:
     runs-on: ubuntu-latest
     steps:
       - name: DumpEnvironment
         uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+        with:
+          action-vars: ${{ toJSON(vars) }}
 
       - name: CloseStaleIssues
-        uses: asterisk/github-actions-stale@main-only-matches-filter
+        if: ${{ vars.CSI_STALE_ISSUE_MESSAGE != '' }}
+        uses: asterisk/github-actions-stale@main-only-matching-filter
         with:
-          stale-issue-message: 'This issue is stale because it has been open 7 days with no activity. Remove stale label or comment or this will be closed in 14 days.'
+          repo-token: ${{ secrets.ASTERISKTEAM_PAT }}
+          days-before-stale: -1
+          days-before-close: -1
+          days-before-issue-stale: ${{vars.CSI_DAYS_BEFORE_ISSUE_STALE}}
+          days-before-issue-close: ${{vars.CSI_DAYS_BEFORE_ISSUE_CLOSE}}
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          stale-issue-message: ${{vars.CSI_STALE_ISSUE_MESSAGE}}
+          close-issue-message: ${{vars.CSI_CLOSE_ISSUE_MESSAGE}}
           stale-issue-label: stale
-          close-issue-message: 'This issue was closed because it has been stalled for 14 days with no activity.'
-          days-before-issue-stale: 7
-          days-before-issue-close: 14
-          stale-pr-message: 'This PR is stale because it has been open 7 days with no activity. Remove stale label or comment or this will be closed in 14 days.'
+          only-labels: ${{vars.CSI_ONLY_LABELS}}
+          debug-only: ${{vars.CSI_DEBUG_ONLY}}
+          only-matching-filter: ${{vars.CSI_SEARCH_FILTER}}
+
+      - name: CloseStalePRs
+        if: ${{ vars.CSPR_STALE_PR_MESSAGE != '' }}
+        uses: asterisk/github-actions-stale@main-only-matching-filter
+        with:
+          repo-token: ${{ secrets.ASTERISKTEAM_PAT }}
+          days-before-stale: -1
+          days-before-close: -1
+          days-before-issue-stale: -1
+          days-before-issue-close: -1
+          days-before-pr-stale: ${{vars.CSPR_DAYS_BEFORE_PR_STALE}}
+          days-before-pr-close: ${{vars.CSPR_DAYS_BEFORE_PR_CLOSE}}
+          stale-pr-message: ${{vars.CSPR_STALE_PR_MESSAGE}}
+          close-pr-message: ${{vars.CSPR_CLOSE_PR_MESSAGE}}
           stale-pr-label: stale
-          close-pr-message: 'This PR was closed because it has been stalled for 14 days with no activity.'
-          days-before-pr-stale: 1
-          days-before-pr-close: 2
+          only-labels: ${{vars.CSPR_ONLY_LABELS}}
           exempt-draft-pr: true
-          debug-only: true
-          only-matching-filter: 'repo:asterisk/asterisk is:pr is:open review:changes_requested'
+          debug-only: ${{vars.CSPR_DEBUG_ONLY}}
+          only-matching-filter: ${{vars.CSPR_SEARCH_FILTER}}
 
