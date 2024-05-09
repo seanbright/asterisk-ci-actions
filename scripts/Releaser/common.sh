@@ -31,7 +31,7 @@ options+=(
 	[release_type]="--release-type=[ rc1 | rcn | ga | ganorc ]"
 	   [start_tag]="--start-tag=<tag>"
 	     [end_tag]="--end-tag=<tag>"
-	    [src_repo]="--src-repo=<source repository>     # defaults to current directory"
+	    [src_repo]="--src-repo=<source repository path>"
 	     [gh_repo]='--gh-repo=<github repository>      # defaults asterisk/$(basename ${SRC_REPO})'
 	     [dst_dir]="--dest-dir=<destination directory> # defaults to ../staging"
 	      [branch]="--branch=<branch> # Release branch"
@@ -77,8 +77,15 @@ debug() {
 }
 
 booloption() {
-	declare -n option=${1^^}
-	${option} && echo "--${1}"
+	converted=${1//-/_}
+	declare -n option=${converted^^}
+	[ -n "${option}" ] && ${option} && echo "--${1}"
+}
+
+stringoption() {
+	converted=${1//-/_}
+	declare -n option=${converted^^}
+	[ -n "${option}" ] && echo "--${1}=\"${option}\""
 }
 
 print_help() {

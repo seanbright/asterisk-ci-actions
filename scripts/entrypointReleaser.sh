@@ -15,25 +15,35 @@ STAGING_DIR=${GITHUB_WORKSPACE}/${INPUT_PRODUCT}-${INPUT_NEW_VERSION}
 source ${SCRIPT_DIR}/common.sh
 export PRODUCT=${INPUT_PRODUCT}
 
-end_tag="${INPUT_NEW_VERSION}"
+END_TAG="${INPUT_NEW_VERSION}"
+START_TAG="${INPUT_START_VERSION}"
+SECURITY=${INPUT_IS_SECURITY}
+HOTFIX=${INPUT_IS_HOTFIX}
+FORCE_CHERRY_PICK=${INPUT_FORCE_CHERRY_PICK}
+PUSH_BRANCHES=${INPUT_PUSH_RELEASE_BRANCHES}
+PUSH_TARBALLS=${INPUT_PUSH_TARBALLS}
+ADVISORIES="${INPUT_ADVISORIES}"
+ADV_URL_BASE=${INPUT_SEC_ADV_URL_BASE}
+export DEPLOY_SSH_USERNAME=${INPUT_DEPLOY_SSH_USERNAME}
+export DEPLOY_HOST=${INPUT_DEPLOY_HOST}
+export DEPLOY_DIR=${INPUT_DEPLOY_DIR}
+
 declare -A end_tag_array
-tag_parser ${INPUT_NEW_VERSION} end_tag_array || bail "Unable to parse end tag '${END_TAG}'"
-start_tag="${INPUT_START_VERSION}"
+tag_parser ${END_TAG} end_tag_array || bail "Unable to parse end tag '${END_TAG}'"
 
 echo "Validating tags"
 ${SCRIPT_DIR}/version_validator.sh \
-	$( ${INPUT_IS_SECURITY} && echo "--security") \
-	$( ${INPUT_IS_HOTFIX} && echo "--hotfix") \
 	--product=${PRODUCT} \
-	${start_tag:+--start-tag=${start_tag}} --end-tag=${INPUT_NEW_VERSION}
+	$(booloption security) $(booloption hotfix) \
+	$(stringoption start-tag) --end-tag=${END_TAG}
 
-echo "Tags valid: ${start_tag} -> ${end_tag} Release Type: ${end_tag_array[release_type]}"
+echo "Tags valid: ${START_TAG} -> ${END_TAG} Release Type: ${end_tag_array[release_type]}"
 
-if [ -n "${INPUT_ADVISORIES}" ] ; then
+if [ -n "${ADVISORIES}" ] ; then
 	IFS=$','
 	echo "Checking security advisories"
 	declare -i failed=0
-	for a in ${INPUT_ADVISORIES} ; do
+	for a in ${ADVISORIES} ; do
 		summary=$(gh api /repos/${INPUT_REPO}/security-advisories/$a --jq '.summary' 2>/dev/null || echo "FAILED")
 		if [[ "$summary" =~ FAILED$ ]] ; then
 			echo "Security advisory $a not found. Bad ID or maybe not published yet."
@@ -61,16 +71,20 @@ git -C ${REPO_DIR} pull >/dev/null 2>&1
 git config --global user.email "asteriskteam@digium.com"
 git config --global user.name "Asterisk Development Team"
 
-start_tag=$(${SCRIPT_DIR}/get_start_tag.sh --src-repo=${REPO_DIR} \
+if ${end_tag_array[certified]} && [ "${end_tag_array[release_type]}" == "ga" ] ; then
+	NORC=true
+	FORCE_CHERRY_PICK=true
+fi
+
+START_TAG=$(${SCRIPT_DIR}/get_start_tag.sh --src-repo=${REPO_DIR} \
 	--product=${PRODUCT} \
-	$( $INPUT_IS_SECURITY && echo "--security") \
-	$( $INPUT_IS_HOTFIX && echo "--hotfix") \
-	${start_tag:+--start-tag=${start_tag}} --end-tag=${end_tag})
+	$(booloption security) $(booloption hotfix) $(booloption norc) \
+	$(stringoption start-tag) --end-tag=${END_TAG})
 
 declare -A start_tag_array
-tag_parser ${start_tag} start_tag_array || bail "Unable to parse start tag '${start_tag}'"
+tag_parser ${START_TAG} start_tag_array || bail "Unable to parse start tag '${START_TAG}'"
 
-echo "Tags valid: ${start_tag} Release Type: ${start_tag_array[release_type]} -> ${end_tag} Release Type: ${end_tag_array[release_type]}"
+echo "Tags valid: ${START_TAG} Release Type: ${start_tag_array[release_type]} -> ${END_TAG} Release Type: ${end_tag_array[release_type]}"
 
 gh auth setup-git -h github.com
 
@@ -80,38 +94,32 @@ rm gpg.key
 
 eval $(ssh-agent -s)
 echo $"${INPUT_DEPLOY_SSH_PRIV_KEY}" | ssh-add -
-export DEPLOY_SSH_USERNAME=${INPUT_DEPLOY_SSH_USERNAME}
-export DEPLOY_HOST=${INPUT_DEPLOY_HOST}
-export DEPLOY_DIR=${INPUT_DEPLOY_DIR}
 
 echo "Running create_release_artifacts.sh"
 ${SCRIPT_DIR}/create_release_artifacts.sh \
 	--src-repo=${REPO_DIR} --dst-dir=${STAGING_DIR} \
 	--gh-repo=${INPUT_REPO} --debug \
-	$(${INPUT_IS_SECURITY} && echo "--security") \
-	$(${INPUT_IS_HOTFIX} && echo "--hotfix") \
-	$([ -n "${INPUT_ADVISORIES}" ] && echo "--advisories=${INPUT_ADVISORIES}") \
-	$([ -n "${INPUT_SEC_ADV_URL_BASE}" ] && echo "--adv-url-base=${INPUT_SEC_ADV_URL_BASE}") \
+	$(booloption security) $(booloption hotfix) $(booloption norc) \
+	$(stringoption advisories) $(stringoption adv-url-base) \
+	$(booloption force-cherry-pick) \
 	--product=${PRODUCT} \
-	--start-tag=${start_tag} --end-tag=${end_tag} \
+	--start-tag=${START_TAG} --end-tag=${END_TAG} \
 	--cherry-pick \
-	$(${INPUT_FORCE_CHERRY_PICK} && echo " --force-cherry-pick" || echo "") \
 	$([ "${PRODUCT}" == "asterisk" ] && echo "--alembic" || echo "") \
 	--changelog --commit --tag \
-	--sign --tarball --patchfile \
-	$(${INPUT_PUSH_RELEASE_BRANCHES} && echo " --push-branches")
+	--sign --tarball --patchfile $(booloption push-branches)
 
 if ${INPUT_CREATE_GITHUB_RELEASE} ; then
 	${SCRIPT_DIR}/push_live.sh \
 		--product=${PRODUCT} \
 		--src-repo=${REPO_DIR} --dst-dir=${STAGING_DIR} --debug \
-		--start-tag=${start_tag} --end-tag=${end_tag} \
-		$(${INPUT_PUSH_TARBALLS} && echo " --push-tarballs")
+		--start-tag=${START_TAG} --end-tag=${END_TAG} \
+		$(booloption push-tarballs)
 fi
 
 eval $(ssh-agent -k)
 
-echo "email_announcement=${PRODUCT}-${end_tag}/email_announcement.md" >> ${GITHUB_OUTPUT}
+echo "email_announcement=${PRODUCT}-${END_TAG}/email_announcement.md" >> ${GITHUB_OUTPUT}
 
 # Determine the correct email list to send the announcement
 # to (if any).

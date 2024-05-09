@@ -15,6 +15,11 @@ declare -A end_tag
 tag_parser ${END_TAG} end_tag || bail "Unable to parse end tag '${END_TAG}'"
 ${DEBUG} && declare -p end_tag
 
+if ${end_tag[certified]} && [ "${end_tag[release_type]}" == "ga" ] ; then
+	NORC=true
+	FORCE_CHERRY_PICK=true
+fi
+
 if [ -z "${START_TAG}" ] ; then
 	START_TAG=$($progdir/get_start_tag.sh \
 		--end-tag=${END_TAG} --src-repo="${SRC_REPO}" \
@@ -33,22 +38,11 @@ ${ECHO_CMD} git -C "${SRC_REPO}" checkout ${end_tag[branch]}
 cd "${SRC_REPO}"
 
 if ${CHERRY_PICK} ; then
-	if [ "${end_tag[release]}" != "-rc1" ] && ! ${FORCE_CHERRY_PICK} ; then
-		debug "Automatic cherry-picking only needed when
-		creating an rc1. Skipping."
-	else
-		${FORCE_CHERRY_PICK} && debug "Forcing cherry-pick" || :
-		commitlist=$(mktemp)
-		${ECHO_CMD} git -C "${SRC_REPO}" cherry ${end_tag[branch]} ${end_tag[source_branch]} |\
-			sed -n -r -e "s/^[+]\s?(.*)/\1/gp" > ${commitlist}
-		commitcount=$(wc -l ${commitlist} | sed -n -r -e "s/([0-9]+).*/\1/gp")
-		[ $commitcount -eq 0 ] && bail "There were no commits to cherry-pick"
-		debug "Cherry picking $commitcount commit(s) from ${end_tag[source_branch]} to ${end_tag[branch]}"
-		echo git -C "${SRC_REPO}" cherry-pick -x $(< ${commitlist})
-		${ECHO_CMD} git -C "${SRC_REPO}" cherry-pick --keep-redundant-commits -x $(< ${commitlist})
-		${ECHO_CMD} rm ${commitlist} &>/dev/null || :
-		debug "Done"
-	fi
+	debug "Cherry-picking ${START_TAG} -> ${END_TAG}"
+	$ECHO_CMD $progdir/cherry_pick.sh \
+		--start-tag=${START_TAG} --end-tag=${END_TAG} \
+		--src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
+		$(booloption debug) $(booloption force_cherry_pick)
 fi
 
 if ${ALEMBIC} && [ "${PRODUCT}" == "asterisk" ] ; then
@@ -59,7 +53,6 @@ if ${ALEMBIC} && [ "${PRODUCT}" == "asterisk" ] ; then
 		$(booloption debug)
 fi
 
-echo "${END_TAG}" > ${DST_DIR}/.version
 if ${CHANGELOG} ; then
 	debug "Creating ChangeLog for ${START_TAG} -> ${END_TAG}"
 	$ECHO_CMD $progdir/create_changelog.sh --start-tag=${START_TAG} \
@@ -71,6 +64,7 @@ if ${CHANGELOG} ; then
 		$(booloption debug) --product=${PRODUCT}
 fi
 
+echo "${END_TAG}" > ${DST_DIR}/.version
 if ${COMMIT} ; then
 	${ALEMBIC} || ${CHANGELOG} || bail "There were no changes so so there's nothing to commit"
 	debug "Committing changes for ${END_TAG}"
@@ -116,13 +110,5 @@ echo "
 	$ECHO_CMD git -C "${SRC_REPO}" push
 	debug "Pushing tag upstream"
 	$ECHO_CMD git -C "${SRC_REPO}" push origin ${END_TAG}:${END_TAG}
-fi
-
-if ${LABEL_ISSUES} ; then
-	debug "Labelling closed issues for ${END_TAG}"
-	$ECHO_CMD $progdir/label_issues.sh \
-		--start-tag=${START_TAG} --end-tag=${END_TAG} \
-		--src-repo="${SRC_REPO}" --dst-dir="${DST_DIR}" \
-		$(booloption debug)
 fi
 
