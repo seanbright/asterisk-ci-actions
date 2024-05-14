@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-declare needs=( end_tag )
+declare needs=( end_tag dst_dir )
 declare wants=( product src_repo gh_repo dst_dir security hotfix norc advisories
 				adv_url_base force_cherry_pick alembic
 				changelog commit tag push_branches tarball patchfile

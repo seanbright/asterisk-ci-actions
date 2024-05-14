@@ -33,7 +33,7 @@ options+=(
 	     [end_tag]="--end-tag=<tag>"
 	    [src_repo]="--src-repo=<source repository path>"
 	     [gh_repo]='--gh-repo=<github repository>      # defaults asterisk/$(basename ${SRC_REPO})'
-	     [dst_dir]="--dest-dir=<destination directory> # defaults to ../staging"
+	     [dst_dir]="--dest-dir=<destination directory> # Directory for build artifacts"
 	      [branch]="--branch=<branch> # Release branch"
 	        [norc]="--norc            # There were no release candidates for this release"
 	    [security]="--security        # This is a security release"
