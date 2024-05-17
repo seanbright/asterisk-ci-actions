@@ -141,8 +141,9 @@ astissuecount=${#astlist[*]}
 printf -- "- Issues Resolved: %d\n" $(( $issuecount + $astissuecount )) >> "${SUMMARY_FILE}"
 
 debug "Getting GitHub security advisory list"
-ghsalist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#(GHSA-[0-9a-z-]+)/\2/gp" "${RAW_COMMIT_FILE}" | sort -n | tr '[:space:]' ' ') )
+ghsalist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*(#)?((GHSA|ghsa)-[0-9a-z-]+)/\3/gp" "${RAW_COMMIT_FILE}" | sort -n | tr '[:space:]' ' ') )
 ghsacount=${#ghsalist[*]}
+printf -- "- Security Advisories Resolved: %d\n" $ghsacount
 printf -- "- Security Advisories Resolved: %d\n" $ghsacount >> "${SUMMARY_FILE}"
 if [ $ghsacount -gt 0 ] ; then
 	for issue in ${ghsalist[*]} ; do
@@ -204,7 +205,6 @@ debug "Getting ${ghsacount} security advisory titles from GitHub"
 if [ ${ghsacount} -gt 0 ] ; then
 	for issue in ${ghsalist[*]} ; do
 		gh api /repos/${GH_REPO}/security-advisories/$issue \
-			--json ghsa_id,summary \
 			--jq '. | "  - !" + .ghsa_id + ": " + .summary' \
 			>> "${DST_DIR}/issues_to_close.txt"
 	done
