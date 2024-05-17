@@ -35,27 +35,13 @@ git push --mirror https://x-access-token:${GITHUB_TOKEN}@github.com/asterisk/${I
 
 cd ..
 
-# We have to do a little dance here to get GitHub to recoginze
-# that we have actions on the master branch.
-sleep 5
-gh repo edit asterisk/${INPUT_DST_REPO} --default-branch=21
-sleep 10
-gh repo edit asterisk/${INPUT_DST_REPO} --default-branch=master
-# Let things settle a bit
-sleep 10
-
-# Make sure that resetting the default branch worked by seeing
-# if we can view the CreateDocs workflow.
-declare -i count=0
-while [ $count -le 5 ] ; do
-	gh -R asterisk/${INPUT_DST_REPO} workflow view CreateDocs >/dev/null && break
-	sleep 5
-	count+=1
-done
-
-# Disable the workflows we never want to run in the private repo
-gh -R asterisk/${INPUT_DST_REPO} workflow disable CreateDocs
-gh -R asterisk/${INPUT_DST_REPO} workflow disable MergeApproved
-gh -R asterisk/${INPUT_DST_REPO} workflow disable NightlyTests
-gh -R asterisk/${INPUT_DST_REPO} workflow disable "Nightly Admin"
-gh -R asterisk/${INPUT_DST_REPO} workflow disable Releaser
+# Disable the workflows we never want to run in the private repo.
+# These will probably fail due to GitHub not enabling actions on the
+# repo in the first place.
+gh -R asterisk/${INPUT_DST_REPO} workflow disable "Issue Opened" || :
+gh -R asterisk/${INPUT_DST_REPO} workflow disable PRMerged || :
+gh -R asterisk/${INPUT_DST_REPO} workflow disable CreateDocs || :
+gh -R asterisk/${INPUT_DST_REPO} workflow disable MergeApproved || :
+gh -R asterisk/${INPUT_DST_REPO} workflow disable NightlyTests || :
+gh -R asterisk/${INPUT_DST_REPO} workflow disable NightlyAdmin || :
+gh -R asterisk/${INPUT_DST_REPO} workflow disable Releaser || :
