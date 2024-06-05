@@ -61,31 +61,62 @@ fi
 cd ${REPO_DIR}
 git fetch --depth 10 --no-tags origin refs/pull/${PR_NUMBER}/head
 
+# Get commits
+mapfile COMMITS < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + "|" + (.commit.message | split("\n")[0]) + "|" + .commit.author.name + "|" + .commit.author.email + "|"' || echo "@_ERROR_@")
+[[ "${COMMITS[0]}" =~ @_ERROR_@ ]] && {
+	echo "::error::No commits for PR ${PR_NUMBER}"
+	exit 1
+}
+
+echo "COMMITS array: "
+declare -p COMMITS
+
+echo "There are ${#COMMITS[@]} for PR ${PR_NUMBER}"
+for commit in "${COMMITS[@]}" ; do
+	echo "Testing: '$commit'"
+	[[ "$commit" =~ ([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\| ]] || {
+		echo "::error::Unable to parse commit '$commit'"
+		exit 1
+	}
+	SHA=${BASH_REMATCH[1]}
+	MESSAGE=${BASH_REMATCH[2]}
+	NAME=${BASH_REMATCH[3]}
+	EMAIL=${BASH_REMATCH[4]}
+	echo "Found commit: SHA: $SHA MESSAGE: $MESSAGE NAME: $NAME EMAIL: $EMAIL"
+done
 
 branches=${BRANCHES//[\"\|\'|\]|\[]/}
 echo "Cherry-picking to branches: $branches"
 
-IFS=$',|'
+IFS=$','
 for BRANCH in $branches ; do
-
 	echo "Cherry-picking commits to branch $BRANCH"
 	$NO_CLONE || git fetch --no-tags --depth 10 origin refs/heads/$BRANCH:$BRANCH
 	git checkout $BRANCH
-	while read SHA MESSAGE NAME EMAIL ; do
-		# We need to set ourselves up as the original author.
+	
+	for commit in "${COMMITS[@]}" ; do
+		[[ "$commit" =~ ([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\| ]] || {
+			echo "::error::Unable to parse commit '$commit'"
+			exit 1
+		}
+		SHA=${BASH_REMATCH[1]}
+		MESSAGE=${BASH_REMATCH[2]}
+		NAME=${BASH_REMATCH[3]}
+		EMAIL=${BASH_REMATCH[4]}
+		
 		git config --local user.email "$EMAIL"
 		git config --local user.name "$NAME"
 		# The SHA should already be downloaded in FETCH_HEAD
 		# so we should be able to just cherry-pick it.
-		echo "Cherry-picking ${SHA} : ${MESSAGE}"
+		echo "Cherry-picking: SHA: $SHA MESSAGE: $MESSAGE NAME: $NAME EMAIL: $EMAIL"
 		git cherry-pick ${SHA} || {
 			echo "::error::Unable to cherry-pick commit"
 			git cherry-pick --abort || :
 			exit 1
 		} 
 		echo "Success"
-	done < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + "|" + (.commit.message | split("\n")[0]) + "|" + .commit.author.name + "|" + .commit.author.email + "|"')
-
+	done
+	
 	# We should already be on the correct branch
 	# with the cherry-picks applied.
 	# We just need to push unless DRY_RUN is true.
