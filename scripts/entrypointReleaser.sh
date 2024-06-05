@@ -124,25 +124,36 @@ echo "email_announcement=${PRODUCT}-${END_TAG}/email_announcement.md" >> ${GITHU
 # Determine the correct email list to send the announcement
 # to (if any).
 if ! ${INPUT_SEND_EMAIL} ; then
+	echo "subject=none" >> ${GITHUB_OUTPUT}
 	echo "mail_list=none" >> ${GITHUB_OUTPUT}
 	exit 0
 fi
 	
 if ${INPUT_IS_SECURITY} ; then
+	if ${end_tag_array[certified]} ; then
+		echo "subject=Certified ${PRODUCT^} Security Release ${END_TAG}" >> ${GITHUB_OUTPUT}
+	else
+		echo "subject=${PRODUCT^} Security Release ${END_TAG}" >> ${GITHUB_OUTPUT}
+	fi
 	echo "mail_list=${INPUT_MAIL_LIST_SEC}" >> ${GITHUB_OUTPUT}
 elif [ "${end_tag_array[release_type]}" == "rc" ] ; then
 	if ${end_tag_array[certified]} ; then
+		echo "subject=Certified ${PRODUCT^} Release Canditate ${END_TAG}" >> ${GITHUB_OUTPUT}
 		echo "mail_list=${INPUT_MAIL_LIST_CERT_RC}" >> ${GITHUB_OUTPUT}
 	else
+		echo "subject=${PRODUCT^} Release Canditate ${END_TAG}" >> ${GITHUB_OUTPUT}
 		echo "mail_list=${INPUT_MAIL_LIST_RC}" >> ${GITHUB_OUTPUT}
 	fi
 elif [ "${end_tag_array[release_type]}" == "ga" ] ; then
 	if ${end_tag_array[certified]} ; then
+		echo "subject=Certified ${PRODUCT^} Release ${END_TAG}" >> ${GITHUB_OUTPUT}
 		echo "mail_list=${INPUT_MAIL_LIST_CERT_GA}" >> ${GITHUB_OUTPUT}
 	else
+		echo "subject=${PRODUCT^} Release ${END_TAG}" >> ${GITHUB_OUTPUT}
 		echo "mail_list=${INPUT_MAIL_LIST_GA}" >> ${GITHUB_OUTPUT}
 	fi
 else
+	echo "subject=none" >> ${GITHUB_OUTPUT}
 	echo "mail_list=none" >> ${GITHUB_OUTPUT}
 fi
 

@@ -186,7 +186,7 @@ runs:
         secure: true
         username: ${{inputs.asteriskteamsa_username}}
         password: ${{inputs.asteriskteamsa_token}}
-        subject: ${{inputs.product}} release ${{ inputs.new_version }}
+        subject: ${{steps.releaser.outputs.subject}}
         to: ${{steps.releaser.outputs.mail_list}}
         from: Asterisk Development Team <asteriskteamsa@sangoma.com>
         body: "file://${{github.workspace}}/${{steps.releaser.outputs.email_announcement}}"
