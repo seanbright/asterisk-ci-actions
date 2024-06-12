@@ -6,11 +6,15 @@ ulimit -a
 
 sysctl kernel.core_pattern
 
-if [ "${INPUT_TEST_TYPE}" == "pass_fail" ] ; then
-	echo "Exiting with RC 1 (forced)"
-	echo "result=failure" >> $GITHUB_OUTPUT
-	exit 1
-fi
-echo "Exiting with RC 0 (forced)"
-echo "result=success" >> $GITHUB_OUTPUT
+cat <<EOF > ~/.pgpass
+*:*:*:postgres:postgres
+*:*:*:asterisk:asterisk
+EOF
+
+chmod go-rwx ~/.pgpass
+export PGPASSFILE=~/.pgpass
+createuser -h postgres -w --username=postgres -RDIElS asterisk
+createdb -h postgres -w --username=postgres -E UTF-8 -O asterisk asterisk
+psql -U postgres -h postgres -w -l
+
 exit 0
