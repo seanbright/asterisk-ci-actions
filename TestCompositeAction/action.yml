@@ -9,6 +9,9 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: DumpEnvironment
+      uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+
     - name: TestStep
       id: teststep
       shell: bash

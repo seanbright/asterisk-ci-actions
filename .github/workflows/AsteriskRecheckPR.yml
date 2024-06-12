@@ -1,0 +1,58 @@
+name: AsteriskRecheckPR
+run-name: "${{github.workflow}}-${{github.event.label.name}}-${{github.event.number}}"
+on:
+  workflow_call:
+    secrets:
+      ASTERISKTEAM_PAT:
+        required: true
+
+env:
+  ASTERISK_REPO:     ${{github.repository}}
+  PR_NUMBER:         ${{github.event.number}}
+  PR_COMMIT:         ${{github.event.pull_request.head.sha}}
+  BRANCH:            ${{github.event.pull_request.base.ref}}
+
+jobs:
+  PRSGetControlData:
+    runs-on: ubuntu-latest
+    outputs:
+      control_data:  ${{ steps.setvars.outputs.control_data }}
+    steps:
+      - id: setvars
+        uses: asterisk/asterisk-ci-actions/GetRepoControlData@main
+        with:
+          repo: ${{ github.event.repository.name}}
+      - name: DumpEnvironment
+        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+        with:
+          action-inputs: ${{toJSON(inputs)}}
+          action-vars: ${{ toJSON(steps.setvars.outputs) }}
+
+  PRSUnitTests:
+    needs: PRSGetControlData
+    runs-on: ubuntu-latest
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      UNITTEST_COMMAND: ${{ fromJSON(needs.PRSGetControlData.outputs.control_data).UNITTEST_COMMAND }}
+    steps:
+      - name: Run Unit Tests
+        uses: asterisk/asterisk-ci-actions/AsteriskUnitComposite@main
+        with:
+          asterisk_repo:     ${{env.ASTERISK_REPO}}
+          pr_number:         ${{env.PR_NUMBER}}
+          base_branch:       ${{env.BRANCH}}
+          unittest_command:  ${{env.UNITTEST_COMMAND}}
+
