@@ -18,6 +18,8 @@ jobs:
     outputs:
       control_data:  ${{ steps.setvars.outputs.control_data }}
     steps:
+      - name: SetupUbuntuRunner
+        uses: asterisk/asterisk-ci-actions/SetupUbuntuRunner@main
       - id: setvars
         uses: asterisk/asterisk-ci-actions/GetRepoControlData@main
         with:
@@ -33,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       # Label used to access the service container
-      postgres:
+      postgres-asterisk:
         # Docker Hub image
         image: postgres
         # Provide the password for postgres
@@ -48,11 +50,12 @@ jobs:
     env:
       UNITTEST_COMMAND: ${{ fromJSON(needs.PRSGetControlData.outputs.control_data).UNITTEST_COMMAND }}
     steps:
-      - name: Run Unit Tests
-        uses: asterisk/asterisk-ci-actions/AsteriskUnitComposite@main
+      - name: Get Asterisk
+        uses: asterisk/asterisk-ci-actions/GetRepo@main
         with:
-          asterisk_repo:     ${{env.ASTERISK_REPO}}
-          pr_number:         ${{env.PR_NUMBER}}
+          repo:              ${{env.ASTERISK_REPO}}
           base_branch:       ${{env.BRANCH}}
-          unittest_command:  ${{env.UNITTEST_COMMAND}}
+          pr_number:         ${{env.PR_NUMBER}}
+          build_script:      buildAsterisk.sh
+          build_options:     --no-configure --no-make --no-menuselect
 

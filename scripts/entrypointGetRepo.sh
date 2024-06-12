@@ -21,7 +21,7 @@ cd ${REPO_DIR}
 
 if [ "x${INPUT_BUILD_SCRIPT}" != "x" ] ; then
 	${SCRIPT_DIR}/${INPUT_BUILD_SCRIPT} --github --branch-name=${INPUT_BASE_BRANCH} \
-		--ccache-disable \
+		--ccache-disable ${INPUT_BUILD_OPTIONS} \
 		--modules-blacklist="${INPUT_MODULES_BLACKLIST// /}" \
 		--output-dir=${OUTPUT_DIR}
 fi

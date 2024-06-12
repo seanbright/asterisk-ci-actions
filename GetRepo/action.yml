@@ -23,6 +23,10 @@ inputs:
     required: false
     type: string
     default: ''
+  build_options:
+    required: false
+    type: string
+    default: ''
   github_token:
     description: 'GitHub API Access Token.'
     default: ${{ github.token }}

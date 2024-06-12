@@ -22,7 +22,7 @@ fi
 set -e
 
 if [ -z $BRANCH_NAME ]; then
-	BRANCH_NAME=$(git config -f .gitreview --get gerrit.defaultbranch)
+	BRANCH_NAME=$(sed -n -r -e "s/AC_INIT\(\[asterisk\],\s*\[([^]]+)],\s*\[[^]]+\]\)/\1/gp" configure.ac)
 fi
 
 if [[ "$BRANCH_NAME" =~ devel(opment)?/([0-9]+)/.+ ]] ; then
@@ -49,14 +49,6 @@ gen_mods() {
 	for x in $mods ; do
 		echo " --${action} ${x}"
 	done
-}
-
-run_alembic() {
-	pushd contrib/ast-db-manage >/dev/null
-	runner alembic $@
-	RC=$?
-	popd > /dev/null
-	return $RC
 }
 
 mkdir -p "$OUTPUT_DIR" 2> /dev/null
@@ -204,6 +196,77 @@ if $COVERAGE ; then
 		--output-file ${LCOV_DIR}/initial.info
 fi
 
+run_alembic_heads_branches() {
+	config=$1
+	echo "Running heads/branches for $config"
+	pushd contrib/ast-db-manage >/dev/null
+	[ ! -f $config ] && { echo "Config file $config not found" ; return 1 ; }
+	out=$( alembic -c $config heads )
+	[ $? -ne 0 ] && { echo "heads: $out" ; return 1 ; }
+	lc=$(echo "$out" | wc -l)
+	[ $lc != 1 ] && { echo "Expecting 1 head but found $lc" ; echo $out ; return 1 ; }
+	out=$( alembic -c $config branches )
+	[ $? -ne 0 ] && { echo "branches: $out" ; return 1 ; }
+	lc=$(echo "$out" | sed -r -e "/^\s*$/d" | wc -l)
+	[ $lc != 0 ] && { echo "Expecting no branches but found $(( $lc - 1 ))" ; echo $out ; return 1 ; }
+	popd > /dev/null
+	echo "Running heads/branches for $config succeeded"
+	return 0
+}
+
+upgrade_downgrade() {
+	config=$1
+	echo "Running upgrade/downgrade for ${config}"
+	sed -r -e "s/^sqlalchemy.url\s*=\s*mysql.*/sqlalchemy.url = postgresql:\/\/asterisk_test:asterisk_test@postgres-asterisk\/asterisk_test/g" ${config}.sample > .${config}	
+	alembic -c ./.${config} upgrade head || {
+		echo "Alembic upgrade failed for ${config}"
+		rm -rf .${config} || :
+		return 1
+	}
+	alembic -c ./.${config} downgrade base || {
+		echo "Alembic downgrade failed for ${config}"
+		rm -rf .${config} || :
+		return 1
+	}
+	rm -rf .${config} || :
+	echo "Running upgrade/downgrade for ${config} succeeded"
+	return 0
+}
+
+run_alembic_upgrade_downgrade() {
+	ping -c 1 postgres-asterisk &>/dev/null || {
+		echo "No postgres server available.  Skipping upgrade/downgrade"
+		return 0
+	}
+
+	pushd contrib/ast-db-manage >/dev/null
+	
+	cat <<EOF > ~/.pgpass
+*:*:*:postgres:postgres
+*:*:*:asterisk:asterisk
+EOF
+	export PGOPTS="-h postgres-asterisk -w --username=postgres"
+	chmod go-rwx ~/.pgpass
+	export PGPASSFILE=~/.pgpass
+	echo "Creating asterisk_test user and database"
+	dropdb $PGOPTS --if-exists -e asterisk_test >/dev/null 2>&1 || :
+	dropuser $PGOPTS --if-exists -e asterisk_test >/dev/null  2>&1 || :
+	createuser $PGOPTS -RDIElS asterisk_test || return 1
+	createdb $PGOPTS -E UTF-8 -O asterisk_test asterisk_test || return 1
+
+	RC=0
+	upgrade_downgrade config.ini || RC=1
+	[ $RC == 0 ] && upgrade_downgrade cdr.ini || RC=1
+	[ $RC == 0 ] && upgrade_downgrade voicemail.ini || RC=1
+
+	echo "Cleaning up user and database"
+	dropdb $PGOPTS --if-exists -e asterisk_test >/dev/null 2>&1 || :
+	dropuser $PGOPTS --if-exists -e asterisk_test >/dev/null  2>&1 || :
+
+	popd > /dev/null
+	return $RC
+}
+
 if ! $NO_ALEMBIC ; then
 	echo "Running Alembic"
 	ALEMBIC=$(which alembic 2>/dev/null || : )
@@ -213,42 +276,27 @@ if ! $NO_ALEMBIC ; then
 	fi
 
 	find contrib/ast-db-manage -name *.pyc -delete
-	out=$(run_alembic -c config.ini.sample branches)
-	if [ "x$out" != "x" ] ; then
-		echo "::error::Alembic branches were found for config"
-		echo $out
-		exit 1
-	fi
 	
-	run_alembic -c config.ini.sample upgrade head --sql \
-		> "${OUTPUT_DIR}alembic-config.sql" \
-		|| { echo "::error::Failed to create alembic-config.sql" ; exit 1 ; }
-	echo "Alembic for 'config' OK"
-	
-	out=$(run_alembic -c cdr.ini.sample branches)
-	if [ "x$out" != "x" ] ; then
-		echo "::error::Alembic branches were found for cdr"
-		echo $out
+	run_alembic_heads_branches config.ini.sample || {
+		>&2 echo "::error::Alembic head/branch check failed for config.ini"
 		exit 1
-	fi
+	}
 
-	run_alembic -c cdr.ini.sample upgrade head --sql \
-		> "${OUTPUT_DIR}alembic-cdr.sql" \
-		|| { echo "::error::Failed to create alembic-cdr.sql" ; exit 1 ; }
-	echo "Alembic for 'cdr' OK"
-
-	
-	out=$(run_alembic -c voicemail.ini.sample branches)
-	if [ "x$out" != "x" ] ; then
-		echo "::error::Alembic branches were found for voicemail"
-		echo $out
+	run_alembic_heads_branches cdr.ini.sample || {
+		>&2 echo "::error::Alembic head/branch check failed for cdr.ini"
 		exit 1
-	fi
+	}
 
-	run_alembic -c voicemail.ini.sample upgrade head --sql \
-		> "${OUTPUT_DIR}alembic-voicemail.sql" \
-		|| { echo "::error::Failed to create alembic-voicemail.sql" ; exit 1 ; }
-	echo "Alembic for 'voicemail' OK"
+	run_alembic_heads_branches voicemail.ini.sample || {
+		>&2 echo "::error::Alembic head/branch check failed for voicemail.ini"
+		exit 1
+	}
+
+	run_alembic_upgrade_downgrade || {
+		>&2 echo "::error::Alembic upgrade/downgrade failed"
+		exit 1
+	}
+	
 fi
 
 if [ -f "doc/core-en_US.xml" ] ; then

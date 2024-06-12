@@ -16,6 +16,14 @@ inputs:
     required: false
     type: boolean
     default: false
+  build_script:
+    required: false
+    type: string
+    default: "buildAsterisk.sh"
+  build_options:
+    required: false
+    type: string
+    default: ""
   modules_blacklist:
     description: 'List of Asterisk modules to blacklist from the build'
     default: ""
@@ -48,7 +56,8 @@ runs:
         base_branch:       ${{inputs.base_branch}}
         pr_number:         ${{inputs.pr_number}}
         is_cherry_pick:    ${{inputs.is_cherry_pick}}
-        build_script:      buildAsterisk.sh
+        build_script:      ${{inputs.build_script}}
+        build_options:     ${{inputs.build_options}}
         github_token:      ${{inputs.github_token}}
         modules_blacklist: ${{inputs.modules_blacklist}}
 
