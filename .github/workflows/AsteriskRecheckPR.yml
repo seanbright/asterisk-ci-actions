@@ -6,56 +6,101 @@ on:
       ASTERISKTEAM_PAT:
         required: true
 
-env:
-  ASTERISK_REPO:     ${{github.repository}}
-  PR_NUMBER:         ${{github.event.number}}
-  PR_COMMIT:         ${{github.event.pull_request.head.sha}}
-  BRANCH:            ${{github.event.pull_request.base.ref}}
-
 jobs:
-  PRSGetControlData:
+  Setup:
     runs-on: ubuntu-latest
-    outputs:
-      control_data:  ${{ steps.setvars.outputs.control_data }}
     steps:
       - name: SetupUbuntuRunner
         uses: asterisk/asterisk-ci-actions/SetupUbuntuRunner@main
-      - id: setvars
-        uses: asterisk/asterisk-ci-actions/GetRepoControlData@main
-        with:
-          repo: ${{ github.event.repository.name}}
-      - name: DumpEnvironment
-        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
-        with:
-          action-inputs: ${{toJSON(inputs)}}
-          action-vars: ${{ toJSON(steps.setvars.outputs) }}
-
-  PRSUnitTests:
-    needs: PRSGetControlData
-    runs-on: ubuntu-latest
-    services:
-      # Label used to access the service container
-      postgres-asterisk:
-        # Docker Hub image
-        image: postgres
-        # Provide the password for postgres
+      - name: Set Label
+        id: setlabel
         env:
-          POSTGRES_PASSWORD: postgres
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      UNITTEST_COMMAND: ${{ fromJSON(needs.PRSGetControlData.outputs.control_data).UNITTEST_COMMAND }}
-    steps:
-      - name: Get Asterisk
-        uses: asterisk/asterisk-ci-actions/GetRepo@main
-        with:
-          repo:              ${{env.ASTERISK_REPO}}
-          base_branch:       ${{env.BRANCH}}
-          pr_number:         ${{env.PR_NUMBER}}
-          build_script:      buildAsterisk.sh
-          build_options:     --no-configure --no-make --no-menuselect
+          GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{github.event.number}}
+        run: | 
+          gh pr edit --repo ${{github.repository}} \
+            --remove-label ${{vars.RECHECKPR_LABEL}} \
+            --remove-label ${{vars.PR_SUBMIT_TESTS_PASSED}} \
+            --remove-label  ${{vars.PR_SUBMIT_TESTS_FAILED}} \
+            --add-label ${{vars.PR_SUBMIT_TESTING_IN_PROGRESS}} \
+            $PR_NUMBER || :
 
+  RunAsteriskUnitTests:
+    uses: ./.github/workflows/RunAsteriskUnitTests.yml
+    with:
+      asterisk_repo:     ${{github.repository}}
+      pr_number:         ${{github.event.number}}
+      base_branch:       ${{github.event.pull_request.base.ref}}
+#      build_options:     --no-configure --no-make --no-menuselect
+      unittest_command:  "test execute category /TEST_PASS_FAIL/ name JUST_PASS"
+
+  RunAsteriskGateTests:
+    runs-on: ubuntu-latest
+    continue-on-error: false
+    strategy:
+      fail-fast: false
+      matrix:
+        group: ${{ fromJSON(vars.GATETEST_LIST) }}
+    steps:
+      - id: runtest
+        name: Run Gate Tests for ${{ matrix.group }}
+        uses: asterisk/asterisk-ci-actions/AsteriskGateComposite@main
+        with:
+          test_type:         Gate
+          asterisk_repo:     ${{github.repository}}
+          pr_number:         ${{github.event.number}}
+          base_branch:       ${{matrix.branch}}
+          testsuite_repo:    ${{vars.TESTSUITE_REPO}}
+          gatetest_group:    ${{matrix.group}}
+          gatetest_command:  ${{ toJSON(fromJSON(vars.GATETEST_COMMANDS)[matrix.group]) }}
+
+  TestResults:
+    if: always()
+    runs-on: ubuntu-latest
+    needs: [RunAsteriskUnitTests,RunAsteriskGateTests]
+    steps:
+      - name: Check test matrix status
+        env:
+          GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+          RESULT_UNIT: ${{ needs.RunAsteriskUnitTests.result }}
+          RESULT_GATE: ${{ needs.RunAsteriskGateTests.result }}
+          TESTS_PASSED: ${{ vars.PR_SUBMIT_TESTS_PASSED }}
+          TESTS_FAILED: ${{ vars.PR_SUBMIT_TESTS_FAILED }}
+        run: |
+          declare -i rc=0
+          echo "all results: ${{ toJSON(needs.*.result) }}"
+          case $RESULT_UNIT in
+            success)
+              echo "::notice::Unit tests passed"
+              ;;
+            skipped)
+              echo "::error::Unit tests were skipped because of an earlier failure"
+              rc+=1
+              ;;
+            *)
+              echo "::error::One or more unit tests failed ($RESULT_UNIT)"
+              rc+=1
+          esac
+          case $RESULT_GATE in
+            success)
+              echo "::notice::Gate tests passed"
+              ;;
+            skipped)
+              echo "::error::Gate tests were skipped because of an earlier failure"
+              rc+=1
+              ;;
+            *)
+              echo "::error::One or more gate tests failed ($RESULT_GATE)"
+              rc+=1
+          esac
+          
+          label=$TESTS_PASSED
+          if [ $rc != 0 ] ; then
+            label=$TESTS_FAILED
+          fi
+          gh pr edit --repo ${{github.repository}} \
+            --remove-label ${{vars.PR_SUBMIT_TESTING_IN_PROGRESS}} \
+            --add-label $label \
+              $PR_NUMBER || :
+          exit $rc

@@ -243,7 +243,7 @@ run_alembic_upgrade_downgrade() {
 	
 	cat <<EOF > ~/.pgpass
 *:*:*:postgres:postgres
-*:*:*:asterisk:asterisk
+*:*:*:asterisk_test:asterisk_test
 EOF
 	export PGOPTS="-h postgres-asterisk -w --username=postgres"
 	chmod go-rwx ~/.pgpass
@@ -251,7 +251,8 @@ EOF
 	echo "Creating asterisk_test user and database"
 	dropdb $PGOPTS --if-exists -e asterisk_test >/dev/null 2>&1 || :
 	dropuser $PGOPTS --if-exists -e asterisk_test >/dev/null  2>&1 || :
-	createuser $PGOPTS -RDIElS asterisk_test || return 1
+	psql $PGOPTS -c "create user asterisk_test with login password 'asterisk_test';" || return 1
+#	createuser $PGOPTS -RDIElS asterisk_test || return 1
 	createdb $PGOPTS -E UTF-8 -O asterisk_test asterisk_test || return 1
 
 	RC=0
