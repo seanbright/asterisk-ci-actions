@@ -31,28 +31,23 @@ jobs:
       asterisk_repo:     ${{github.repository}}
       pr_number:         ${{github.event.number}}
       base_branch:       ${{github.event.pull_request.base.ref}}
-#      build_options:     --no-configure --no-make --no-menuselect
-      unittest_command:  "test execute category /TEST_PASS_FAIL/ name JUST_PASS"
+      build_options:     ${{vars.BUILD_OPTIONS}}
+      unittest_command:  ${{vars.UNITTEST_COMMAND}}
 
   RunAsteriskGateTests:
-    runs-on: ubuntu-latest
-    continue-on-error: false
     strategy:
       fail-fast: false
       matrix:
         group: ${{ fromJSON(vars.GATETEST_LIST) }}
-    steps:
-      - id: runtest
-        name: Run Gate Tests for ${{ matrix.group }}
-        uses: asterisk/asterisk-ci-actions/AsteriskGateComposite@main
-        with:
-          test_type:         Gate
-          asterisk_repo:     ${{github.repository}}
-          pr_number:         ${{github.event.number}}
-          base_branch:       ${{matrix.branch}}
-          testsuite_repo:    ${{vars.TESTSUITE_REPO}}
-          gatetest_group:    ${{matrix.group}}
-          gatetest_command:  ${{ toJSON(fromJSON(vars.GATETEST_COMMANDS)[matrix.group]) }}
+    uses: ./.github/workflows/RunAsteriskGateTests.yml
+    with:
+      test_type:         Gate
+      asterisk_repo:     ${{github.repository}}
+      pr_number:         ${{github.event.number}}
+      base_branch:       ${{github.event.pull_request.base.ref}}
+      testsuite_repo:    ${{vars.TESTSUITE_REPO}}
+      gatetest_group:    ${{matrix.group}}
+      gatetest_command:  ${{ toJSON(fromJSON(vars.GATETEST_COMMANDS)[matrix.group]) }}
 
   TestResults:
     if: always()
