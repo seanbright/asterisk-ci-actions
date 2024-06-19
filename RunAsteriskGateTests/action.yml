@@ -5,7 +5,7 @@ inputs:
     type: string
   pr_number:
     required: true
-    type: number
+    type: string
   pr_commit:
     required: true
     type: string

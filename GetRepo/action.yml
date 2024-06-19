@@ -6,7 +6,7 @@ inputs:
     default: ${{github.repository}}
   pr_number:
     required: false
-    type: number
+    type: string
     default: 0
   base_branch:
     required: true

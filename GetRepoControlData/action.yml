@@ -24,7 +24,9 @@ runs:
         retries: 5
         script: |
           try {
-            let url = `${process.env.CONTROLDATA_BASE}/${process.env.CONTROLDATA_FILE}` 
+            // We need to strip off a potential leading organization
+            let repo = process.env.REPO.replace(/[^/]+\//,"");
+            let url = `${process.env.CONTROLDATA_BASE}/${repo}.json`;
             const result = await github.request(url);
             let jsonin = JSON.parse(result.data);
             let jsonout = {};
