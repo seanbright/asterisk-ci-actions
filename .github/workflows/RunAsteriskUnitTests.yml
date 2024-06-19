@@ -1,5 +1,4 @@
-name: RunAsteriskUnitTests
-run-name: "${{github.workflow}}-${{github.event.label.name}}-${{github.event.number}}"
+name: 'RAUT'
 on:
   workflow_call:
     inputs:
@@ -29,67 +28,35 @@ on:
         type: string
         default: ""
         required: false
-      github_token:
-        description: 'GitHub API Access Token.'
-        type: string
-        default: ${{ github.token }}
-        required: false
       unittest_command:
         type: string
         required: true
-#    secrets:
-#      ASTERISKTEAM_PAT:
-#        required: true
-
-#env:
-#  ASTERISK_REPO:     ${{github.repository}}
-#  PR_NUMBER:         ${{github.event.number}}
-#  PR_COMMIT:         ${{github.event.pull_request.head.sha}}
-#  BRANCH:            ${{github.event.pull_request.base.ref}}
 
 jobs:
-#  PRSGetControlData:
-#    runs-on: ubuntu-latest
-#    outputs:
-#      control_data:  ${{ steps.setvars.outputs.control_data }}
-#    steps:
-#      - name: SetupUbuntuRunner
-#        uses: asterisk/asterisk-ci-actions/SetupUbuntuRunner@main
-#      - id: setvars
-#        uses: asterisk/asterisk-ci-actions/GetRepoControlData@main
-#        with:
-#          repo: ${{ github.event.repository.name}}
-#      - name: DumpEnvironment
-#        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
-#        with:
-#          action-inputs: ${{toJSON(inputs)}}
-#          action-vars: ${{ toJSON(steps.setvars.outputs) }}
-
   RunUnitTests:
-#    needs: PRSGetControlData
+    name: UnitTests ${{ inputs.base_branch }}
     runs-on: ubuntu-latest
     services:
-      # Label used to access the service container
       postgres-asterisk:
-        # Docker Hub image
         image: postgres
-        # Provide the password for postgres
         env:
           POSTGRES_PASSWORD: postgres
-        # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     steps:
+      - name: SetupUbuntuRunner
+        uses: asterisk/asterisk-ci-actions/SetupUbuntuRunner@main
+
       - name: SetTestName
         shell: bash
         run: |
           BASE_BRANCH="${{inputs.base_branch}}"
           UNIT_TEST_NAME="unittests-${BASE_BRANCH//\//-}"
           echo "UNIT_TEST_NAME=${UNIT_TEST_NAME}" >> "${GITHUB_ENV}"
-    
+
       - name: Get Asterisk
         uses: asterisk/asterisk-ci-actions/GetRepo@main
         with:
@@ -99,7 +66,7 @@ jobs:
           is_cherry_pick:    ${{inputs.is_cherry_pick}}
           build_script:      ${{inputs.build_script}}
           build_options:     ${{inputs.build_options}}
-          github_token:      ${{inputs.github_token}}
+          github_token:      ${{secrets.TOKEN}}
           modules_blacklist: ${{inputs.modules_blacklist}}
 
       - name: Run unittest-${{inputs.base_branch}}
@@ -108,7 +75,7 @@ jobs:
           asterisk_repo:    ${{inputs.asterisk_repo}}
           base_branch:      ${{inputs.base_branch}}
           pr_number:        ${{inputs.pr_number}}
-          github_token:     ${{inputs.github_token}}
+          github_token:     ${{secrets.TOKEN}}
           unittest_command: ${{inputs.unittest_command}}
   
       - name: Save Output

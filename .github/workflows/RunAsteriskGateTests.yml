@@ -1,5 +1,4 @@
-name: RunAsteriskGateTests
-run-name: "${{github.workflow}}-${{github.event.label.name}}-${{github.event.number}}"
+name: 'RAGT'
 on:
   workflow_call:
     inputs:
@@ -32,11 +31,6 @@ on:
         type: string
         default: ""
         required: false
-      github_token:
-        description: 'GitHub API Access Token.'
-        type: string
-        default: ${{ github.token }}
-        required: false
       cache_dir:
         type: string
         default: cache
@@ -50,20 +44,19 @@ on:
         description: 'Gate Group'
         type: string
         required: true
-      gatetest_command:
-        description: 'Gate Command'
+      gatetest_commands:
+        description: 'Gate Commands'
         type: string
         required: true
-#    secrets:
-#      ASTERISKTEAM_PAT:
-#        required: true
-
 
 jobs:
   RunGateTests:
-    name: RunGateTests-${{inputs.gatetest_group}}
+    name: GateTests ${{ inputs.base_branch }} ${{inputs.gatetest_group}}
     runs-on: ubuntu-latest
     steps:
+      - name: SetupUbuntuRunner
+        uses: asterisk/asterisk-ci-actions/SetupUbuntuRunner@main
+
       - name: GetTestsuiteDir
         shell: bash
         run: |
@@ -81,7 +74,7 @@ jobs:
           is_cherry_pick:    ${{inputs.is_cherry_pick}}
           build_script:      ${{inputs.build_script}}
           build_options:     ${{inputs.build_options}}
-          github_token:      ${{inputs.github_token}}
+          github_token:      ${{secrets.TOKEN}}
           modules_blacklist: ${{inputs.modules_blacklist}}
 
       - id: runtests
@@ -92,11 +85,11 @@ jobs:
           base_branch:       ${{inputs.base_branch}}
           pr_number:         ${{inputs.pr_number}}
           cache_dir:         ${{inputs.cache_dir}}
-          github_token:      ${{inputs.github_token}}
+          github_token:      ${{secrets.TOKEN}}
           testsuite_repo:    ${{inputs.testsuite_repo}}
           gatetest_group:    0
-          gatetest_command:  ${{inputs.gatetest_command}} 
-  
+          gatetest_command:  ${{ toJSON(fromJSON(inputs.gatetest_commands)[inputs.gatetest_group]) }}
+ 
       - name: Save Output
         id: save-output
         if: ${{ always() }}
