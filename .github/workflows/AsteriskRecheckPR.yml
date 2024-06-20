@@ -3,20 +3,20 @@ run-name: "${{github.workflow}}-${{github.event.label.name}}-${{github.event.num
 on:
   workflow_call:
     secrets:
-      ASTERISKTEAM_PAT:
+      TOKEN:
         required: true
+
+env:
+  PR_NUMBER: ${{ github.event.number }}
 
 jobs:
   Setup:
     runs-on: ubuntu-latest
     steps:
-      - name: SetupUbuntuRunner
-        uses: asterisk/asterisk-ci-actions/SetupUbuntuRunner@main
       - name: Set Label
         id: setlabel
         env:
-          GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{github.event.number}}
+          GH_TOKEN:  ${{ secrets.TOKEN }}
         run: | 
           gh pr edit --repo ${{github.repository}} \
             --remove-label ${{vars.RECHECKPR_LABEL}} \
@@ -25,41 +25,31 @@ jobs:
             --add-label ${{vars.PR_SUBMIT_TESTING_IN_PROGRESS}} \
             $PR_NUMBER || :
 
-  RunAsteriskUnitTests:
-    uses: ./.github/workflows/RunAsteriskUnitTests.yml
+  PRCheck:
+    name: PRCheck
+    uses: ./.github/workflows/AsteriskUnitGateTest.yml
     with:
+      test_type:         prrecheck
       asterisk_repo:     ${{github.repository}}
       pr_number:         ${{github.event.number}}
       base_branch:       ${{github.event.pull_request.base.ref}}
+      is_cherry_pick:    false
       build_options:     ${{vars.BUILD_OPTIONS}}
       unittest_command:  ${{vars.UNITTEST_COMMAND}}
-
-  RunAsteriskGateTests:
-    strategy:
-      fail-fast: false
-      matrix:
-        group: ${{ fromJSON(vars.GATETEST_LIST) }}
-    uses: ./.github/workflows/RunAsteriskGateTests.yml
-    with:
-      test_type:         Gate
-      asterisk_repo:     ${{github.repository}}
-      pr_number:         ${{github.event.number}}
-      base_branch:       ${{github.event.pull_request.base.ref}}
       testsuite_repo:    ${{vars.TESTSUITE_REPO}}
-      gatetest_group:    ${{matrix.group}}
-      gatetest_command:  ${{ toJSON(fromJSON(vars.GATETEST_COMMANDS)[matrix.group]) }}
+      gatetest_list:     ${{vars.GATETEST_LIST}}
+      gatetest_commands: ${{vars.GATETEST_COMMANDS}}
+    secrets: inherit
 
   TestResults:
     if: always()
     runs-on: ubuntu-latest
-    needs: [RunAsteriskUnitTests,RunAsteriskGateTests]
+    needs: [PRCheck]
     steps:
-      - name: Check test matrix status
+      - name: Check status
         env:
-          GH_TOKEN:  ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
-          RESULT_UNIT: ${{ needs.RunAsteriskUnitTests.result }}
-          RESULT_GATE: ${{ needs.RunAsteriskGateTests.result }}
+          GH_TOKEN:  ${{ secrets.TOKEN }}
+          RESULT_UNIT: ${{ needs.PRCheck.result }}
           TESTS_PASSED: ${{ vars.PR_SUBMIT_TESTS_PASSED }}
           TESTS_FAILED: ${{ vars.PR_SUBMIT_TESTS_FAILED }}
         run: |
@@ -67,26 +57,14 @@ jobs:
           echo "all results: ${{ toJSON(needs.*.result) }}"
           case $RESULT_UNIT in
             success)
-              echo "::notice::Unit tests passed"
+              echo "::notice::Unit/Gate tests passed"
               ;;
             skipped)
-              echo "::error::Unit tests were skipped because of an earlier failure"
+              echo "::error::Unit/Gate tests were skipped because of an earlier failure"
               rc+=1
               ;;
             *)
-              echo "::error::One or more unit tests failed ($RESULT_UNIT)"
-              rc+=1
-          esac
-          case $RESULT_GATE in
-            success)
-              echo "::notice::Gate tests passed"
-              ;;
-            skipped)
-              echo "::error::Gate tests were skipped because of an earlier failure"
-              rc+=1
-              ;;
-            *)
-              echo "::error::One or more gate tests failed ($RESULT_GATE)"
+              echo "::error::One or more Unit/Gate tests failed ($RESULT_UNIT)"
               rc+=1
           esac
           
