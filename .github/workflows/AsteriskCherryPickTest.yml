@@ -74,7 +74,7 @@ jobs:
       gatetest_commands: ${{vars.GATETEST_COMMANDS}}
     secrets: inherit
 
-  CherryPickTests:
+  CherryPickTestResults:
     needs: [ IdentifyBranches, CherryPickTestMatrix ]
     if: ${{ needs.IdentifyBranches.outputs.branch_count > 0 && ( success() || failure() ) }}
     runs-on: ubuntu-latest
