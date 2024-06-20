@@ -61,18 +61,18 @@ jobs:
       base_branch:       ${{ inputs.base_branch }}
       is_cherry_pick:    ${{ inputs.is_cherry_pick }}
       build_options:     ${{ inputs.build_options }}
-      unittest_command:  'test execute category /TEST_PASS_FAIL/ name JUST_PASS'
-#      unittest_command:  ${{ fromJSON(needs.Setup.outputs.control_data).UNITTEST_COMMAND }}
+      unittest_command:  ${{ inputs.unittest_command }}
     secrets: inherit
 
   GateTests:
+    if: ${{ inputs.testsuite_test_type != 'NONE' }}
     strategy:
       fail-fast: false
       matrix:
         group: ${{ fromJSON(inputs.gatetest_list) }}
     uses: ./.github/workflows/RunAsteriskGateTests.yml
     with:
-      test_type:         Gate
+      test_type:         ${{ inputs.testsuite_test_type }}
       asterisk_repo:     ${{ inputs.asterisk_repo }}
       pr_number:         ${{ inputs.pr_number }}
       base_branch:       ${{ inputs.base_branch }}
@@ -113,8 +113,7 @@ jobs:
               echo "::notice::Gate tests passed"
               ;;
             skipped)
-              echo "::error::Gate tests were skipped because of an earlier failure"
-              rc+=1
+              echo "::notice::Gate tests were not requested"
               ;;
             *)
               echo "::error::One or more gate tests failed ($RESULT_GATE)"
