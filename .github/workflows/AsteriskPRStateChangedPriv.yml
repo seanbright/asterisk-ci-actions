@@ -1,0 +1,154 @@
+name: AsteriskPRStateChangedPriv
+on:
+  workflow_call:
+    secrets:
+      TOKEN:
+        required: true
+
+env:
+  ACTION:     ${{ github.event.action }}
+  CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+  REPO:       ${{ github.repository }}
+
+jobs:
+  PRStateChangedPriv:
+    if: github.event.workflow_run.conclusion != 'skipped'
+    runs-on: ubuntu-latest
+    outputs:
+      PR_NUMBER:     ${{ steps.getpr.outputs.PR_NUMBER }}
+    steps:
+      - name: DumpEnvironment
+        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+
+      - name: Get PR Number
+        id: getpr
+        env:
+          GH_TOKEN: ${{ secrets.TOKEN }}
+          SHA: ${{github.event.workflow_run.head_sha}}
+        run: |
+          PR_NUMBER=$(gh -R $REPO search prs $SHA --json number --jq '.[].number')
+          if [ -z "$PR_NUMBER" ] ; then
+            echo "::error::Unable to find PR number"
+            exit 1
+          fi
+          if [[ "$PR_NUMBER" =~ ^[0-9]+$ ]] ; then
+            echo "PR_NUMBER=${PR_NUMBER}" >>${GITHUB_OUTPUT}
+            exit 0
+          fi
+          echo "::error::PR number '$PR_NUMBER' not valid"
+          exit 1
+
+      - name: Set Label
+        id: setlabel
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER:  ${{ steps.getpr.outputs.PR_NUMBER }}
+          LABEL_TIP:  ${{ vars.PR_SUBMIT_TESTING_IN_PROGRESS }}
+          LABEL_PASS: ${{ vars.PR_SUBMIT_TESTS_PASSED }}
+          LABEL_FAIL: ${{ vars.PR_SUBMIT_TESTS_FAILED }}
+        with:
+          retries: 5
+          script: |
+            let label;
+            if (process.env.ACTION === 'requested') {
+              label = process.env.LABEL_TIP;
+            } else {
+              if ( process.env.CONCLUSION === 'success' ) {
+                label = process.env.LABEL_PASS;
+              } else {
+                label = process.env.LABEL_FAIL;
+              }
+            }
+            core.info(`Setting label ${label}`);
+            github.rest.issues.setLabels({
+              issue_number: process.env.PR_NUMBER,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ label ]
+            });
+            return;
+
+      - name: Get cherry-pick branches
+        if: github.event.action == 'completed'
+        id: getbranches
+        uses: asterisk/asterisk-ci-actions/GetCherryPickBranchesFromPR@main
+        with:
+          repo:              ${{env.REPO}}
+          pr_number:         ${{steps.getpr.outputs.PR_NUMBER}}
+          cherry_pick_regex: ${{vars.CHERRY_PICK_REGEX}}
+          github_token:      ${{secrets.TOKEN}}
+
+      - name: Add cherry-pick reminder
+        if: github.event.action == 'completed'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER:            ${{steps.getpr.outputs.PR_NUMBER}}
+          CHERRY_PICK_REMINDER: ${{vars.CHERRY_PICK_REMINDER}}
+          BRANCHES_OUTPUT:      ${{toJSON(steps.getbranches.outputs)}}
+          BRANCH_COUNT:         ${{steps.getbranches.outputs.branch_count}}
+          FORCED_NONE:          ${{steps.getbranches.outputs.forced_none}}
+        with:
+          retries: 5
+          script: |
+            if (process.env.FORCED_NONE === 'true' ||
+              process.env.BRANCH_COUNT > 0) {
+              core.info("No cherry-pick reminder needed.");
+              return;
+            }
+            let comments = await github.rest.issues.listComments({
+              issue_number: process.env.PR_NUMBER,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            let found = false;
+            for (const c of comments.data) {
+              if (c.body.startsWith("<!--CPR-->")) {
+                found = true;
+                break;
+              }
+            }
+            if (found) {
+              core.info("Cherry-pick reminder already exists.");
+              return;
+            }
+            core.info("Adding cherry-pick reminder.");
+            await github.rest.issues.createComment({
+              issue_number: process.env.PR_NUMBER,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: process.env.CHERRY_PICK_REMINDER
+            })
+            return;
+
+#      - name: Add reviewers
+#        if: github.event.action == 'completed'
+#        uses: actions/github-script@v7
+#        env:
+#          PR_NUMBER: ${{steps.getpr.outputs.PR_NUMBER}}
+#          REVIEWERS: ${{vars.PR_REVIEWERS}}
+#        with:
+#          retries: 5
+#          github-token: ${{ secrets.TOKEN }}
+#          script: |
+#            let rs = JSON.parse(process.env.REVIEWERS.length ? process.env.REVIEWERS : '[]');
+#            let users = [];
+#            let teams = [];
+#            for (const r of rs) {
+#              if (r.indexOf("/") > 0) {
+#                teams.push(r.split('/')[1]);
+#              } else {
+#                users.push(r);
+#              }
+#            }
+#            if (teams.length > 0 || users.length > 0) {
+#              core.info(`Adding user reviewers ${users}`);
+#              core.info(`Adding team reviewers ${teams}`);
+#              await github.rest.pulls.requestReviewers({
+#                pull_number: process.env.PR_NUMBER,
+#                owner: context.repo.owner,
+#                repo: context.repo.repo,
+#                reviewers: users,
+#                team_reviewers: teams
+#              });
+#            }
+#            return;
