@@ -3,35 +3,48 @@ run-name: "TestWorkflow"
 on:
   workflow_dispatch:
     inputs:
-      test_type:
-        description: 'nightly, prsubmit, cherry-pick'
-        required: true
-        type: string
-      asterisk_repo:
-        description: 'Must be org/repo'
-        required: true
-        type: string
-      pr_number:
-        required: true
+      counter:
         type: number
-      base_branch:
-        required: true
-        type: string
+        default: 0
 
 env:
-  TEST_TYPE:     ${{inputs.test_type}}
-  ASTERISK_REPO: ${{inputs.asterisk_repo}}
-  PR_NUMBER:     ${{inputs.pr_number}}
-  BRANCH:        ${{inputs.base_branch}}
+  COUNTER: 42
 
 jobs:
-  AsteriskCheckPR:
-    name: AsteriskCheckPR
-    uses: ./.github/workflows/AsteriskCheckPRforBranch.yml
-    with:
-      test_type: ${{ inputs.test_type }}
-      asterisk_repo: ${{ inputs.asterisk_repo }}
-      pr_number:  ${{ inputs.pr_number }}
-      base_branch: ${{ inputs.base_branch }}
-    secrets:
-      ASTERISKTEAM_PAT: ${{ secrets.ASTERISKTEAM_PAT }}
+  Setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: DumpEnvironment
+        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+        with:
+          action-inputs: ${{ toJSON(inputs) }}
+
+  SetupMatrix:
+#    if: ${{ inputs.counter == 666 }}
+#    needs: Setup 
+    runs-on: ubuntu-latest
+#    strategy:
+#      fail-fast: false
+#      matrix:
+#        group: ['A','B']
+    steps:
+      - name: DoSomething
+        shell: bash
+        run: |
+          echo "I DID SOMETHING FIRST"
+
+  Setup2:
+#    needs: SetupMatrix 
+    runs-on: ubuntu-latest
+    steps:
+      - name: DoSomething
+        shell: bash
+        run: |
+          echo "I DID SOMETHING AFTER"
+
+
+#  TestCalledWorkflow:
+#    uses: ./.github/workflows/TestCalledWorkflow.yml
+#    with:
+#      counter: ${{inputs.counter}}
+

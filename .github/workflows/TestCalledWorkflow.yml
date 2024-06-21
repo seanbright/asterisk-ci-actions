@@ -1,0 +1,26 @@
+name: TestCalledWorkflow
+run-name: "TestCalledWorkflow"
+on:
+  workflow_run:
+    workflows: [TestWorkflow]
+    types:
+      - in_progress
+
+#  workflow_call:
+#    inputs:
+#      counter:
+#        type: string
+#        default: 0
+#    secrets:
+#      TOKEN:
+#        required: true
+
+jobs:
+  TestCalledWorkflow:
+    name: DumpEnv
+    runs-on: ubuntu-latest
+    steps:
+      - name: DumpEnvironment
+        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+#        with:
+#          action-inputs: ${{ toJSON(inputs) }}
