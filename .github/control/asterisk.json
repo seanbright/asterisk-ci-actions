@@ -348,6 +348,12 @@
     "value": "pr-submit-tests-passed"
   },
   {
+    "created_at": "2024-06-25T01:08:48Z",
+    "name": "RECHECKPR_LABEL",
+    "updated_at": "2024-06-25T01:08:48Z",
+    "value": "recheckpr"
+  },
+  {
     "created_at": "2023-06-26T13:02:47Z",
     "name": "RECHECK_LABEL",
     "updated_at": "2023-06-26T13:02:47Z",
