@@ -25,8 +25,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.TOKEN }}
           SHA: ${{github.event.workflow_run.head_sha}}
+          HEAD_REPO: ${{github.event.workflow_run.head_repository.full_name}}
         run: |
-          PR_NUMBER=$(gh -R $REPO search prs $SHA --json number --jq '.[].number')
+          URL="/repos/$HEAD_REPO/commits/$SHA/pulls"
+          echo "Using URL $URL"
+          PR_NUMBER=$(gh api $URL --jq '.[].number')
           if [ -z "$PR_NUMBER" ] ; then
             echo "::error::Unable to find PR number"
             exit 1
