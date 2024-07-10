@@ -8,6 +8,10 @@ on:
     secrets:
       TOKEN:
         required: true
+      application_id:
+        required: true
+      application_private_key:
+        required: true
 
 env:
   PR_NUMBER: ${{ github.event.number }}
@@ -142,8 +146,8 @@ jobs:
         id: get_workflow_token
         uses: peter-murray/workflow-application-token-action@v3
         with:
-          application_id: ${{secrets.ASTERISK_ORG_ACCESS_APP_ID}}
-          application_private_key: ${{secrets.ASTERISK_ORG_ACCESS_APP_PRIV_KEY}}
+          application_id: ${{secrets.application_id}}
+          application_private_key: ${{secrets.application_private_key}}
           organization: asterisk
 
       - name: Merge and Cherry Pick to ${{needs.IdentifyBranches.outputs.branches}}
