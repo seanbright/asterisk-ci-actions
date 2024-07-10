@@ -9,10 +9,6 @@ on:
       TOKEN:
         required: true
 
-concurrency:
-  group: ${{github.workflow}}-${{github.event.number}}
-  cancel-in-progress: true
-
 env:
   PR_NUMBER: ${{ github.event.number }}
   BASE_BRANCH: ${{github.event.pull_request.base.ref}}

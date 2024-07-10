@@ -5,10 +5,6 @@ on:
       TOKEN:
         required: true
 
-concurrency:
-  group: ${{github.workflow}}-${{github.event.number}}
-  cancel-in-progress: true
-
 env:
   PR_NUMBER: ${{ github.event.number }}
   VAR_CHERRY_PICK_TEST_LABEL: ${{vars.CHERRY_PICK_TEST_LABEL}}
