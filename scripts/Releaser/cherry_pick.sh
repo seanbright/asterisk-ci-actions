@@ -43,6 +43,10 @@ if [ ! -f "${SRC_REPO}/.lastclean" ] ; then
 	sed -i -r -e "/Remove .lastclean and .version from source control/d" ${commitlist}
 fi
 
+if [ ! -f "${SRC_REPO}/CHANGES" ] && [ ! -f "${SRC_REPO}/UPGRADE.txt" ] ; then
+	sed -i -r -e "/Remove files that are no longer updated/d" ${commitlist}
+fi
+
 commitcount=$(wc -l ${commitlist} | sed -n -r -e "s/([0-9]+).*/\1/gp")
 [ $commitcount -eq 0 ] && bail "There were no commits to cherry-pick"
 echo "Cherry picking $commitcount commit(s) from ${end_tag[source_branch]} to ${end_tag[branch]}"

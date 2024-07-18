@@ -149,15 +149,19 @@ if [ "${new[release_type]}" == "rc" ] ; then
 		fi
 		# We need to get the last branch.  In the case of certified,
 		# it's brobably NOT branch_num - 1.
-#		if ${last[certified]} ; then
-#			last_branch=$(git -C "${SRC_REPO}" for-each-ref --sort="v:refname" --format="%(refname:lstrip=3)" refs/heads/releases/${new[certprefix]} | tail -2 | head -1)
-#			lastga=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l "${last_branch}.[0-9]*${new[patchsep]}[0-9]" | tail -1)
-#			debug "Using lastga '${lastga}' for certified"
-#			print_tag "${last[tag]}"
-#		else
+		if ${last[certified]} ; then
+			debug "First RC of a new major certified release."
+			debug "Searching refs/heads/releases/${new[certprefix]}*"
+			last_branch=$(git -C "${SRC_REPO}" for-each-ref --sort="v:refname" --format="%(refname:lstrip=3)" refs/heads/releases/${new[certprefix]}* | tail -2 | head -1)
+			debug "last branch: ${last_branch}"
+			debug "Searching tags for ${last_branch}${new[patchsep]}[0-9]{,[0-9]}"
+			lastga=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l ${last_branch}${new[patchsep]}[0-9]{,[0-9]} | tail -1)
+			debug "Using lastga '${lastga}' for certified"
+			print_tag "${lastga}"
+		else
 			debug "Using -pre1 '${last[tag]}'"
 			print_tag "${last[tag]}"
-#		fi
+		fi
 		exit 0
 	fi
 	debug "good: rcn->rcn+1"
@@ -177,11 +181,22 @@ debug "good: rcn->ga"
 if [ ${new[minor]} -eq 0 ] && [ ${new[patch]} -eq 0 ] ; then
 	debug "First GA of new major release.  Using -pre1 '${last[major]}.0.0-pre1'"
 	print_tag "${last[major]}.0.0-pre1"
+elif ${new[certified]} && [ ${new[patch]} -eq 1 ] ; then
+	debug "First GA of a new certified major release."
+	debug "Searching refs/heads/releases/${new[certprefix]}*"
+	last_branch=$(git -C "${SRC_REPO}" for-each-ref --sort="v:refname" --format="%(refname:lstrip=3)" refs/heads/releases/${new[certprefix]}* | tail -2 | head -1)
+	debug "last branch: ${last_branch}"
+	debug "Searching tags for ${last_branch}${new[patchsep]}[0-9]{,[0-9]}"
+	lastga=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l ${last_branch}${new[patchsep]}[0-9]{,[0-9]} | tail -1)
+	debug "Using lastga '${lastga}' for certified"
+	print_tag "${lastga}"
+	exit 0
 else
 	# git tag -l doesn't do regex so we need to get a partial match list
 	# and further filter it to remove RCs, etc. so we're only left
 	# with GAs.  Since git does do a good job at sorting version strings
 	# the last GA entry will be the one we want.
+	debug "Searching for ${new[certprefix]}${new[major]}.[0-9]*${new[patchsep]}[0-9]*"
 	prevtags=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l "${new[certprefix]}${new[major]}.[0-9]*${new[patchsep]}[0-9]*")
 	for t in ${prevtags} ; do
 		unset ta ; declare -A ta
