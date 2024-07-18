@@ -151,8 +151,10 @@ if [ "${new[release_type]}" == "rc" ] ; then
 		# it's brobably NOT branch_num - 1.
 		if ${last[certified]} ; then
 			debug "First RC of a new major certified release."
-			debug "Searching refs/heads/releases/${new[certprefix]}*"
-			last_branch=$(git -C "${SRC_REPO}" for-each-ref --sort="v:refname" --format="%(refname:lstrip=3)" refs/heads/releases/${new[certprefix]}* | tail -2 | head -1)
+			# We need to search refs/remotes because the repo was probably just cloned and only
+			# the new branch checked out.  The rest of teh branches won't exist locally.
+			debug "Searching refs/remotes/origin/releases/${new[certprefix]}*"
+			last_branch=$(git -C "${SRC_REPO}" for-each-ref --sort="v:refname" --format="%(refname:lstrip=4)" refs/remotes/origin/releases/${new[certprefix]}* | tail -2 | head -1)
 			debug "last branch: ${last_branch}"
 			debug "Searching tags for ${last_branch}${new[patchsep]}[0-9]{,[0-9]}"
 			lastga=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l ${last_branch}${new[patchsep]}[0-9]{,[0-9]} | tail -1)
@@ -183,8 +185,10 @@ if [ ${new[minor]} -eq 0 ] && [ ${new[patch]} -eq 0 ] ; then
 	print_tag "${last[major]}.0.0-pre1"
 elif ${new[certified]} && [ ${new[patch]} -eq 1 ] ; then
 	debug "First GA of a new certified major release."
-	debug "Searching refs/heads/releases/${new[certprefix]}*"
-	last_branch=$(git -C "${SRC_REPO}" for-each-ref --sort="v:refname" --format="%(refname:lstrip=3)" refs/heads/releases/${new[certprefix]}* | tail -2 | head -1)
+	# We need to search refs/remotes because the repo was probably just cloned and only
+	# the new branch checked out.  The rest of teh branches won't exist locally.
+	debug "Searching refs/remotes/origin/releases/${new[certprefix]}*"
+	last_branch=$(git -C "${SRC_REPO}" for-each-ref --sort="v:refname" --format="%(refname:lstrip=4)" refs/remotes/origin/releases/${new[certprefix]}* | tail -2 | head -1)
 	debug "last branch: ${last_branch}"
 	debug "Searching tags for ${last_branch}${new[patchsep]}[0-9]{,[0-9]}"
 	lastga=$(git -C "${SRC_REPO}" tag --sort="v:refname" -l ${last_branch}${new[patchsep]}[0-9]{,[0-9]} | tail -1)
