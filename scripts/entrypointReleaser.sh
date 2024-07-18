@@ -77,7 +77,7 @@ if ${end_tag_array[certified]} && [ "${end_tag_array[release_type]}" == "ga" ] ;
 fi
 
 START_TAG=$(${SCRIPT_DIR}/get_start_tag.sh --src-repo=${REPO_DIR} \
-	--product=${PRODUCT} \
+	--product=${PRODUCT} --debug \
 	$(booloption security) $(booloption hotfix) $(booloption norc) \
 	$(stringoption start-tag) --end-tag=${END_TAG})
 
