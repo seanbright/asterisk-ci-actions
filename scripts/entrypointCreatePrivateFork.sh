@@ -33,15 +33,19 @@ cd ${REPO_DIR}
 git push --mirror https://x-access-token:${GITHUB_TOKEN}@github.com/asterisk/${INPUT_DST_REPO}.git &> /tmp/push || \
 	{ cat /tmp/push ; exit 1 ; }
 
+gh repo edit asterisk/${INPUT_DST_REPO} --default-branch master
+# Sleep for a bit to allow github to catch up and recognize the
+# workflows on the master branch.
+sleep 10
+
 cd ..
 
 # Disable the workflows we never want to run in the private repo.
 # These will probably fail due to GitHub not enabling actions on the
 # repo in the first place.
-gh -R asterisk/${INPUT_DST_REPO} workflow disable "Issue Opened" || :
-gh -R asterisk/${INPUT_DST_REPO} workflow disable PRMerged || :
 gh -R asterisk/${INPUT_DST_REPO} workflow disable CreateDocs || :
-gh -R asterisk/${INPUT_DST_REPO} workflow disable MergeApproved || :
-gh -R asterisk/${INPUT_DST_REPO} workflow disable NightlyTests || :
+gh -R asterisk/${INPUT_DST_REPO} workflow disable "Issue Opened" || :
 gh -R asterisk/${INPUT_DST_REPO} workflow disable NightlyAdmin || :
+gh -R asterisk/${INPUT_DST_REPO} workflow disable NightlyTests || :
+gh -R asterisk/${INPUT_DST_REPO} workflow disable PRMergeApproved || :
 gh -R asterisk/${INPUT_DST_REPO} workflow disable Releaser || :
