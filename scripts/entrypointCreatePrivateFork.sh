@@ -34,11 +34,28 @@ git push --mirror https://x-access-token:${GITHUB_TOKEN}@github.com/asterisk/${I
 	{ cat /tmp/push ; exit 1 ; }
 
 gh repo edit asterisk/${INPUT_DST_REPO} --default-branch master
+
+# Clone all the labels from the soure repo.
+
+gh label clone asterisk/${INPUT_SRC_REPO} -f
+
 # Sleep for a bit to allow github to catch up and recognize the
 # workflows on the master branch.
-sleep 10
+sleep 5
 
-cd ..
+gh api \
+	--method PUT \
+	-H "Accept: application/vnd.github+json" \
+	-H "X-GitHub-Api-Version: 2022-11-28" \
+	/orgs/asterisk/actions/permissions/repositories/${INPUT_DST_REPO} || :
+
+gh api --method PUT \
+	-H "Accept: application/vnd.github+json" \
+	-H "X-GitHub-Api-Version: 2022-11-28" \
+	/repos/asterisk/${INPUT_DST_REPO}/actions/permissions \
+	-F "enabled=true" -f "allowed_actions=all" || :
+
+sleep 5
 
 # Disable the workflows we never want to run in the private repo.
 # These will probably fail due to GitHub not enabling actions on the

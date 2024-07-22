@@ -16,16 +16,24 @@ jobs:
   CreatePrivateFork:
     runs-on: ubuntu-latest
     steps:
-      - name: CreatePrivateFork
-        uses: asterisk/asterisk-ci-actions/CreatePrivateForkComposite@main
+      - name: CreateFork
+        uses: asterisk/asterisk-ci-actions/CreatePrivateFork@main
         with:
-          src_repo: ${{inputs.src_repo}}
-          dst_repo: ${{inputs.dst_repo}}
-          github_token: ${{secrets.ASTERISKTEAM_PAT}}
-  
+          src_repo:         ${{inputs.src_repo}}
+          dst_repo:         ${{inputs.dst_repo}}
+          github_token:     ${{secrets.ASTERISKTEAM_PAT}}
+
+      - name: CopyVars
+        uses: asterisk/asterisk-ci-actions/CopyRepoVariables@main
+        with:
+          src_repo:        ${{inputs.src_repo}}
+          dst_repo:        ${{inputs.dst_repo}}
+          github_token:    ${{secrets.ASTERISKTEAM_PAT}}
+
   UpdateControlData:
     needs: CreatePrivateFork
     uses: ./.github/workflows/UpdateControlData.yml
     with:
       repo: ${{inputs.dst_repo}}
     secrets: inherit
+
