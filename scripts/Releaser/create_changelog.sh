@@ -262,7 +262,7 @@ git -C "${SRC_REPO}" shortlog \
 	-E --grep "^(([.]github)|(Add\s+ChangeLog)|(Update[s]?\s+for)|(Update\s+CHANGES))" --invert-grep \
 	--group="author" --format="- %<(80,trunc)%s" ${START_TAG}..HEAD |\
 #	Undent the commits and make headings for the authors
-	sed -r -e "s/\s+-(.+)/  -\1/g" --e "s/^([^ ].+)/- ### \1/g" \
+	sed -r -e "s/\s+-(.+)/  -\1/g" --e "s/^([^ ].+)/- #### \1/g" \
 	>>"${FULL_CHANGELOG_FILE}"
 
 debug "Adding commit list"
@@ -331,7 +331,12 @@ Thank You!
 
 EOF
 fi
+
+if $SECURITY || $HOTFIX ; then
+cat "${FULL_CHANGELOG_FILE}" >>"${DST_DIR}/email_announcement.md"
+else
 cat "${SUMMARY_FILE}" >>"${DST_DIR}/email_announcement.md"
+fi
 
 debug "Create the README"
 cp "${SRC_REPO}/README.md" "${DST_DIR}/README-${END_TAG}.md"
