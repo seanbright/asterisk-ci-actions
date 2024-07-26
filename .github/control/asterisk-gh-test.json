@@ -282,22 +282,22 @@
     "value": "testing-in-progress"
   },
   {
-    "created_at": "2024-07-26T14:39:02Z",
-    "name": "TESTSUITE_PR_AUTO_MERGE_REGEX",
-    "updated_at": "2024-07-26T14:39:44Z",
-    "value": "testsuite-test-auto-merge:[ ]*(yes|no|true|false)"
-  },
-  {
-    "created_at": "2024-07-26T14:37:11Z",
-    "name": "TESTSUITE_PR_TEST_REGEX",
-    "updated_at": "2024-07-26T14:37:11Z",
-    "value": "testsuite-test-pr:[ ]*([0-9]+)"
-  },
-  {
     "created_at": "2023-03-13T18:34:52Z",
     "name": "TESTSUITE_REPO",
     "updated_at": "2023-04-24T11:41:37Z",
     "value": "asterisk/testsuite-gh-test"
+  },
+  {
+    "created_at": "2024-07-26T14:39:02Z",
+    "name": "TESTSUITE_TEST_AUTO_MERGE_REGEX",
+    "updated_at": "2024-07-26T16:02:02Z",
+    "value": "testsuite-test-auto-merge:[ ]*(yes|no|true|false)"
+  },
+  {
+    "created_at": "2024-07-26T14:37:11Z",
+    "name": "TESTSUITE_TEST_PR_REGEX",
+    "updated_at": "2024-07-26T16:01:30Z",
+    "value": "testsuite-test-pr:[ ]*([0-9]+)"
   },
   {
     "created_at": "2023-05-02T17:53:32Z",
