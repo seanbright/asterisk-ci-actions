@@ -150,6 +150,12 @@
     "value": "oss-downloads.sangoma.com"
   },
   {
+    "created_at": "2024-07-26T13:26:03Z",
+    "name": "FPBX_ISSUE_REPO",
+    "updated_at": "2024-07-26T13:26:03Z",
+    "value": "freepbx/issue-tracker"
+  },
+  {
     "created_at": "2023-04-27T14:52:18Z",
     "name": "GATETEST_COMMANDS",
     "updated_at": "2024-04-08T19:32:34Z",
