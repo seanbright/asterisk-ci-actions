@@ -128,7 +128,9 @@ if ! ${INPUT_SEND_EMAIL} ; then
 	echo "mail_list=none" >> ${GITHUB_OUTPUT}
 	exit 0
 fi
-	
+
+echo "release_type=${end_tag_array[release_type]}" >> ${GITHUB_OUTPUT}
+
 if ${INPUT_IS_SECURITY} ; then
 	if ${end_tag_array[certified]} ; then
 		echo "subject=Certified ${PRODUCT^} Security Release ${END_TAG}" >> ${GITHUB_OUTPUT}

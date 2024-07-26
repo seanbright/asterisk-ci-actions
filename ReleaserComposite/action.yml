@@ -98,6 +98,9 @@ inputs:
   github_token:
     type: string
     required: true
+  asteriskteam_gh_token:
+    type: string
+    required: true
   application_id:
     type: string
     required: true
@@ -122,6 +125,10 @@ inputs:
   deploy_dir:
     type: string
     required: true
+  fpbx_issue_repo:
+    type: string
+    required: true
+    
   
 runs:
   using: "composite"
@@ -163,12 +170,6 @@ runs:
         deploy_host: ${{inputs.deploy_host}}
         deploy_dir: ${{inputs.deploy_dir}}
 
-#    - name: Dump
-#      uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
-#      with:
-#        action-inputs: ${{ toJSON(inputs)}}
-#        action-vars: ${{ toJSON(steps.releaser.outputs)}}
-
     - name: Save Output
       id: save-output
       if: always()
@@ -193,3 +194,14 @@ runs:
         reply_to: no-reply@sangoma.com
         ignore_cert: true
         convert_markdown: false
+
+    - name: Open FPBX Issue
+      if: inputs.send_email && steps.releaser.outputs.release_type == 'ga'
+      env:
+        GH_TOKEN: ${{inputs.asteriskteam_gh_token}}
+        FPBX_ISSUE_REPO: ${{inputs.fpbx_issue_repo}}
+        ASTERISK_VERSION: ${{inputs.new_version}}
+      run: |
+        gh issue create -R ${FPBX_ISSUE_REPO} \
+          --title "Asterisk Version ${ASTERISK_VERSION} Has Been Released" \
+          --body "Release Notes: https://github.com/asterisk/asterisk/releases/tag/${ASTERISK_VERSION}" 

@@ -118,6 +118,8 @@ outputs:
     description: 'Email subject'
   email_announcement:
     description: 'Path to email announcement'
+  release_type:
+    description: 'ga, rc, etc.'
 
 runs:
   using: "docker"
