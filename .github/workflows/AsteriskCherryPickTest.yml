@@ -16,6 +16,7 @@ jobs:
     outputs:
       branches:     ${{ steps.getbranches.outputs.branches }}
       branch_count: ${{ steps.getbranches.outputs.branch_count }}
+      testsuite_test_pr:  ${{ steps.testsuitepr.outputs.testsuite_test_pr }}
     steps:
       - name: Remove Trigger Label, Add InProgress Label
         env:
@@ -49,6 +50,16 @@ jobs:
           --add-label ${{vars.CHERRY_PICK_TESTING_IN_PROGRESS}} \
           ${{env.PR_NUMBER}} || :
 
+      - name: GetTestsuitePR
+        id: testsuitepr
+        uses: asterisk/asterisk-ci-actions/GetTestsuitePRFromAsteriskPR@main
+        with:
+          repo:     ${{github.repository}}
+          pr_number: ${{github.event.number}}
+          testsuite_test_pr_regex: ${{ vars.TESTSUITE_TEST_PR_REGEX }}
+          testsuite_test_auto_merge_regex: ${{ vars.TESTSUITE_TEST_AUTO_MERGE_REGEX }}
+          github_token: ${{ secrets.TOKEN }}
+
   CherryPickTestMatrix:
     needs: IdentifyBranches
     if: ${{ needs.IdentifyBranches.outputs.branch_count > 0 && ( success() || failure() ) }}
@@ -66,6 +77,7 @@ jobs:
       build_options:     ${{vars.BUILD_OPTIONS}}
       unittest_command:  ${{vars.UNITTEST_COMMAND}}
       testsuite_repo:    ${{vars.TESTSUITE_REPO}}
+      testsuite_test_pr: ${{needs.IdentifyBranches.outputs.testsuite_test_pr}}
       gatetest_list:     ${{vars.GATETEST_LIST}}
       gatetest_commands: ${{vars.GATETEST_COMMANDS}}
     secrets: inherit

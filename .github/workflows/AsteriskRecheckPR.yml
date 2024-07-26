@@ -12,6 +12,8 @@ env:
 jobs:
   Setup:
     runs-on: ubuntu-latest
+    outputs:
+      testsuite_test_pr:  ${{ steps.testsuitepr.outputs.testsuite_test_pr }}
     steps:
       - name: Set Label
         id: setlabel
@@ -25,8 +27,19 @@ jobs:
             --add-label ${{vars.PR_SUBMIT_TESTING_IN_PROGRESS}} \
             $PR_NUMBER || :
 
+      - name: GetTestsuitePR
+        id: testsuitepr
+        uses: asterisk/asterisk-ci-actions/GetTestsuitePRFromAsteriskPR@main
+        with:
+          repo:     ${{github.repository}}
+          pr_number: ${{github.event.number}}
+          testsuite_test_pr_regex: ${{ vars.TESTSUITE_TEST_PR_REGEX }}
+          testsuite_test_auto_merge_regex: ${{ vars.TESTSUITE_TEST_AUTO_MERGE_REGEX }}
+          github_token: ${{ secrets.TOKEN }}
+
   PRCheck:
     name: PRCheck
+    needs: Setup
     uses: ./.github/workflows/AsteriskUnitGateTest.yml
     with:
       test_type:         prrecheck
@@ -37,6 +50,7 @@ jobs:
       build_options:     ${{vars.BUILD_OPTIONS}}
       unittest_command:  ${{vars.UNITTEST_COMMAND}}
       testsuite_repo:    ${{vars.TESTSUITE_REPO}}
+      testsuite_test_pr: ${{ needs.Setup.outputs.testsuite_test_pr }}
       gatetest_list:     ${{vars.GATETEST_LIST}}
       gatetest_commands: ${{vars.GATETEST_COMMANDS}}
     secrets: inherit
