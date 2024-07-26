@@ -14,37 +14,17 @@ jobs:
   Setup:
     runs-on: ubuntu-latest
     steps:
-      - name: DumpEnvironment
-        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
-        with:
-          action-inputs: ${{ toJSON(inputs) }}
-
-  SetupMatrix:
-#    if: ${{ inputs.counter == 666 }}
-#    needs: Setup 
-    runs-on: ubuntu-latest
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        group: ['A','B']
-    steps:
-      - name: DoSomething
-        shell: bash
+#      - name: DumpEnvironment
+#        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+#        with:
+#          action-inputs: ${{ toJSON(inputs) }}
+#
+      - name: CreateIssue
+        env:
+          GH_TOKEN: ${{secrets.ASTERISKTEAM_PAT}}
         run: |
-          echo "I DID SOMETHING FIRST"
+          gh issue create -R freepbx/github-integration-test \
+            --title 'Asterisk Version blah Has Been Released' \
+            --body 'Asterisk Version blah Has Been Released' 
 
-  Setup2:
-#    needs: SetupMatrix 
-    runs-on: ubuntu-latest
-    steps:
-      - name: DoSomething
-        shell: bash
-        run: |
-          echo "I DID SOMETHING AFTER"
-
-
-#  TestCalledWorkflow:
-#    uses: ./.github/workflows/TestCalledWorkflow.yml
-#    with:
-#      counter: ${{inputs.counter}}
 
