@@ -390,6 +390,18 @@
     "value": "asterisk/testsuite"
   },
   {
+    "created_at": "2024-07-26T17:28:40Z",
+    "name": "TESTSUITE_TEST_AUTO_MERGE_REGEX",
+    "updated_at": "2024-07-26T17:28:40Z",
+    "value": "testsuite-test-auto-merge:[ ]*(yes|no|true|false)"
+  },
+  {
+    "created_at": "2024-07-26T17:27:47Z",
+    "name": "TESTSUITE_TEST_PR_REGEX",
+    "updated_at": "2024-07-26T17:27:47Z",
+    "value": "testsuite-test-pr:[ ]*([0-9]+)"
+  },
+  {
     "created_at": "2023-05-02T17:53:49Z",
     "name": "TEST_CHECKS_FAILED_LABEL",
     "updated_at": "2023-05-02T17:53:49Z",
