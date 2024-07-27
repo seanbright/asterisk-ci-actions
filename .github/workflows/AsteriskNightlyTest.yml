@@ -48,15 +48,15 @@ jobs:
         run: |
           case $RESULT in
             success)
-              echo "::notice::All tests passed"
+              echo "All tests passed"
               exit 0
               ;;
             skipped)
-              echo "::notice::Unit tests were skipped because of an earlier failure"
+              echo "One or more tests were skipped because of an earlier failure"
               exit 1
               ;;
             *)
-              echo "::error::One or more tests failed ($RESULT)"
+              echo "One or more tests failed ($RESULT)"
               exit 1
           esac
 

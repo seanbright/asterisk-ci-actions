@@ -7,18 +7,18 @@ on:
         required: true
 
 env:
-  PR_NUMBER: ${{ github.event.number }}
+  PR_NUMBER: ${{github.event.number}}
 
 jobs:
   Setup:
     runs-on: ubuntu-latest
     outputs:
-      testsuite_test_pr:  ${{ steps.testsuitepr.outputs.testsuite_test_pr }}
+      testsuite_test_pr:  ${{steps.testsuitepr.outputs.testsuite_test_pr}}
     steps:
       - name: Set Label
         id: setlabel
         env:
-          GH_TOKEN:  ${{ secrets.TOKEN }}
+          GH_TOKEN:  ${{secrets.TOKEN}}
         run: | 
           gh pr edit --repo ${{github.repository}} \
             --remove-label ${{vars.RECHECKPR_LABEL}} \
@@ -31,11 +31,11 @@ jobs:
         id: testsuitepr
         uses: asterisk/asterisk-ci-actions/GetTestsuitePRFromAsteriskPR@main
         with:
-          repo:     ${{github.repository}}
-          pr_number: ${{github.event.number}}
-          testsuite_test_pr_regex: ${{ vars.TESTSUITE_TEST_PR_REGEX }}
-          testsuite_test_auto_merge_regex: ${{ vars.TESTSUITE_TEST_AUTO_MERGE_REGEX }}
-          github_token: ${{ secrets.TOKEN }}
+          repo:                            ${{github.repository}}
+          pr_number:                       ${{github.event.number}}
+          testsuite_test_pr_regex:         ${{vars.TESTSUITE_TEST_PR_REGEX}}
+          testsuite_test_auto_merge_regex: ${{vars.TESTSUITE_TEST_AUTO_MERGE_REGEX}}
+          github_token:                    ${{secrets.TOKEN}}
 
   PRCheck:
     name: PRCheck
@@ -50,7 +50,7 @@ jobs:
       build_options:     ${{vars.BUILD_OPTIONS}}
       unittest_command:  ${{vars.UNITTEST_COMMAND}}
       testsuite_repo:    ${{vars.TESTSUITE_REPO}}
-      testsuite_test_pr: ${{ needs.Setup.outputs.testsuite_test_pr }}
+      testsuite_test_pr: ${{needs.Setup.outputs.testsuite_test_pr}}
       gatetest_list:     ${{vars.GATETEST_LIST}}
       gatetest_commands: ${{vars.GATETEST_COMMANDS}}
     secrets: inherit
@@ -62,32 +62,29 @@ jobs:
     steps:
       - name: Check status
         env:
-          GH_TOKEN:  ${{ secrets.TOKEN }}
-          RESULT_UNIT: ${{ needs.PRCheck.result }}
-          TESTS_PASSED: ${{ vars.PR_SUBMIT_TESTS_PASSED }}
-          TESTS_FAILED: ${{ vars.PR_SUBMIT_TESTS_FAILED }}
+          GH_TOKEN:          ${{secrets.TOKEN}}
+          RESULT_UNIT:       ${{needs.PRCheck.result}}
+          IN_PROGRESS_LABEL: ${{vars.PR_SUBMIT_TESTING_IN_PROGRESS}}
+          PASSED_LABEL:      ${{vars.PR_SUBMIT_TESTS_PASSED}}
+          FAILED_LABEL:      ${{vars.PR_SUBMIT_TESTS_FAILED}}
         run: |
           declare -i rc=0
-          echo "all results: ${{ toJSON(needs.*.result) }}"
           case $RESULT_UNIT in
             success)
-              echo "::notice::Unit/Gate tests passed"
+              echo "All tests passed"
               ;;
             skipped)
-              echo "::error::Unit/Gate tests were skipped because of an earlier failure"
+              echo "One or more tests were skipped because of an earlier failure"
               rc+=1
               ;;
             *)
-              echo "::error::One or more Unit/Gate tests failed ($RESULT_UNIT)"
+              echo "One or more tests failed ($RESULT)"
               rc+=1
           esac
-          
-          label=$TESTS_PASSED
-          if [ $rc != 0 ] ; then
-            label=$TESTS_FAILED
-          fi
+          [ $rc -gt 0 ] && label=$FAILED_LABEL || label=$PASSED_LABEL
           gh pr edit --repo ${{github.repository}} \
-            --remove-label ${{vars.PR_SUBMIT_TESTING_IN_PROGRESS}} \
+            --remove-label $IN_PROGRESS_LABEL \
             --add-label $label \
-              $PR_NUMBER || :
+            ${PR_NUMBER} || :
           exit $rc
+          
