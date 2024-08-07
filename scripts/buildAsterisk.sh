@@ -176,6 +176,17 @@ if ! $NO_MENUSELECT ; then
 	$SUCCESS || exit 1
 fi
 
+runner ${MAKE} ari-stubs
+changes=$(git status --porcelain)
+if [ -n "$changes" ] ; then
+		echo "ERROR: 'make ari-stubs' generated new files which were not checked in.
+Perhaps you forgot to run 'make ari-stubs' yourself?
+Files:
+$changes
+" >&2
+	exit 1
+fi
+
 if ! $NO_MAKE ; then
 	runner ${MAKE} -j8 full || runner ${MAKE} -j1 NOISY_BUILD=yes full
 fi
