@@ -15,7 +15,7 @@ declare -A end_tag
 tag_parser ${END_TAG} end_tag || bail "Unable to parse end tag '${END_TAG}'"
 ${DEBUG} && declare -p end_tag
 
-if ${end_tag[certified]} && [ "${end_tag[release_type]}" == "ga" ] ; then
+if ${end_tag[certified]} && [ "${end_tag[release_type]}" == "ga" ] && ! ${SECURITY} ; then
 	NORC=true
 	FORCE_CHERRY_PICK=true
 fi
