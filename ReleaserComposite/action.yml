@@ -197,6 +197,7 @@ runs:
 
     - name: Open FPBX Issue
       if: inputs.send_email && steps.releaser.outputs.release_type == 'ga'
+      shell: bash
       env:
         GH_TOKEN: ${{inputs.asteriskteam_gh_token}}
         FPBX_ISSUE_REPO: ${{inputs.fpbx_issue_repo}}
