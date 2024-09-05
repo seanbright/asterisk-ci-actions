@@ -71,11 +71,6 @@ git -C ${REPO_DIR} pull >/dev/null 2>&1
 git config --global user.email "asteriskteam@digium.com"
 git config --global user.name "Asterisk Development Team"
 
-if ${end_tag_array[certified]} && [ "${end_tag_array[release_type]}" == "ga" ] ; then
-	NORC=true
-	FORCE_CHERRY_PICK=true
-fi
-
 START_TAG=$(${SCRIPT_DIR}/get_start_tag.sh --src-repo=${REPO_DIR} \
 	--product=${PRODUCT} --debug \
 	$(booloption security) $(booloption hotfix) $(booloption norc) \
