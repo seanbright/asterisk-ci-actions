@@ -140,14 +140,14 @@
   {
     "created_at": "2023-03-13T15:35:30Z",
     "name": "GATETEST_COMMANDS",
-    "updated_at": "2024-07-23T17:33:30Z",
-    "value": "{\r\n\t\"ari1\": {\r\n\t\t\"name\": \"ari1\",\r\n\t\t\"dir\": \"tests/CI/output/ari1\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/rest_api/[abem]\"\r\n\t},\r\n\t\"ari2\": {\r\n\t\t\"name\": \"ari2\",\r\n\t\t\"dir\": \"tests/CI/output/ari2\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/rest_api/[c]\"\r\n\t},\r\n\t\"pjs1\": {\r\n\t\t\"name\": \"pjs1\",\r\n\t\t\"dir\": \"tests/CI/output/pjsip1\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/channels/pjsip/[cghmnopqu]\"\r\n\t},\r\n\t\"pjs2\": {\r\n\t\t\"name\": \"pjs2\",\r\n\t\t\"dir\": \"tests/CI/output/pjsip2\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/channels/pjsip/[adit]\"\r\n\t},\r\n\t\"pjs3\": {\r\n\t\t\"name\": \"pjs3\",\r\n\t\t\"dir\": \"tests/CI/output/pjsip3\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/channels/pjsip/[b]\"\r\n\t},\r\n\t\"pjs4\": {\r\n\t\t\"name\": \"pjs4\",\r\n\t\t\"dir\": \"tests/CI/output/pjsip4\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/channels/pjsip/[r]\"\r\n\t},\r\n\t\"pjs5\": {\r\n\t\t\"name\": \"pjs5\",\r\n\t\t\"dir\": \"tests/CI/output/pjsip5\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"--test-regex=tests/channels/pjsip/[s]\"\r\n\t},\r\n\t\"pjsiptest\": {\r\n\t\t\"name\": \"pjsiptest\",\r\n\t\t\"dir\": \"tests/CI/output/pjsiptest\",\r\n\t\t\"timeout\": 180,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \"-t tests/rest_api/external_interaction/attended_transfer/stasis_bridge_to_stasis_bridge/same_stasis_app_accepted -t tests/channels/pjsip/qualify/max_initial_qualify_time\"\r\n\t},\r\n\t\"channels\": {\r\n\t\t\"name\": \"channels\",\r\n\t\t\"dir\": \"tests/CI/output/channels\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/channels/local -t tests/channels/iax2\"\r\n\t},\r\n\t\"fax\": {\r\n\t\t\"name\": \"fax\",\r\n\t\t\"dir\": \"tests/CI/output/fax\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/fax\"\r\n\t},\r\n\t\"rtp_sorcery\": {\r\n\t\t\"name\": \"rtp_sorcery\",\r\n\t\t\"dir\": \"tests/CI/output/rtp_sorcery\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/rtp -t tests/sorcery\"\r\n\t},\r\n\t\"apps_funcs\": {\r\n\t\t\"name\": \"apps_funcs\",\r\n\t\t\"dir\": \"tests/CI/output/apps\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/apps -t tests/funcs\"\r\n\t},\r\n\t\"mgr_masq_pbx\": {\r\n\t\t\"name\": \"mgr_masq_pbx\",\r\n\t\t\"dir\": \"tests/CI/output/mgr_masq_pbx\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/manager -t tests/masquerade -t tests/pbx\"\r\n\t},\r\n\t\"pass_fail\": {\r\n\t\t\"name\": \"pass_fail\",\r\n\t\t\"dir\": \"tests/CI/output/pass_fail\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/channels/pjsip/subscriptions/presence\"\r\n\t},\r\n\t\"all_pass\": {\r\n\t\t\"name\": \"all_pass\",\r\n\t\t\"dir\": \"tests/CI/output/all_pass\",\r\n\t\t\"timeout\": 240,\r\n\t\t\"options\": \"\",\r\n\t\t\"testcmd\": \" -t tests/channels/local\"\r\n\t}\r\n}\r\n"
+    "updated_at": "2024-07-30T19:44:09Z",
+    "value": "{\r\n  \"ari1\": {\r\n    \"name\": \"ari1\",\r\n    \"dir\": \"tests/CI/output/ari1\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/rest_api/[abem]\"\r\n  },\r\n  \"ari2\": {\r\n    \"name\": \"ari2\",\r\n    \"dir\": \"tests/CI/output/ari2\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/rest_api/[c]\"\r\n  },\r\n  \"pjs1\": {\r\n    \"name\": \"pjs1\",\r\n    \"dir\": \"tests/CI/output/pjsip1\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/channels/pjsip/[cghmnopqu]\"\r\n  },\r\n  \"pjs2\": {\r\n    \"name\": \"pjs2\",\r\n    \"dir\": \"tests/CI/output/pjsip2\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/channels/pjsip/[adit]\"\r\n  },\r\n  \"pjs3\": {\r\n    \"name\": \"pjs3\",\r\n    \"dir\": \"tests/CI/output/pjsip3\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/channels/pjsip/[b]\"\r\n  },\r\n  \"pjs4\": {\r\n    \"name\": \"pjs4\",\r\n    \"dir\": \"tests/CI/output/pjsip4\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/channels/pjsip/[r]\"\r\n  },\r\n  \"pjs5\": {\r\n    \"name\": \"pjs5\",\r\n    \"dir\": \"tests/CI/output/pjsip5\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/channels/pjsip/[s]\"\r\n  },\r\n  \"channels\": {\r\n    \"name\": \"channels\",\r\n    \"dir\": \"tests/CI/output/channels\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/channels/local -t tests/channels/iax2\"\r\n  },\r\n  \"fax\": {\r\n    \"name\": \"fax\",\r\n    \"dir\": \"tests/CI/output/fax\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/fax\"\r\n  },\r\n  \"extra_gates\": {\r\n    \"name\": \"extra_gates\",\r\n    \"dir\": \"tests/CI/output/extra_gates\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/extra_gates\"\r\n  },\r\n  \"rtp_sorcery\": {\r\n    \"name\": \"rtp_sorcery\",\r\n    \"dir\": \"tests/CI/output/rtp_sorcery\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/rtp -t tests/sorcery\"\r\n  },\r\n  \"apps_funcs\": {\r\n    \"name\": \"apps_funcs\",\r\n    \"dir\": \"tests/CI/output/apps\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/apps -t tests/funcs\"\r\n  },\r\n  \"mgr_masq_pbx\": {\r\n    \"name\": \"mgr_masq_pbx\",\r\n    \"dir\": \"tests/CI/output/mgr_masq_pbx\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/manager -t tests/masquerade -t tests/pbx\"\r\n  },\r\n  \"pass_fail\": {\r\n    \"name\": \"pass_fail\",\r\n    \"dir\": \"tests/CI/output/pass_fail\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/channels/pjsip/subscriptions/presence\"\r\n  },\r\n  \"all_pass\": {\r\n    \"name\": \"all_pass\",\r\n    \"dir\": \"tests/CI/output/all_pass\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/channels/local\"\r\n  }\r\n}\r\n"
   },
   {
     "created_at": "2023-03-13T17:13:53Z",
     "name": "GATETEST_LIST",
-    "updated_at": "2024-06-20T19:32:30Z",
-    "value": "['channels']"
+    "updated_at": "2024-07-30T19:44:59Z",
+    "value": "['ari1','ari2','pjs1','pjs2','pjs3','pjs4','pjs5','fax','channels','extra_gates']"
   },
   {
     "created_at": "2023-06-07T16:35:14Z",
@@ -182,14 +182,14 @@
   {
     "created_at": "2023-03-27T11:25:36Z",
     "name": "NIGHTLYTEST_BRANCHES",
-    "updated_at": "2023-04-11T18:46:04Z",
-    "value": "['18','20','master']"
+    "updated_at": "2024-09-12T16:25:08Z",
+    "value": "['18','20','21','22','master','certified/20.7']\r\n"
   },
   {
     "created_at": "2023-03-27T11:27:21Z",
     "name": "NIGHTLYTEST_LIST",
-    "updated_at": "2023-04-11T18:45:45Z",
-    "value": "['ari1','ari2','pjs1','pjs2','pjs3','pjs4','pjs5','fax','channels']"
+    "updated_at": "2024-07-30T19:45:28Z",
+    "value": "['ari1','ari2','pjs1','pjs2','pjs3','pjs4','pjs5','fax','channels','extra_gates','apps_funcs']\r\n"
   },
   {
     "created_at": "2023-06-06T19:09:31Z",
@@ -326,8 +326,8 @@
   {
     "created_at": "2023-03-03T21:15:17Z",
     "name": "UNITTEST_COMMAND",
-    "updated_at": "2024-06-20T19:33:01Z",
-    "value": "test execute category /TEST_PASS_FAIL/ name JUST_PASS"
+    "updated_at": "2024-07-30T23:15:43Z",
+    "value": "test execute all"
   },
   {
     "created_at": "2023-04-06T13:34:14Z",
