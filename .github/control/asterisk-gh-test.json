@@ -42,18 +42,6 @@
     "value": "asteriskteam@sangoma.com"
   },
   {
-    "created_at": "2024-09-16T14:09:19Z",
-    "name": "AST_ACTIONS_REPO",
-    "updated_at": "2024-09-16T14:09:19Z",
-    "value": "asterisk/asterisk-ci-actions"
-  },
-  {
-    "created_at": "2024-09-16T14:09:54Z",
-    "name": "AST_CI_ACTIONS_BRANCH",
-    "updated_at": "2024-09-16T14:09:54Z",
-    "value": "main-cache-build"
-  },
-  {
     "created_at": "2023-05-02T17:04:50Z",
     "name": "CHERRY_PICK_CHECKS_FAILED_LABEL",
     "updated_at": "2023-05-02T17:53:33Z",
@@ -286,6 +274,12 @@
     "name": "RECHECKPR_LABEL",
     "updated_at": "2024-06-12T16:39:07Z",
     "value": "recheckpr"
+  },
+  {
+    "created_at": "2024-09-16T15:38:44Z",
+    "name": "RUN_DUMP_ENV",
+    "updated_at": "2024-09-16T15:38:44Z",
+    "value": "true"
   },
   {
     "created_at": "2023-05-02T17:04:26Z",
