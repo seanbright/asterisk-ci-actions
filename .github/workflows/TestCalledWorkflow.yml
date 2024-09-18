@@ -34,13 +34,13 @@ on:
         default: "akey"
 
 env:
-  WF_ENV: ${{inputs.build_cache_dir}}
+  WF_ENV: ${{ inputs.build_cache_dir }}
 
 jobs:
 
   Setup:
     env:
-      JOB_ENV: ${{inputs.build_cache_key}}
+      JOB_ENV: ${{ inputs.build_cache_key }}
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/asterisk/asteriskci-agent-rocky8:latest

@@ -28,25 +28,25 @@ on:
         required: true
 
 env:
-  GH_TOKEN:         ${{secrets.TOKEN}}
-  GITHUB_TOKEN:     ${{secrets.TOKEN}}
-  TEST_TYPE:        ${{inputs.test_type}}
-  BASE_BRANCH:      ${{inputs.base_branch}}
-  CACHE_DIR:        ${{inputs.output_cache_dir}}
-  USER_GROUP:       ${{inputs.user_group}}
+  GH_TOKEN:         ${{ secrets.TOKEN }}
+  GITHUB_TOKEN:     ${{ secrets.TOKEN }}
+  TEST_TYPE:        ${{ inputs.test_type }}
+  BASE_BRANCH:      ${{ inputs.base_branch }}
+  CACHE_DIR:        ${{ inputs.output_cache_dir }}
+  USER_GROUP:       ${{ inputs.user_group }}
   ACTION_DIR:       asterisk-ci-actions
-  SCRIPT_DIR:       ${{github.workspace}}/asterisk-ci-actions/scripts
-  OUTPUT_DIR:       ${{github.workspace}}/${{inputs.output_cache_dir}}/output
-  REPO_DIR:         ${{github.event.repository.name}}
-  REPO_ORG:         ${{github.event.repository.owner.login}}
+  SCRIPT_DIR:       ${{ github.workspace }}/asterisk-ci-actions/scripts
+  OUTPUT_DIR:       ${{ github.workspace }}/${{ inputs.output_cache_dir }}/output
+  REPO_DIR:         ${{ github.event.repository.name }}
+  REPO_ORG:         ${{ github.event.repository.owner.login }}
   CI_BRANCH:        main-cache-builds
-  BUILD_CACHE_DIR:  ${{inputs.build_cache_dir}}
-  BUILD_CACHE_KEY:  ${{inputs.build_cache_key}}
-  UNITTEST_COMMAND: ${{inputs.unittest_command}}
+  BUILD_CACHE_DIR:  ${{ inputs.build_cache_dir }}
+  BUILD_CACHE_KEY:  ${{ inputs.build_cache_key }}
+  UNITTEST_COMMAND: ${{ inputs.unittest_command }}
 
 jobs:
   RunUnitTests:
-    name: ${{inputs.base_branch}}-unit
+    name: ${{ inputs.base_branch }}-unit
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/asterisk/asteriskci-agent-rocky8:latest
@@ -58,10 +58,10 @@ jobs:
       - name: Restore Asterisk Cache
         uses: asterisk/asterisk-ci-actions/RestoreAsteriskFromCache@main-cache-builds
         with:
-          repo_dir:        ${{github.event.repository.name}}
-          build_cache_dir: ${{inputs.build_cache_dir}}
-          build_cache_key: ${{inputs.build_cache_key}}
-          user_group:      ${{inputs.user_group}}
+          repo_dir:        ${{ github.event.repository.name }}
+          build_cache_dir: ${{ inputs.build_cache_dir }}
+          build_cache_key: ${{ inputs.build_cache_key }}
+          user_group:      ${{ inputs.user_group }}
 
       - name: Setup
         run: |
@@ -93,6 +93,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{env.UNIT_TEST_NAME}}
-          path: ${{inputs.output_cache_dir}}/output
+          name: ${{ env.UNIT_TEST_NAME }}
+          path: ${{ inputs.output_cache_dir }}/output
 

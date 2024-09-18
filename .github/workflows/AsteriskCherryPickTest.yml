@@ -21,22 +21,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.TOKEN }}
         run: |
-          gh pr edit --repo ${{github.repository}} \
-            --remove-label ${{vars.CHERRY_PICK_TEST_LABEL}} \
-            --remove-label ${{vars.CHERRY_PICK_CHECKS_PASSED_LABEL}} \
-            --remove-label ${{vars.CHERRY_PICK_CHECKS_FAILED_LABEL}} \
-            --remove-label ${{vars.CHERRY_PICK_GATES_PASSED_LABEL}} \
-            --remove-label ${{vars.CHERRY_PICK_GATES_FAILED_LABEL}} \
-            --remove-label ${{vars.CHERRY_PICK_TESTING_IN_PROGRESS}} \
+          gh pr edit --repo ${{ github.repository }} \
+            --remove-label ${{ vars.CHERRY_PICK_TEST_LABEL }} \
+            --remove-label ${{ vars.CHERRY_PICK_CHECKS_PASSED_LABEL }} \
+            --remove-label ${{ vars.CHERRY_PICK_CHECKS_FAILED_LABEL }} \
+            --remove-label ${{ vars.CHERRY_PICK_GATES_PASSED_LABEL }} \
+            --remove-label ${{ vars.CHERRY_PICK_GATES_FAILED_LABEL }} \
+            --remove-label ${{ vars.CHERRY_PICK_TESTING_IN_PROGRESS }} \
             $PR_NUMBER || :
 
       - name: Get cherry-pick branches
         uses: asterisk/asterisk-ci-actions/GetCherryPickBranchesFromPR@main
         id: getbranches
         with:
-          repo:              ${{github.repository}}
-          pr_number:         ${{env.PR_NUMBER}}
-          cherry_pick_regex: ${{vars.CHERRY_PICK_REGEX}}
+          repo:              ${{ github.repository }}
+          pr_number:         ${{ env.PR_NUMBER }}
+          cherry_pick_regex: ${{ vars.CHERRY_PICK_REGEX }}
           github_token:      ${{ secrets.TOKEN }}
 
       - name: Check Branch Count
@@ -44,16 +44,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.TOKEN }}
         run: |
-          gh pr edit --repo ${{github.repository}} \
-          --add-label ${{vars.CHERRY_PICK_TESTING_IN_PROGRESS}} \
+          gh pr edit --repo ${{ github.repository }} \
+          --add-label ${{ vars.CHERRY_PICK_TESTING_IN_PROGRESS }} \
           $PR_NUMBER || :
 
       - name: GetTestsuitePR
         id: testsuitepr
         uses: asterisk/asterisk-ci-actions/GetTestsuitePRFromAsteriskPR@main
         with:
-          repo:                            ${{github.repository}}
-          pr_number:                       ${{github.event.number}}
+          repo:                            ${{ github.repository }}
+          pr_number:                       ${{ github.event.number }}
           testsuite_test_pr_regex:         ${{ vars.TESTSUITE_TEST_PR_REGEX }}
           testsuite_test_auto_merge_regex: ${{ vars.TESTSUITE_TEST_AUTO_MERGE_REGEX }}
           github_token:                    ${{ secrets.TOKEN }}
@@ -67,9 +67,9 @@ jobs:
         branch: ${{ fromJSON(needs.GetBranches.outputs.branches) }}
     uses: ./.github/workflows/RunCherryPickPrelimTest.yml
     with:
-      repo:        ${{github.repository}}
-      pr_number:   ${{github.event.number}}
-      base_branch: ${{matrix.branch}}
+      repo:        ${{ github.repository }}
+      pr_number:   ${{ github.event.number }}
+      base_branch: ${{ matrix.branch }}
     secrets: inherit
 
   CherryPickTestMatrix:
@@ -82,16 +82,16 @@ jobs:
     uses: ./.github/workflows/AsteriskUnitGateTest.yml
     with:
       test_type:         cherry-pick
-      asterisk_repo:     ${{github.repository}}
-      pr_number:         ${{github.event.number}}
-      base_branch:       ${{matrix.branch}}
+      asterisk_repo:     ${{ github.repository }}
+      pr_number:         ${{ github.event.number }}
+      base_branch:       ${{ matrix.branch }}
       is_cherry_pick:    true
-      build_options:     ${{vars.BUILD_OPTIONS}}
-      unittest_command:  ${{vars.UNITTEST_COMMAND}}
-      testsuite_repo:    ${{vars.TESTSUITE_REPO}}
-      testsuite_test_pr: ${{needs.GetBranches.outputs.testsuite_test_pr}}
-      gatetest_list:     ${{vars.GATETEST_LIST}}
-      gatetest_commands: ${{vars.GATETEST_COMMANDS}}
+      build_options:     ${{ vars.BUILD_OPTIONS }}
+      unittest_command:  ${{ vars.UNITTEST_COMMAND }}
+      testsuite_repo:    ${{ vars.TESTSUITE_REPO }}
+      testsuite_test_pr: ${{ needs.GetBranches.outputs.testsuite_test_pr }}
+      gatetest_list:     ${{ vars.GATETEST_LIST }}
+      gatetest_commands: ${{ vars.GATETEST_COMMANDS }}
     secrets: inherit
 
   CherryPickTestResults:
@@ -101,11 +101,11 @@ jobs:
     steps:
       - name: Check test matrix status
         env:
-          RESULT_UNIT:       ${{needs.CherryPickTestMatrix.result}}
+          RESULT_UNIT:       ${{ needs.CherryPickTestMatrix.result }}
           GH_TOKEN:          ${{ secrets.TOKEN }}
-          IN_PROGRESS_LABEL: ${{vars.CHERRY_PICK_TESTING_IN_PROGRESS}}
-          PASSED_LABEL:      ${{vars.CHERRY_PICK_CHECKS_PASSED_LABEL}}
-          FAILED_LABEL:      ${{vars.CHERRY_PICK_CHECKS_FAILED_LABEL}}
+          IN_PROGRESS_LABEL: ${{ vars.CHERRY_PICK_TESTING_IN_PROGRESS }}
+          PASSED_LABEL:      ${{ vars.CHERRY_PICK_CHECKS_PASSED_LABEL }}
+          FAILED_LABEL:      ${{ vars.CHERRY_PICK_CHECKS_FAILED_LABEL }}
         run: |
           declare -i rc=0
           case $RESULT_UNIT in
@@ -121,7 +121,7 @@ jobs:
               rc+=1
           esac
           [ $rc -gt 0 ] && label=$FAILED_LABEL || label=$PASSED_LABEL
-          gh pr edit --repo ${{github.repository}} \
+          gh pr edit --repo ${{ github.repository }} \
             --remove-label $IN_PROGRESS_LABEL \
             --add-label $label \
             $PR_NUMBER || :

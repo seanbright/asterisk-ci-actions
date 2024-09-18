@@ -21,6 +21,6 @@ jobs:
       - name: Copy Variables
         uses: asterisk/asterisk-ci-actions/CopyRepoVariables@main
         with:
-          src_repo: ${{inputs.src_repo}}
-          dst_repo: ${{inputs.dst_repo}}
-          github_token: ${{secrets.ASTERISKTEAM_PAT}}
+          src_repo: ${{ inputs.src_repo }}
+          dst_repo: ${{ inputs.dst_repo }}
+          github_token: ${{ secrets.ASTERISKTEAM_PAT }}

@@ -16,15 +16,15 @@ on:
         required: true
 
 env:
-  GH_TOKEN:     ${{secrets.TOKEN}}
-  GITHUB_TOKEN: ${{secrets.TOKEN}}
-  REPO:         ${{inputs.repo}}
-  PR_NUMBER:    ${{inputs.pr_number}}
-  BASE_BRANCH:  ${{inputs.base_branch}}
+  GH_TOKEN:     ${{ secrets.TOKEN }}
+  GITHUB_TOKEN: ${{ secrets.TOKEN }}
+  REPO:         ${{ inputs.repo }}
+  PR_NUMBER:    ${{ inputs.pr_number }}
+  BASE_BRANCH:  ${{ inputs.base_branch }}
   ACTION_DIR:   asterisk-ci-actions
-  SCRIPT_DIR:   ${{github.workspace}}/asterisk-ci-actions/scripts
-  REPO_DIR:     ${{github.event.repository.name}}
-  REPO_ORG:     ${{github.event.repository.owner.login}}
+  SCRIPT_DIR:   ${{ github.workspace }}/asterisk-ci-actions/scripts
+  REPO_DIR:     ${{ github.event.repository.name }}
+  REPO_ORG:     ${{ github.event.repository.owner.login }}
   CI_BRANCH:    main-cache-builds
 
 jobs:

@@ -27,9 +27,9 @@ jobs:
           set-safe-directory: true
       - name: checkdata
         env:
-          CONTROLDATA_BASE: "${{vars.CONTROLDATA_BASE}}"
-          CONTROLDATA_FILE: "${{inputs.repo}}.json"
-          REPO: ${{inputs.repo}}
+          CONTROLDATA_BASE: "${{ vars.CONTROLDATA_BASE }}"
+          CONTROLDATA_FILE: "${{ inputs.repo }}.json"
+          REPO: ${{ inputs.repo }}
           GH_TOKEN:   ${{ secrets.ASTERISKTEAM_PAT }}
         run: |
           echo "Current Directory: $PWD"

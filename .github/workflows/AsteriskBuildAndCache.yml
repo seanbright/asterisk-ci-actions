@@ -52,23 +52,23 @@ on:
         required: true
 
 env:
-  GH_TOKEN:          ${{secrets.TOKEN}}
-  GITHUB_TOKEN:      ${{secrets.TOKEN}}
-  ASTERISK_REPO:     ${{inputs.asterisk_repo}}
+  GH_TOKEN:          ${{ secrets.TOKEN }}
+  GITHUB_TOKEN:      ${{ secrets.TOKEN }}
+  ASTERISK_REPO:     ${{ inputs.asterisk_repo }}
   BASE_BRANCH:       ${{ inputs.base_branch }}
   IS_CHERRY_PICK:    ${{ inputs.is_cherry_pick }}
   PR_NUMBER:         ${{ inputs.pr_number }}
   BUILD_SCRIPT:      ${{ inputs.build_script }}
   BUILD_OPTIONS:     ${{ inputs.build_options }}
   MODULES_BLACKLIST: ${{ inputs.modules_blacklist }}
-  CACHE_DIR:         ${{github.workspace}}/${{inputs.output_cache_dir}}
-  REPO_DIR:          ${{github.event.repository.name}}
-  REPO_ORG:          ${{github.event.repository.owner.login}}
-  OUTPUT_DIR:        ${{github.workspace}}/${{inputs.output_cache_dir}}/output
+  CACHE_DIR:         ${{ github.workspace }}/${{ inputs.output_cache_dir }}
+  REPO_DIR:          ${{ github.event.repository.name }}
+  REPO_ORG:          ${{ github.event.repository.owner.login }}
+  OUTPUT_DIR:        ${{ github.workspace }}/${{ inputs.output_cache_dir }}/output
   ACTION_DIR:        asterisk-ci-actions
-  SCRIPT_DIR:        ${{github.workspace}}/asterisk-ci-actions/scripts
-  BUILD_CACHE_DIR:   ${{github.workspace}}/${{inputs.build_cache_dir}}
-  BUILD_CACHE_KEY:   ${{inputs.build_cache_key}}
+  SCRIPT_DIR:        ${{ github.workspace }}/asterisk-ci-actions/scripts
+  BUILD_CACHE_DIR:   ${{ github.workspace }}/${{ inputs.build_cache_dir }}
+  BUILD_CACHE_KEY:   ${{ inputs.build_cache_key }}
 
 jobs:
   Build:
@@ -143,5 +143,5 @@ jobs:
         name: CacheBuildProducts
         uses: actions/cache/save@v4
         with:
-          path: ${{inputs.build_cache_dir}}
-          key:  ${{inputs.build_cache_key}}
+          path: ${{ inputs.build_cache_dir }}
+          key:  ${{ inputs.build_cache_key }}

@@ -6,13 +6,13 @@ on:
         required: true
 
 env:
-  ACTION:     ${{github.event.action}}
-  CONCLUSION: ${{github.event.workflow_run.conclusion}}
-  REPO:       ${{github.repository}}
-  GH_TOKEN:   ${{secrets.TOKEN}}
-  SHA:        ${{github.event.workflow_run.head_sha}}
-  HEAD_REPO:  ${{github.event.workflow_run.head_repository.full_name}}
-  WORKFLOW:   ${{github.event.workflow.name}}
+  ACTION:     ${{ github.event.action }}
+  CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+  REPO:       ${{ github.repository }}
+  GH_TOKEN:   ${{ secrets.TOKEN }}
+  SHA:        ${{ github.event.workflow_run.head_sha }}
+  HEAD_REPO:  ${{ github.event.workflow_run.head_repository.full_name }}
+  WORKFLOW:   ${{ github.event.workflow.name }}
 
 jobs:
   PRStateChangedPriv:
@@ -85,20 +85,20 @@ jobs:
         id: getbranches
         uses: asterisk/asterisk-ci-actions/GetCherryPickBranchesFromPR@main
         with:
-          repo:              ${{env.REPO}}
-          pr_number:         ${{steps.getpr.outputs.PR_NUMBER}}
-          cherry_pick_regex: ${{vars.CHERRY_PICK_REGEX}}
-          github_token:      ${{secrets.TOKEN}}
+          repo:              ${{ env.REPO }}
+          pr_number:         ${{ steps.getpr.outputs.PR_NUMBER }}
+          cherry_pick_regex: ${{ vars.CHERRY_PICK_REGEX }}
+          github_token:      ${{ secrets.TOKEN }}
 
       - name: Add cherry-pick reminder
         if: github.event.action == 'completed'
         uses: actions/github-script@v7
         env:
-          PR_NUMBER:            ${{steps.getpr.outputs.PR_NUMBER}}
-          CHERRY_PICK_REMINDER: ${{vars.CHERRY_PICK_REMINDER}}
-          BRANCHES_OUTPUT:      ${{toJSON(steps.getbranches.outputs)}}
-          BRANCH_COUNT:         ${{steps.getbranches.outputs.branch_count}}
-          FORCED_NONE:          ${{steps.getbranches.outputs.forced_none}}
+          PR_NUMBER:            ${{ steps.getpr.outputs.PR_NUMBER }}
+          CHERRY_PICK_REMINDER: ${{ vars.CHERRY_PICK_REMINDER }}
+          BRANCHES_OUTPUT:      ${{ toJSON(steps.getbranches.outputs) }}
+          BRANCH_COUNT:         ${{ steps.getbranches.outputs.branch_count }}
+          FORCED_NONE:          ${{ steps.getbranches.outputs.forced_none }}
         with:
           retries: 5
           script: |

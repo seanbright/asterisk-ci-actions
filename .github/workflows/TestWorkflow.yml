@@ -43,5 +43,5 @@ jobs:
       test_type:         ${{ inputs.test_type }}
       base_branch:       ${{ inputs.base_branch }}
       build_cache_dir:   ${{ inputs.build_cache_dir }}
-      build_cache_key:   ${{github.workflow}}-${{inputs.pr_number}}-${{inputs.base_branch}}
+      build_cache_key:   ${{ github.workflow }}-${{ inputs.pr_number }}-${{ inputs.base_branch }}
     secrets: inherit

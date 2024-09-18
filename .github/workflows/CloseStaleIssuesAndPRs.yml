@@ -21,16 +21,16 @@ jobs:
           repo-token: ${{ secrets.ASTERISKTEAM_PAT }}
           days-before-stale: -1
           days-before-close: -1
-          days-before-issue-stale: ${{vars.CSI_DAYS_BEFORE_ISSUE_STALE}}
-          days-before-issue-close: ${{vars.CSI_DAYS_BEFORE_ISSUE_CLOSE}}
+          days-before-issue-stale: ${{ vars.CSI_DAYS_BEFORE_ISSUE_STALE }}
+          days-before-issue-close: ${{ vars.CSI_DAYS_BEFORE_ISSUE_CLOSE }}
           days-before-pr-stale: -1
           days-before-pr-close: -1
-          stale-issue-message: ${{vars.CSI_STALE_ISSUE_MESSAGE}}
-          close-issue-message: ${{vars.CSI_CLOSE_ISSUE_MESSAGE}}
+          stale-issue-message: ${{ vars.CSI_STALE_ISSUE_MESSAGE }}
+          close-issue-message: ${{ vars.CSI_CLOSE_ISSUE_MESSAGE }}
           stale-issue-label: stale
-          only-labels: ${{vars.CSI_ONLY_LABELS}}
-          debug-only: ${{vars.CSI_DEBUG_ONLY}}
-          only-matching-filter: ${{vars.CSI_SEARCH_FILTER}}
+          only-labels: ${{ vars.CSI_ONLY_LABELS }}
+          debug-only: ${{ vars.CSI_DEBUG_ONLY }}
+          only-matching-filter: ${{ vars.CSI_SEARCH_FILTER }}
 
       - name: CloseStalePRs
         if: ${{ vars.CSPR_STALE_PR_MESSAGE != '' }}
@@ -41,13 +41,13 @@ jobs:
           days-before-close: -1
           days-before-issue-stale: -1
           days-before-issue-close: -1
-          days-before-pr-stale: ${{vars.CSPR_DAYS_BEFORE_PR_STALE}}
-          days-before-pr-close: ${{vars.CSPR_DAYS_BEFORE_PR_CLOSE}}
-          stale-pr-message: ${{vars.CSPR_STALE_PR_MESSAGE}}
-          close-pr-message: ${{vars.CSPR_CLOSE_PR_MESSAGE}}
+          days-before-pr-stale: ${{ vars.CSPR_DAYS_BEFORE_PR_STALE }}
+          days-before-pr-close: ${{ vars.CSPR_DAYS_BEFORE_PR_CLOSE }}
+          stale-pr-message: ${{ vars.CSPR_STALE_PR_MESSAGE }}
+          close-pr-message: ${{ vars.CSPR_CLOSE_PR_MESSAGE }}
           stale-pr-label: stale
-          only-labels: ${{vars.CSPR_ONLY_LABELS}}
+          only-labels: ${{ vars.CSPR_ONLY_LABELS }}
           exempt-draft-pr: true
-          debug-only: ${{vars.CSPR_DEBUG_ONLY}}
-          only-matching-filter: ${{vars.CSPR_SEARCH_FILTER}}
+          debug-only: ${{ vars.CSPR_DEBUG_ONLY }}
+          only-matching-filter: ${{ vars.CSPR_SEARCH_FILTER }}
 
