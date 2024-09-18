@@ -25,7 +25,7 @@ env:
   SCRIPT_DIR:   ${{ github.workspace }}/asterisk-ci-actions/scripts
   REPO_DIR:     ${{ github.event.repository.name }}
   REPO_ORG:     ${{ github.event.repository.owner.login }}
-  CI_BRANCH:    main-cache-builds
+  CI_BRANCH:    main
 
 jobs:
   CherryPick:

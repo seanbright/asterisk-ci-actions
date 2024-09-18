@@ -39,7 +39,7 @@ env:
   OUTPUT_DIR:       ${{ github.workspace }}/${{ inputs.output_cache_dir }}/output
   REPO_DIR:         ${{ github.event.repository.name }}
   REPO_ORG:         ${{ github.event.repository.owner.login }}
-  CI_BRANCH:        main-cache-builds
+  CI_BRANCH:        main
   BUILD_CACHE_DIR:  ${{ inputs.build_cache_dir }}
   BUILD_CACHE_KEY:  ${{ inputs.build_cache_key }}
   UNITTEST_COMMAND: ${{ inputs.unittest_command }}
@@ -56,7 +56,7 @@ jobs:
         shell: bash
     steps:
       - name: Restore Asterisk Cache
-        uses: asterisk/asterisk-ci-actions/RestoreAsteriskFromCache@main-cache-builds
+        uses: asterisk/asterisk-ci-actions/RestoreAsteriskFromCache@main
         with:
           repo_dir:        ${{ github.event.repository.name }}
           build_cache_dir: ${{ inputs.build_cache_dir }}
