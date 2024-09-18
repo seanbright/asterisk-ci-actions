@@ -1,4 +1,4 @@
-name: AsteriskPRStateChangedPriv
+name: PRStateChangedPriv
 on:
   workflow_call:
     secrets:
@@ -47,7 +47,7 @@ jobs:
       - name: PreStart
         if: github.event.action == 'requested'
         run: |
-          gh cache delete ${WORKFLOW}-${PR_NUMBER}-${BASE_BRANCH} || :
+          gh cache delete -R ${REPO} ${WORKFLOW}-${PR_NUMBER}-${BASE_BRANCH} || :
 
       - name: Set Label
         id: setlabel
@@ -135,4 +135,4 @@ jobs:
       - name: PostComplete
         if: github.event.action == 'completed'
         run: |
-          gh cache delete ${WORKFLOW}-${PR_NUMBER}-${BASE_BRANCH} || :
+          gh cache delete -R ${REPO} ${WORKFLOW}-${PR_NUMBER}-${BASE_BRANCH} || :
