@@ -2,6 +2,12 @@ name: RecheckPR
 run-name: "${{ github.workflow }}-${{ github.event.label.name }}-${{ github.event.number }}"
 on:
   workflow_call:
+    inputs:
+      actions_ref:
+        description: 'JSON object reference to the actions: { "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
+        type: string
+        required: false
+        default: '{ "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
     secrets:
       TOKEN:
         required: true

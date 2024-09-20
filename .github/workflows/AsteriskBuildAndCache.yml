@@ -2,6 +2,11 @@ name: Build
 on:
   workflow_call:
     inputs:
+      actions_ref:
+        description: 'JSON object reference to the actions: { "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
+        type: string
+        required: false
+        default: '{ "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
       test_type:
         description: 'nightly, prstatechange, prrecheck, cherry-pick'
         required: true
@@ -32,6 +37,10 @@ on:
         type: string
         default: ""
         required: false
+      sipp_version:
+        required: false
+        type: string
+        default: v3.6.1
       output_cache_dir:
         type: string
         required: false
@@ -61,38 +70,38 @@ env:
   BUILD_SCRIPT:      ${{ inputs.build_script }}
   BUILD_OPTIONS:     ${{ inputs.build_options }}
   MODULES_BLACKLIST: ${{ inputs.modules_blacklist }}
+  SIPP_VERSION:      ${{ inputs.sipp_version }}
   CACHE_DIR:         ${{ github.workspace }}/${{ inputs.output_cache_dir }}
   REPO_DIR:          ${{ github.event.repository.name }}
   REPO_ORG:          ${{ github.event.repository.owner.login }}
   OUTPUT_DIR:        ${{ github.workspace }}/${{ inputs.output_cache_dir }}/output
-  ACTION_DIR:        asterisk-ci-actions
-  SCRIPT_DIR:        ${{ github.workspace }}/asterisk-ci-actions/scripts
   BUILD_CACHE_DIR:   ${{ github.workspace }}/${{ inputs.build_cache_dir }}
   BUILD_CACHE_KEY:   ${{ inputs.build_cache_key }}
-  CI_BRANCH:         main
+  ACTIONS_OWNER:     ${{ fromJSON(inputs.actions_ref).owner }}
+  ACTIONS_REPO:      ${{ fromJSON(inputs.actions_ref).repo }}
+  ACTIONS_BRANCH:    ${{ fromJSON(inputs.actions_ref).branch }}
+  SCRIPT_DIR:        ${{ github.workspace }}/asterisk-ci-actions/scripts
 
 jobs:
   Build:
     name: ${{ inputs.base_branch }}-build
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/asterisk/asteriskci-agent-rocky8:latest
-      options: --privileged
     defaults:
       run:
         shell: bash
     steps:
-      - name: DumpEnvironment
-        if: ${{ inputs.debug }}
-        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+      - name: Setup Runner
+        run: |
+          # Setup
+          wget -qO asterisk-ci-actions.tar.gz \
+            https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
+          tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
+          sudo ${SCRIPT_DIR}/setupRunner.sh --sipp-version=${SIPP_VERSION}
 
       - name: BuildAsterisk
         run: |
-          sysctl -w kernel.core_pattern=/tmp/core-%e-%t
-          chmod 1777 /tmp
-          echo "*** Cloning ${REPO_ORG}/${ACTION_DIR}"
-          git clone ${GITHUB_SERVER_URL}/${REPO_ORG}/${ACTION_DIR}
-          git -C ${ACTION_DIR} checkout ${CI_BRANCH:-main}
+          # Building Asterisk
+          REPO_DIR=$(basename ${ASTERISK_REPO})
 
           mkdir -p ${REPO_DIR}
           mkdir -p ${CACHE_DIR}
@@ -106,9 +115,9 @@ jobs:
 
           cd ${REPO_DIR}
           echo "*** Running Alembic Tests"
-          ${SCRIPT_DIR}/setupDatabase.sh
-          ${SCRIPT_DIR}/runAlembicTests.sh
-          ${SCRIPT_DIR}/teardownDatabase.sh --stop-database
+          sudo ${SCRIPT_DIR}/setupDatabase.sh
+          sudo ${SCRIPT_DIR}/runAlembicTests.sh
+          sudo ${SCRIPT_DIR}/teardownDatabase.sh --stop-database
 
           echo "*** Starting build"
           ${SCRIPT_DIR}/${BUILD_SCRIPT} --github --branch-name=${BASE_BRANCH} \
