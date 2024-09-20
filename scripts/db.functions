@@ -45,7 +45,8 @@ _pg_ctl() {
 	[ "$1" != "initdb" ] && opts="-c config_file=${PGSQLCONF}"
 	[ "$1" == "start" ] && {
 		opts+=" -c listen_addresses=127.0.0.1 -c unix_socket_directories=/run/postgresql,/tmp"
-		sed -i -r -e "s/^local\s+all\s+postgres\s+peer/local all postgres trust/g" ${PGHBA}
+		sed -i -r -e "s/^local\s+all\s+([^\s]+)\s+peer/local all \1 trust/g" ${PGHBA}
+		sed -i -r -e "s/^host\s+all\s+([^\s]+)\s+(127.0.0.1.32|::1.128)\s+.*/host all \1 \2 trust/g" ${PGHBA}
 		[ ! -d /run/postgresql ] && {
 			mkdir /run/postgresql
 			chown postgres:postgres /run/postgresql

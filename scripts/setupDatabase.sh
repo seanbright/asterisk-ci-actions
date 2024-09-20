@@ -45,11 +45,25 @@ createdb $PGOPTS -E UTF-8 -T template0 -O ${USER} ${DATABASE} &>/tmp/create_db.o
 }
 
 echo "Creating ${DSN} ODBC DSN"
+declare -a DRIVERS=( "PostgreSQL" "PostgreSQL Unicode" )
+DRIVER=
+for d in "${DRIVERS[@]}" ; do
+	odbcinst -d -q -n "$d" &>/dev/null && {
+		DRIVER="$d"
+		break
+	}
+done
+
+[ -z "$DRIVER" ] && {
+	echo "No ODBC Postgres driver found"
+	exit 1
+}
+
 odbcinst -u -s -l -n ${DSN} &>/dev/null || :
 odbcinst -i -s -l -n ${DSN} -f /dev/stdin <<-EOF
 	[${DSN}]
 	Description        = PostgreSQL connection to 'asterisk' database
-	Driver             = PostgreSQL
+	Driver             = ${DRIVER}
 	Servername         = ${HOST}
 	Database           = ${DATABASE}
 	UserName           = ${USER}
