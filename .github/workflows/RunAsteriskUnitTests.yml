@@ -82,7 +82,8 @@ jobs:
             echo "*** Found asterisk source cache '${REPO_DIR}'"
             chown -R ${USER_GROUP} ${REPO_DIR}
             cd ${REPO_DIR}
-            chmod go-rw tests/keys/rsa_key1.key
+            [ -f tests/keys/rsa_key1.key ] && \
+              chmod go-rw tests/keys/rsa_key1.key || :
           fi
           echo "*** Running asterisk unit tests"
           ${SCRIPT_DIR}/runAsteriskUnitTests.sh --no-expect --github \
