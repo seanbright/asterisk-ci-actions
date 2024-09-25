@@ -97,17 +97,13 @@ jobs:
     steps:
       - name: Check unit test matrix status
         env:
-          RESULT:   ${{ needs.PreMergeUnitTestMatrix.result }}
+          RESULT:   ${{ needs.PreMergeTest.result }}
           GH_TOKEN: ${{ secrets.TOKEN }}
         run: |
           declare -i rc=0
           case $RESULT in
             success)
               echo "All tests passed"
-              ;;
-            skipped)
-              echo "One or more tests were skipped because of an earlier failure"
-              rc+=1
               ;;
             *)
               echo "One or more tests failed ($RESULT)"
