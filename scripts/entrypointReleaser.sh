@@ -135,10 +135,10 @@ if ${INPUT_IS_SECURITY} ; then
 	echo "mail_list=${INPUT_MAIL_LIST_SEC}" >> ${GITHUB_OUTPUT}
 elif [ "${end_tag_array[release_type]}" == "rc" ] ; then
 	if ${end_tag_array[certified]} ; then
-		echo "subject=Certified ${PRODUCT^} Release Canditate ${END_TAG}" >> ${GITHUB_OUTPUT}
+		echo "subject=Certified ${PRODUCT^} Release Candidate ${END_TAG}" >> ${GITHUB_OUTPUT}
 		echo "mail_list=${INPUT_MAIL_LIST_CERT_RC}" >> ${GITHUB_OUTPUT}
 	else
-		echo "subject=${PRODUCT^} Release Canditate ${END_TAG}" >> ${GITHUB_OUTPUT}
+		echo "subject=${PRODUCT^} Release Candidate ${END_TAG}" >> ${GITHUB_OUTPUT}
 		echo "mail_list=${INPUT_MAIL_LIST_RC}" >> ${GITHUB_OUTPUT}
 	fi
 elif [ "${end_tag_array[release_type]}" == "ga" ] ; then
