@@ -43,4 +43,25 @@ runs:
         ${{toJSON(github)}}
         %%EOF%%
         echo "::endgroup::"
+
+        echo "::group::GITHUB_WORKSPCE: ${GITHUB_WORKSPACE}"
+        ls -al ${GITHUB_WORKSPACE}
+        echo "::endgroup::"
+
+        echo "::group::HOME: ${HOME}"
+        ls -al ${HOME}
+        echo "::endgroup::"
+
+        echo "::group::RUNNER_WORKSPACE: ${RUNNER_WORKSPACE}"
+        ls -al ${RUNNER_WORKSPACE}
+        echo "::endgroup::"
+
+        if [ -n "${GITHUB_ACTION_PATH}" ] ; then
+          echo "::group::GITHUB_ACTION_PATH: ${GITHUB_ACTION_PATH}"
+          ls -al ${GITHUB_ACTION_PATH}
+          echo "::endgroup::"
+        fi
+
+
+
         exit 0
