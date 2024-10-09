@@ -30,7 +30,12 @@ jobs:
         run: |
           URL="/repos/$HEAD_REPO/commits/$SHA/pulls"
           echo "Using URL $URL"
-          PR_BRANCH=$(gh api $URL --jq '.[] | (.number | tostring) + ":" + .base.ref')
+          # It's possible that the submitter created a PR with the same commit hash
+          # in their own fork so we need to make sure we only get the PR for the
+          # repo in the asterisk organization.  .base.repo.full_name should be
+          # asterisk/asterisk or asterisk/testsuite which should match the
+          # value of github.repository.
+          PR_BRANCH=$(gh api $URL --jq '.[] | select(.base.repo.full_name == "${{ github.repository }}") | (.number | tostring) + ":" + .base.ref')
           if [[ "$PR_BRANCH" =~ ^([0-9]+):([^ ]+)$ ]] ; then
             PR_NUMBER=${BASH_REMATCH[1]}
             echo "PR_NUMBER=${PR_NUMBER}" >> ${GITHUB_OUTPUT}
