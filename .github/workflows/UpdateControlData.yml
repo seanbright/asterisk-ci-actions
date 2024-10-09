@@ -28,23 +28,25 @@ jobs:
       - name: checkdata
         env:
           CONTROLDATA_BASE: "${{ vars.CONTROLDATA_BASE }}"
-          CONTROLDATA_FILE: "${{ inputs.repo }}.json"
+          CONTROLDATA_JSON: "${{ inputs.repo }}.json"
+          CONTROLDATA_ENV: "${{ inputs.repo }}.env"
           REPO: ${{ inputs.repo }}
           GH_TOKEN:   ${{ secrets.ASTERISKTEAM_PAT }}
         run: |
           echo "Current Directory: $PWD"
           csum1=""
-          if [ -f ./.github/control/${CONTROLDATA_FILE} ] ; then
-            csum1=$(md5sum ./.github/control/${CONTROLDATA_FILE})
-            cat ./.github/control/${CONTROLDATA_FILE}
+          if [ -f ./.github/control/${CONTROLDATA_JSON} ] ; then
+            csum1=$(md5sum ./.github/control/${CONTROLDATA_JSON})
             echo "CSUM1: $csum1"
           fi
-          echo "Retriving variables from repo $REPO"
+          echo "Retriving variables from repo $REPO in JSON format"
           gh api --jq .variables --paginate -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            /repos/asterisk/${REPO}/actions/variables | jq -s add > /tmp/${REPO}-vars.json
-          csum2=$(md5sum /tmp/${REPO}-vars.json)
-          cat /tmp/${REPO}-vars.json
+            /repos/asterisk/${REPO}/actions/variables | jq -s add > /tmp/${CONTROLDATA_JSON}
+          csum2=$(md5sum /tmp/${CONTROLDATA_JSON})
+          echo "Retriving variables from repo $REPO in ENV format"
+          gh api --paginate /repos/asterisk/${REPO}/actions/variables \
+            --jq '.variables[] | "vars_" + .name + "=$" + (.value | @sh)' > /tmp/${CONTROLDATA_ENV}
           echo "CSUM2: $csum2"
           if [ "${csum1%% *}" == "${csum2%% *}" ] ; then
             echo "No change for $REPO"
@@ -54,8 +56,9 @@ jobs:
           git config --global user.email "asteriskteam@digium.com"
           git config --global user.name "Asterisk Development Team"
           git pull
-          cp /tmp/${REPO}-vars.json ./.github/control/${CONTROLDATA_FILE}
-          git add ./.github/control/${CONTROLDATA_FILE}
+          cp /tmp/${CONTROLDATA_JSON} ./.github/control/${CONTROLDATA_JSON}
+          cp /tmp/${CONTROLDATA_ENV} ./.github/control/${CONTROLDATA_ENV}
+          git add ./.github/control/${CONTROLDATA_JSON} ./.github/control/${CONTROLDATA_ENV}
           git commit -a -m "Update control data for repo ${REPO}"
           git push
           exit 0
