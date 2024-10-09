@@ -140,14 +140,14 @@
   {
     "created_at": "2023-03-13T15:35:30Z",
     "name": "GATETEST_COMMANDS",
-    "updated_at": "2024-07-30T19:44:09Z",
+    "updated_at": "2024-09-20T15:10:20Z",
     "value": "{\r\n  \"ari1\": {\r\n    \"name\": \"ari1\",\r\n    \"dir\": \"tests/CI/output/ari1\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/rest_api/[abem]\"\r\n  },\r\n  \"ari2\": {\r\n    \"name\": \"ari2\",\r\n    \"dir\": \"tests/CI/output/ari2\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/rest_api/[c]\"\r\n  },\r\n  \"pjs1\": {\r\n    \"name\": \"pjs1\",\r\n    \"dir\": \"tests/CI/output/pjsip1\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/channels/pjsip/[cghmnopqu]\"\r\n  },\r\n  \"pjs2\": {\r\n    \"name\": \"pjs2\",\r\n    \"dir\": \"tests/CI/output/pjsip2\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/channels/pjsip/[adit]\"\r\n  },\r\n  \"pjs3\": {\r\n    \"name\": \"pjs3\",\r\n    \"dir\": \"tests/CI/output/pjsip3\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/channels/pjsip/[b]\"\r\n  },\r\n  \"pjs4\": {\r\n    \"name\": \"pjs4\",\r\n    \"dir\": \"tests/CI/output/pjsip4\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/channels/pjsip/[r]\"\r\n  },\r\n  \"pjs5\": {\r\n    \"name\": \"pjs5\",\r\n    \"dir\": \"tests/CI/output/pjsip5\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \"--test-regex=tests/channels/pjsip/[s]\"\r\n  },\r\n  \"channels\": {\r\n    \"name\": \"channels\",\r\n    \"dir\": \"tests/CI/output/channels\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/channels/local -t tests/channels/iax2\"\r\n  },\r\n  \"fax\": {\r\n    \"name\": \"fax\",\r\n    \"dir\": \"tests/CI/output/fax\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/fax\"\r\n  },\r\n  \"extra_gates\": {\r\n    \"name\": \"extra_gates\",\r\n    \"dir\": \"tests/CI/output/extra_gates\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/extra_gates\"\r\n  },\r\n  \"rtp_sorcery\": {\r\n    \"name\": \"rtp_sorcery\",\r\n    \"dir\": \"tests/CI/output/rtp_sorcery\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/rtp -t tests/sorcery\"\r\n  },\r\n  \"apps_funcs\": {\r\n    \"name\": \"apps_funcs\",\r\n    \"dir\": \"tests/CI/output/apps\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/apps -t tests/funcs\"\r\n  },\r\n  \"mgr_masq_pbx\": {\r\n    \"name\": \"mgr_masq_pbx\",\r\n    \"dir\": \"tests/CI/output/mgr_masq_pbx\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/manager -t tests/masquerade -t tests/pbx\"\r\n  },\r\n  \"pass_fail\": {\r\n    \"name\": \"pass_fail\",\r\n    \"dir\": \"tests/CI/output/pass_fail\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/channels/pjsip/subscriptions/presence\"\r\n  },\r\n  \"all_pass\": {\r\n    \"name\": \"all_pass\",\r\n    \"dir\": \"tests/CI/output/all_pass\",\r\n    \"timeout\": 240,\r\n    \"step_timeout_minutes\": 45,\r\n    \"options\": \"\",\r\n    \"testcmd\": \" -t tests/channels/local\"\r\n  }\r\n}\r\n"
   },
   {
     "created_at": "2023-03-13T17:13:53Z",
     "name": "GATETEST_LIST",
-    "updated_at": "2024-07-30T19:44:59Z",
-    "value": "['ari1','ari2','pjs1','pjs2','pjs3','pjs4','pjs5','fax','channels','extra_gates']"
+    "updated_at": "2024-10-09T19:33:06Z",
+    "value": "[\"ari1\",\"ari2\",\"pjs1\",\"pjs2\",\"pjs3\",\"pjs4\",\"pjs5\",\"fax\",\"channels\",\"extra_gates\"]"
   },
   {
     "created_at": "2023-06-07T16:35:14Z",
@@ -164,8 +164,8 @@
   {
     "created_at": "2023-06-07T16:48:32Z",
     "name": "MERGE_APPROVED_LABELS",
-    "updated_at": "2023-06-07T16:48:32Z",
-    "value": "['merge-approved','merge-approved-force']"
+    "updated_at": "2024-10-09T20:13:24Z",
+    "value": "[\"merge-approved\",\"merge-approved-force\"]"
   },
   {
     "created_at": "2023-06-07T16:45:02Z",
@@ -182,14 +182,14 @@
   {
     "created_at": "2023-03-27T11:25:36Z",
     "name": "NIGHTLYTEST_BRANCHES",
-    "updated_at": "2024-09-12T16:25:08Z",
-    "value": "['18','20','21','22','master','certified/20.7']\r\n"
+    "updated_at": "2024-10-09T20:14:12Z",
+    "value": "[\"18\",\"20\",\"21\",\"22\",\"master\",\"certified/20.7\"]\r\n"
   },
   {
     "created_at": "2023-03-27T11:27:21Z",
     "name": "NIGHTLYTEST_LIST",
-    "updated_at": "2024-07-30T19:45:28Z",
-    "value": "['ari1','ari2','pjs1','pjs2','pjs3','pjs4','pjs5','fax','channels','extra_gates','apps_funcs']\r\n"
+    "updated_at": "2024-10-09T20:15:36Z",
+    "value": "[\"ari1\",\"ari2\",\"pjs1\",\"pjs2\",\"pjs3\",\"pjs4\",\"pjs5\",\"fax\",\"channels\",\"extra_gates\",\"apps_funcs\"]"
   },
   {
     "created_at": "2023-06-06T19:09:31Z",
@@ -264,12 +264,6 @@
     "value": "pr-submit-tests-passed"
   },
   {
-    "created_at": "2023-06-06T12:36:49Z",
-    "name": "QUEUE_MERGE_COMMANDS",
-    "updated_at": "2023-06-07T00:56:06Z",
-    "value": "['queue-merge','queue-merge-force']"
-  },
-  {
     "created_at": "2024-06-12T16:39:07Z",
     "name": "RECHECKPR_LABEL",
     "updated_at": "2024-06-12T16:39:07Z",
@@ -278,8 +272,8 @@
   {
     "created_at": "2024-09-16T15:38:44Z",
     "name": "RUN_DUMP_ENV",
-    "updated_at": "2024-09-16T15:38:44Z",
-    "value": "true"
+    "updated_at": "2024-09-16T16:01:45Z",
+    "value": "false"
   },
   {
     "created_at": "2023-05-02T17:04:26Z",
@@ -350,8 +344,8 @@
   {
     "created_at": "2023-04-06T13:33:11Z",
     "name": "WIKIDOC_BRANCHES",
-    "updated_at": "2023-04-06T13:33:11Z",
-    "value": "['18','20']"
+    "updated_at": "2024-10-09T20:16:23Z",
+    "value": "[\"18\",\"20\"]"
   },
   {
     "created_at": "2023-03-14T18:37:18Z",
