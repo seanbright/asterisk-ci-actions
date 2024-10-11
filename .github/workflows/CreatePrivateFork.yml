@@ -4,27 +4,45 @@ on:
   workflow_dispatch:
     inputs:
       src_repo:
-        description: 'Source asterisk org repo:'
+        description: 'Source repo in asterisk org:'
         required: true
         type: string
       dst_repo:
-        description: 'Destination asterisk org repo:'
+        description: 'Destination repo in asterisk org:'
         required: true
         type: string
+      actions_ref:
+        description: 'JSON object reference to the actions.  Default: { "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
+        type: string
+        required: false
+        default: '{ "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
+        
+env:
+  ACTIONS_OWNER:    ${{ fromJSON(inputs.actions_ref).owner }}
+  ACTIONS_REPO:     ${{ fromJSON(inputs.actions_ref).repo }}
+  ACTIONS_BRANCH:   ${{ fromJSON(inputs.actions_ref).branch }}
+  SCRIPT_DIR:       ${{ github.workspace }}/asterisk-ci-actions/scripts
+  GITHUB_TOKEN:     ${{ secrets.ASTERISKTEAM_PAT }}
 
 jobs:
   CreatePrivateFork:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup
+        run: |
+          # Setup
+          wget -qO asterisk-ci-actions.tar.gz \
+            https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
+          tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
+
       - name: CreateFork
-        uses: asterisk/asterisk-ci-actions/CreatePrivateFork@main
-        with:
-          src_repo:         ${{ inputs.src_repo }}
-          dst_repo:         ${{ inputs.dst_repo }}
-          github_token:     ${{ secrets.ASTERISKTEAM_PAT }}
+        run: |
+          ${SCRIPT_DIR}/createPrivateFork.sh --src-repo=${{ inputs.src_repo }} \
+            --dst-repo=${{ inputs.dst_repo }}
+          
 
       - name: CopyVars
-        uses: asterisk/asterisk-ci-actions/CopyRepoVariables@main
+        uses: ./asterisk-ci-actions/CopyRepoVariables
         with:
           src_repo:        ${{ inputs.src_repo }}
           dst_repo:        ${{ inputs.dst_repo }}
