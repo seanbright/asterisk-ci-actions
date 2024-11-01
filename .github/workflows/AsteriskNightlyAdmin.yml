@@ -1,0 +1,25 @@
+name: AsteriskNightlyAdmin
+on:
+  workflow_call:
+    secrets:
+      ASTERISKTEAM_PAT:
+        required: true
+
+jobs:
+
+  CloseStaleIssues:
+    uses: ./.github/workflows/CloseStaleIssuesAndPRs.yml
+    secrets: inherit
+
+  CacheCleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cache Janitor
+        uses: beshkenadze/ga-cache-janitor@3.0.4
+        with:
+          token: ${{secrets.ASTERISKTEAM_PAT}}
+          debug: 'true'
+          max-age: '5d'
+          accessed: 'true'
+#          max-total-size: '5GB'
+#          created: 'true'
