@@ -94,7 +94,7 @@ fi
 if $COVERAGE ; then
 	common_config_args+=" --enable-coverage"
 fi
-if [ "$BRANCH_NAME" == "master" -o $DISABLE_BINARY_MODULES ] ; then
+if [ "$BRANCH_NAME" == "master" ] || $DISABLE_BINARY_MODULES ] ; then
 	common_config_args+=" --disable-binary-modules"
 fi
 
@@ -116,6 +116,8 @@ if ! $NO_MENUSELECT ; then
 	$SUCCESS || exit 1
 
 	runner menuselect/menuselect `gen_mods enable DONT_OPTIMIZE` menuselect.makeopts
+	grep -q ADD_CFLAGS_TO_BUILDOPTS_H ./build_tools/cflags.xml && \
+		runner menuselect/menuselect --enable ADD_CFLAGS_TO_BUILDOPTS_H menuselect.makeopts
 	if ! $NO_DEV_MODE ; then
 		runner menuselect/menuselect `gen_mods enable DO_CRASH TEST_FRAMEWORK` menuselect.makeopts
 	fi
@@ -145,7 +147,9 @@ if ! $NO_MENUSELECT ; then
 	cp menuselect.makeopts ${OUTPUT_DIR}/menuselect.makeopts.postcats
 	$SUCCESS || exit 1
 
-	mod_disables="codec_ilbc res_digium_phone res_pjsip_config_sangoma"
+	mod_disables="codec_ilbc codec_silk codec_siren7 codec_siren14 codec_g729a res_digium_phone"
+	grep -q res_pjsip_config_sangoma res/res.xml && mod_disables+=" res_pjsip_config_sangoma"
+
 	if $TESTED_ONLY ; then
 		# These modules are not tested at all.  They are loaded but nothing is ever done
 		# with them, no testsuite tests depend on them.
