@@ -1,0 +1,140 @@
+name: PRStateChangedPriv
+on:
+  workflow_call:
+    inputs:
+      actions_ref:
+        description: 'JSON object reference to the actions: { "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
+        type: string
+        required: false
+        default: '{ "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
+    secrets:
+      TOKEN:
+        required: true
+
+env:
+  ACTION:     ${{ github.event.action }}
+  CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+  REPO:       ${{ github.repository }}
+  GH_TOKEN:   ${{ secrets.TOKEN }}
+  SHA:        ${{ github.event.workflow_run.head_sha }}
+  HEAD_REPO:  ${{ github.event.workflow_run.head_repository.full_name }}
+  WORKFLOW:   ${{ github.event.workflow.name }}
+  BUILD_CACHE_KEY_PREFIX: ${{ github.event.workflow.name }}-${{ github.event.workflow_run.run_number }}
+
+jobs:
+  PRStateChangedPriv:
+    if: github.event.workflow_run.conclusion != 'skipped'
+    runs-on: ubuntu-latest
+    outputs:
+      PR_NUMBER:     ${{ steps.getpr.outputs.PR_NUMBER }}
+      BASE_BRANCH:   ${{ steps.getpr.outputs.BASE_BRANCH }}
+    steps:
+      - name: DumpEnvironment
+        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+
+      - name: Get PR Number
+        id: getpr
+        run: |
+          URL="/repos/$HEAD_REPO/commits/$SHA/pulls"
+          echo "Using URL $URL"
+          # It's possible that the submitter created a PR with the same commit hash
+          # in their own fork so we need to make sure we only get the PR for the
+          # repo in the asterisk organization.  .base.repo.full_name should be
+          # asterisk/asterisk or asterisk/testsuite which should match the
+          # value of github.repository.
+          PR_BRANCH=$(gh api $URL --jq '.[] | select(.base.repo.full_name == "${{ github.repository }}") | (.number | tostring) + ":" + .base.ref')
+          if [[ "$PR_BRANCH" =~ ^([0-9]+):([^ ]+)$ ]] ; then
+            PR_NUMBER=${BASH_REMATCH[1]}
+            echo "PR_NUMBER=${PR_NUMBER}" >> ${GITHUB_OUTPUT}
+            echo "PR_NUMBER=${PR_NUMBER}" >> ${GITHUB_ENV}
+            BASE_BRANCH=${BASH_REMATCH[2]}
+            echo "BASE_BRANCH=${BASE_BRANCH}" >> ${GITHUB_OUTPUT}
+            echo "BASE_BRANCH=${BASE_BRANCH}" >> ${GITHUB_ENV}
+            echo "PR: ${PR_NUMBER}  BASE_BRANCH: ${BASE_BRANCH}"
+            exit 0
+          fi
+          echo "::error::PR number '$PR_NUMBER' not valid"
+          exit 1
+
+      - name: Set Label
+        id: setlabel
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER:  ${{ steps.getpr.outputs.PR_NUMBER }}
+          LABEL_TIP:  ${{ vars.PR_SUBMIT_TESTING_IN_PROGRESS }}
+          LABEL_PASS: ${{ vars.PR_SUBMIT_TESTS_PASSED }}
+          LABEL_FAIL: ${{ vars.PR_SUBMIT_TESTS_FAILED }}
+        with:
+          retries: 5
+          script: |
+            core.info(`BASE_BRANCH ${process.env.BASE_BRANCH}`);
+            let label;
+            if (process.env.ACTION === 'requested') {
+              label = process.env.LABEL_TIP;
+            } else {
+              if ( process.env.CONCLUSION === 'success' ) {
+                label = process.env.LABEL_PASS;
+              } else {
+                label = process.env.LABEL_FAIL;
+              }
+            }
+            core.info(`Setting label ${label}`);
+            github.rest.issues.setLabels({
+              issue_number: process.env.PR_NUMBER,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: [ label ]
+            });
+            return;
+
+      - name: Get cherry-pick branches
+        if: github.event.action == 'completed'
+        id: getbranches
+        uses: asterisk/asterisk-ci-actions/GetCherryPickBranchesFromPR@main
+        with:
+          repo:              ${{ env.REPO }}
+          pr_number:         ${{ steps.getpr.outputs.PR_NUMBER }}
+          cherry_pick_regex: ${{ vars.CHERRY_PICK_REGEX }}
+          github_token:      ${{ secrets.TOKEN }}
+
+      - name: Add cherry-pick reminder
+        if: github.event.action == 'completed'
+        uses: actions/github-script@v7
+        env:
+          PR_NUMBER:            ${{ steps.getpr.outputs.PR_NUMBER }}
+          CHERRY_PICK_REMINDER: ${{ vars.CHERRY_PICK_REMINDER }}
+          BRANCHES_OUTPUT:      ${{ toJSON(steps.getbranches.outputs) }}
+          BRANCH_COUNT:         ${{ steps.getbranches.outputs.branch_count }}
+          FORCED_NONE:          ${{ steps.getbranches.outputs.forced_none }}
+        with:
+          retries: 5
+          script: |
+            if (process.env.FORCED_NONE === 'true' ||
+              process.env.BRANCH_COUNT > 0) {
+              core.info("No cherry-pick reminder needed.");
+              return;
+            }
+            let comments = await github.rest.issues.listComments({
+              issue_number: process.env.PR_NUMBER,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            });
+            let found = false;
+            for (const c of comments.data) {
+              if (c.body.startsWith("<!--CPR-->")) {
+                found = true;
+                break;
+              }
+            }
+            if (found) {
+              core.info("Cherry-pick reminder already exists.");
+              return;
+            }
+            core.info("Adding cherry-pick reminder.");
+            await github.rest.issues.createComment({
+              issue_number: process.env.PR_NUMBER,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: process.env.CHERRY_PICK_REMINDER
+            })
+            return;

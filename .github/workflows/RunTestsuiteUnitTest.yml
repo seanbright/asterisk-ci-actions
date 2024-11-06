@@ -1,0 +1,57 @@
+name: RunUnitTests
+on:
+  workflow_call:
+    inputs:
+      pr_number:
+        required: true
+        type: string
+      base_branch:
+        required: true
+        type: string
+      unittest_command:
+        type: string
+        required: true
+    secrets:
+      TOKEN:
+        required: true
+
+env:
+  GH_TOKEN:         ${{ secrets.TOKEN }}
+  GITHUB_TOKEN:     ${{ secrets.TOKEN }}
+  BASE_BRANCH:      ${{ inputs.base_branch }}
+  PR_NUMBER:        ${{ inputs.pr_number }}
+  REPO_DIR:         ${{ github.event.repository.name }}
+  REPO_ORG:         ${{ github.event.repository.owner.login }}
+  UNITTEST_COMMAND: ${{ inputs.unittest_command }}
+
+jobs:
+  RunUnitTests:
+    name: ${{ inputs.base_branch }}-unit
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: "Setup testsuite"
+        run: |
+          # Setup testsuite
+          git clone --depth 1 --no-tags -q -b ${BASE_BRANCH} \
+            ${GITHUB_SERVER_URL}/${REPO_ORG}/${REPO_DIR} ${REPO_DIR}
+          git config --global --add safe.directory ${REPO_DIR}
+          cd ${REPO_DIR}
+          if [ $PR_NUMBER -gt 0 ] ; then
+            gh pr checkout "${PR_NUMBER}" -b "pr-${PR_NUMBER}" ||
+              { echo "::error::Testsuite PR ${PR_NUMBER} not found" ; exit 1 ; }
+          fi
+          git --no-pager log -1 --oneline
+
+      - name: Run Unit Tests
+        run: |
+          # Run Unit Tests
+          cd ${REPO_DIR}
+          echo "Installing libpcap-dev for yappcap"
+          sudo apt-get install -y libpcap-dev
+          echo "Setting up virtualenv"
+          ./setupVenv.sh
+          echo "Running self tests"
+          ./runInVenv.sh ./self_test && echo "Self tests passed" || echo "Self tests failed"
