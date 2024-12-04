@@ -35,62 +35,46 @@ jobs:
       - name: Get PR Number
         id: getpr
         run: |
-          URL="/repos/$HEAD_REPO/commits/$SHA/pulls"
-          echo "Using URL $URL"
-          # It's possible that the submitter created a PR with the same commit hash
-          # in their own fork so we need to make sure we only get the PR for the
-          # repo in the asterisk organization.  .base.repo.full_name should be
-          # asterisk/asterisk or asterisk/testsuite which should match the
-          # value of github.repository.
-          PR_BRANCH=$(gh api $URL --jq '.[] | select(.base.repo.full_name == "${{ github.repository }}") | (.number | tostring) + ":" + .base.ref')
-          if [[ "$PR_BRANCH" =~ ^([0-9]+):([^ ]+)$ ]] ; then
-            PR_NUMBER=${BASH_REMATCH[1]}
-            echo "PR_NUMBER=${PR_NUMBER}" >> ${GITHUB_OUTPUT}
-            echo "PR_NUMBER=${PR_NUMBER}" >> ${GITHUB_ENV}
-            BASE_BRANCH=${BASH_REMATCH[2]}
-            echo "BASE_BRANCH=${BASE_BRANCH}" >> ${GITHUB_OUTPUT}
-            echo "BASE_BRANCH=${BASE_BRANCH}" >> ${GITHUB_ENV}
-            echo "PR: ${PR_NUMBER}  BASE_BRANCH: ${BASE_BRANCH}"
-            exit 0
+          URL="/search/issues?q=repo:${REPO}%20is:pr%20is:open%20sha:${SHA}%20sort:updated%20order:desc"
+          echo "Using URL $URL to find PR number"
+          PR_NUMBER=$(gh api $URL --jq '.items[0].number')
+          if [ -z "$PR_NUMBER" ] ; then
+            echo "::error::No PR found"
+            exit 1
           fi
-          echo "::error::PR number '$PR_NUMBER' not valid"
-          exit 1
+          URL="/repos/${REPO}/pulls/${PR_NUMBER}"
+          echo "Using URL $URL to find PR ${PR_NUMBER} base branch"
+          BASE_BRANCH=$(gh api $URL --jq '.base.ref')
+          if [ -z "$BASE_BRANCH" ] ; then
+            echo "::error::No base branch found for PR ${PR_NUMBER}"
+            exit 1
+          fi
+          echo "Found PR ${PR_NUMBER} base branch ${BASE_BRANCH}"
+          echo "PR_NUMBER=${PR_NUMBER}" >> ${GITHUB_OUTPUT}
+          echo "PR_NUMBER=${PR_NUMBER}" >> ${GITHUB_ENV}
+          echo "BASE_BRANCH=${BASE_BRANCH}" >> ${GITHUB_OUTPUT}
+          echo "BASE_BRANCH=${BASE_BRANCH}" >> ${GITHUB_ENV}
+          exit 0
 
-      - name: PreStart
-        if: github.event.action == 'requested'
-        run: |
-          gh cache delete -R ${REPO} ${WORKFLOW}-${PR_NUMBER}-${BASE_BRANCH} || :
-
-      - name: Set Label
-        id: setlabel
-        uses: actions/github-script@v7
+      - name: SetLabels
         env:
-          PR_NUMBER:  ${{ steps.getpr.outputs.PR_NUMBER }}
           LABEL_TIP:  ${{ vars.PR_SUBMIT_TESTING_IN_PROGRESS }}
           LABEL_PASS: ${{ vars.PR_SUBMIT_TESTS_PASSED }}
           LABEL_FAIL: ${{ vars.PR_SUBMIT_TESTS_FAILED }}
-        with:
-          retries: 5
-          script: |
-            core.info(`BASE_BRANCH ${process.env.BASE_BRANCH}`);
-            let label;
-            if (process.env.ACTION === 'requested') {
-              label = process.env.LABEL_TIP;
-            } else {
-              if ( process.env.CONCLUSION === 'success' ) {
-                label = process.env.LABEL_PASS;
-              } else {
-                label = process.env.LABEL_FAIL;
-              }
-            }
-            core.info(`Setting label ${label}`);
-            github.rest.issues.setLabels({
-              issue_number: process.env.PR_NUMBER,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: [ label ]
-            });
-            return;
+        run: |
+          if [ "$ACTION" == "requested" ] ; then
+            gh pr edit --repo ${REPO} \
+              --remove-label ${LABEL_PASS} \
+              --remove-label ${LABEL_FAIL} \
+              --add-label ${LABEL_TIP} \
+              $PR_NUMBER || :
+          else
+            [ "$CONCLUSION" == "success" ] && LABEL_RESULT=${LABEL_PASS} || LABEL_RESULT=${LABEL_FAIL}
+            gh pr edit --repo ${REPO} \
+              --remove-label ${LABEL_TIP} \
+              --add-label ${LABEL_RESULT} \
+              $PR_NUMBER || :
+          fi
 
       - name: Get cherry-pick branches
         if: github.event.action == 'completed'
@@ -104,45 +88,29 @@ jobs:
 
       - name: Add cherry-pick reminder
         if: github.event.action == 'completed'
-        uses: actions/github-script@v7
         env:
           PR_NUMBER:            ${{ steps.getpr.outputs.PR_NUMBER }}
           CHERRY_PICK_REMINDER: ${{ vars.CHERRY_PICK_REMINDER }}
           BRANCHES_OUTPUT:      ${{ toJSON(steps.getbranches.outputs) }}
           BRANCH_COUNT:         ${{ steps.getbranches.outputs.branch_count }}
           FORCED_NONE:          ${{ steps.getbranches.outputs.forced_none }}
-        with:
-          retries: 5
-          script: |
-            if (process.env.FORCED_NONE === 'true' ||
-              process.env.BRANCH_COUNT > 0) {
-              core.info("No cherry-pick reminder needed.");
-              return;
-            }
-            let comments = await github.rest.issues.listComments({
-              issue_number: process.env.PR_NUMBER,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-            });
-            let found = false;
-            for (const c of comments.data) {
-              if (c.body.startsWith("<!--CPR-->")) {
-                found = true;
-                break;
-              }
-            }
-            if (found) {
-              core.info("Cherry-pick reminder already exists.");
-              return;
-            }
-            core.info("Adding cherry-pick reminder.");
-            await github.rest.issues.createComment({
-              issue_number: process.env.PR_NUMBER,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: process.env.CHERRY_PICK_REMINDER
-            })
-            return;
+        run: |
+          if [ "$FORCED_NONE" == "true"] || [ ${BRANCH_COUNT} -gt 0 ] ; then
+            echo "No reminder needed"
+            exit 0
+          fi
+          URL="/repos/${REPO}/issues/${PR_NUMBER}/comments"
+          ALREADY_HAS_CPR=$(gh api $URL --jq '.[] | select(.body | startswith("<!--CPR-->")) | has("body")')
+          if [ "$ALREADY_HAS_CPR" == "true" ] ; then
+            echo "Already has CPR"
+            exit 0
+          fi
+          echo "$CHERRY_PICK_REMINDER" | gh --repo ${REPO} pr comment ${PR_NUMBER} --body-file -
+
+      - name: PreStart
+        if: github.event.action == 'requested'
+        run: |
+          gh cache delete -R ${REPO} ${WORKFLOW}-${PR_NUMBER}-${BASE_BRANCH} || :
 
       - name: PostComplete
         if: github.event.action == 'completed'
