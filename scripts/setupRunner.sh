@@ -28,7 +28,7 @@ if ! which gh &>/dev/null ; then
 fi
 
 echo "Installing dev packages"
-apt-get install -qq sudo binutils-dev freetds-dev \
+apt-get install -qq sudo build-essential gdb binutils-dev freetds-dev \
   libasound2-dev libbluetooth-dev libc-client2007e-dev \
   libcap-dev libcfg-dev libcodec2-dev libcorosync-common-dev \
   libcpg-dev libcurl4-openssl-dev libedit-dev libfftw3-dev \
