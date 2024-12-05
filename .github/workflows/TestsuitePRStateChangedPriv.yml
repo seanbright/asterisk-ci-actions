@@ -42,6 +42,7 @@ jobs:
             echo "::error::No PR found"
             exit 1
           fi
+          echo "Found PR ${PR_NUMBER}"
           URL="/repos/${REPO}/pulls/${PR_NUMBER}"
           echo "Using URL $URL to find PR ${PR_NUMBER} base branch"
           BASE_BRANCH=$(gh api $URL --jq '.base.ref')
