@@ -19,11 +19,12 @@ env:
   SHA:        ${{ github.event.workflow_run.head_sha }}
   HEAD_REPO:  ${{ github.event.workflow_run.head_repository.full_name }}
   WORKFLOW:   ${{ github.event.workflow.name }}
+  WORKFLOW_RUN: ${{ github.event.workflow_run.name }}
   BUILD_CACHE_KEY_PREFIX: ${{ github.event.workflow.name }}-${{ github.event.workflow_run.run_number }}
 
 jobs:
   PRStateChangedPriv:
-    if: github.event.workflow_run.conclusion != 'skipped'
+    if: ( !contains(fromJSON('["skipped", "cancelled"]'), github.event.workflow_run.conclusion) )
     runs-on: ubuntu-latest
     outputs:
       PR_NUMBER:     ${{ steps.getpr.outputs.PR_NUMBER }}
@@ -35,11 +36,29 @@ jobs:
       - name: Get PR Number
         id: getpr
         run: |
-          URL="/search/issues?q=repo:${REPO}%20is:pr%20is:open%20sha:${SHA}%20sort:updated%20order:desc"
-          echo "Using URL $URL to find PR number"
-          PR_NUMBER=$(gh api $URL --jq '.items[0].number')
+          # Getting PR number from workflow_run.name
+          echo "Triggering workflow run name: '${WORKFLOW_RUN}'"
+          if [[ "${WORKFLOW_RUN}" =~ ^PR\ ([0-9]+) ]] ; then
+            PR_NUMBER=${BASH_REMATCH[1]}
+          else
+            # If the action was "requested", then the triggering workflow
+            # may not have a had a chance to change its name from "PRChanged"
+            # to "PR nnnn ..." before this workfow was kicked off.  We need
+            # to keep checking the triggering workflow's name until it does.
+            echo "Unable to parse '${WORKFLOW_RUN}' for PR number.  Retrying"
+            for x in {1..10} ; do
+              wfname=$(gh api /repos/${REPO}/actions/runs/${WORKFLOW_RUN_ID} --jq '.name')
+              echo "Attempt: ${x} of 10. Triggering workflow run name: '${wfname}'"
+              if [[ "${wfname}" =~ ^PR\ ([0-9]+) ]] ; then
+                PR_NUMBER=${BASH_REMATCH[1]}
+                break;
+              fi
+              echo "Attempt: ${x} of 10. Still unable to parse.  Waiting 5 seconds"
+              sleep 5
+            done
+          fi
           if [ -z "$PR_NUMBER" ] ; then
-            echo "::error::No PR found"
+            echo "Unable to parse PR number"
             exit 1
           fi
           echo "Found PR ${PR_NUMBER}"
@@ -63,6 +82,7 @@ jobs:
           LABEL_PASS: ${{ vars.PR_SUBMIT_TESTS_PASSED }}
           LABEL_FAIL: ${{ vars.PR_SUBMIT_TESTS_FAILED }}
         run: |
+          # Setting labels
           if [ "$ACTION" == "requested" ] ; then
             gh pr edit --repo ${REPO} \
               --remove-label ${LABEL_PASS} \
@@ -96,6 +116,7 @@ jobs:
           BRANCH_COUNT:         ${{ steps.getbranches.outputs.branch_count }}
           FORCED_NONE:          ${{ steps.getbranches.outputs.forced_none }}
         run: |
+          # Add cherry-pick reminder
           if [ "$FORCED_NONE" == "true"] || [ ${BRANCH_COUNT} -gt 0 ] ; then
             echo "No reminder needed"
             exit 0
