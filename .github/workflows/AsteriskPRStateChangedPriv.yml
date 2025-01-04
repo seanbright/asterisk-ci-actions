@@ -118,7 +118,7 @@ jobs:
           FORCED_NONE:          ${{ steps.getbranches.outputs.forced_none }}
         run: |
           # Add cherry-pick reminder
-          if [ "$FORCED_NONE" == "true"] || [ ${BRANCH_COUNT} -gt 0 ] ; then
+          if [ "$FORCED_NONE" == "true" ] || [ ${BRANCH_COUNT} -gt 0 ] ; then
             echo "No reminder needed"
             exit 0
           fi
