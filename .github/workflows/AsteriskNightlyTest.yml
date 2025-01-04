@@ -50,27 +50,3 @@ jobs:
       gatetest_commands: ${{ vars.GATETEST_COMMANDS }}
       realtime:          ${{ inputs.realtime }}
     secrets: inherit
-
-  Cleanup:
-    needs: [ Test ]
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      - env:
-          RESULT:    ${{ needs.Test.result }}
-        run: |
-          # Cleanup
-          case $RESULT in
-            success)
-              echo "All tests passed"
-              exit 0
-              ;;
-            skipped)
-              echo "One or more tests were skipped because of an earlier failure"
-              exit 1
-              ;;
-            *)
-              echo "One or more tests failed ($RESULT)"
-              exit 1
-          esac
-

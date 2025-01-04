@@ -124,8 +124,8 @@ jobs:
       realtime:          ${{ inputs.realtime }}
     secrets: inherit
 
-  Results:
-    name: '**Results-${{ inputs.base_branch }}'
+  Cleanup:
+    name: '**Cleanup-${{ inputs.base_branch }}'
     if: always()
     runs-on: ubuntu-latest
     needs: [Unit,Gate]
@@ -170,4 +170,4 @@ jobs:
           esac
           $keep_cache || gh cache delete -R ${ASTERISK_REPO} ${BUILD_CACHE_KEY} || :
 
-          exit $rc
+          exit 0

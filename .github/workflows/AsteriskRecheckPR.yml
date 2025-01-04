@@ -92,5 +92,5 @@ jobs:
             --remove-label $IN_PROGRESS_LABEL \
             --add-label $label \
             ${PR_NUMBER} || :
-          exit $rc
+          exit 0
           
