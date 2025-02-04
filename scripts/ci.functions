@@ -72,3 +72,15 @@ export_to_github() {
 		echo "$var=$vc" >> "$out"
 	done
 }
+
+assert_env_variable() {
+	declare -n VAR="$1"
+	if [ -z "${VAR}" ] ; then
+		echo "::error::Missing $1 in environment" >&2
+		return 1
+	fi
+}
+
+debug_out() {
+	echo "$(basename ${0}): $@" >&2
+}

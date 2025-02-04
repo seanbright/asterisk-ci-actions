@@ -22,6 +22,13 @@ env:
   WORKFLOW_RUN: ${{ github.event.workflow_run.name }}
   WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
   BUILD_CACHE_KEY_PREFIX: ${{ github.event.workflow.name }}-${{ github.event.workflow_run.run_number }}
+  ACTIONS_OWNER:    ${{ fromJSON(inputs.actions_ref).owner }}
+  ACTIONS_REPO:     ${{ fromJSON(inputs.actions_ref).repo }}
+  ACTIONS_BRANCH:   ${{ fromJSON(inputs.actions_ref).branch }}
+  SCRIPT_DIR:       ${{ github.workspace }}/asterisk-ci-actions/scripts
+  LABEL_TIP:  ${{ vars.PR_SUBMIT_TESTING_IN_PROGRESS }}
+  LABEL_PASS: ${{ vars.PR_SUBMIT_TESTS_PASSED }}
+  LABEL_FAIL: ${{ vars.PR_SUBMIT_TESTS_FAILED }}
 
 jobs:
   PRStateChangedPriv:
@@ -30,7 +37,15 @@ jobs:
     outputs:
       PR_NUMBER:     ${{ steps.getpr.outputs.PR_NUMBER }}
       BASE_BRANCH:   ${{ steps.getpr.outputs.BASE_BRANCH }}
+
     steps:
+      - name: Setup Runner
+        run: |
+          # Setup
+          wget -qO asterisk-ci-actions.tar.gz \
+            https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
+          tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
+
       - name: DumpEnvironment
         uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
 
@@ -38,104 +53,52 @@ jobs:
         id: getpr
         run: |
           # Getting PR number from workflow_run.name
-          echo "Triggering workflow run name: '${WORKFLOW_RUN}'"
-          if [[ "${WORKFLOW_RUN}" =~ ^PR\ ([0-9]+) ]] ; then
-            PR_NUMBER=${BASH_REMATCH[1]}
-          else
-            # If the action was "requested", then the triggering workflow
-            # may not have a had a chance to change its name from "PRChanged"
-            # to "PR nnnn ..." before this workfow was kicked off.  We need
-            # to keep checking the triggering workflow's name until it does.
-            echo "Unable to parse '${WORKFLOW_RUN}' for PR number.  Retrying"
-            for x in {1..10} ; do
-              wfname=$(gh api /repos/${REPO}/actions/runs/${WORKFLOW_RUN_ID} --jq '.name')
-              echo "Attempt: ${x} of 10. Triggering workflow run name: '${wfname}'"
-              if [[ "${wfname}" =~ ^PR\ ([0-9]+) ]] ; then
-                PR_NUMBER=${BASH_REMATCH[1]}
-                break;
-              fi
-              echo "Attempt: ${x} of 10. Still unable to parse.  Waiting 5 seconds"
-              sleep 5
-            done
-          fi
-          if [ -z "$PR_NUMBER" ] ; then
-            echo "Unable to parse PR number"
-            exit 1
-          fi
-          echo "Found PR ${PR_NUMBER}"
-          URL="/repos/${REPO}/pulls/${PR_NUMBER}"
-          echo "Using URL $URL to find PR ${PR_NUMBER} base branch"
-          BASE_BRANCH=$(gh api $URL --jq '.base.ref')
-          if [ -z "$BASE_BRANCH" ] ; then
-            echo "::error::No base branch found for PR ${PR_NUMBER}"
-            exit 1
-          fi
-          echo "Found PR ${PR_NUMBER} base branch ${BASE_BRANCH}"
-          echo "PR_NUMBER=${PR_NUMBER}" >> ${GITHUB_OUTPUT}
-          echo "PR_NUMBER=${PR_NUMBER}" >> ${GITHUB_ENV}
-          echo "BASE_BRANCH=${BASE_BRANCH}" >> ${GITHUB_OUTPUT}
-          echo "BASE_BRANCH=${BASE_BRANCH}" >> ${GITHUB_ENV}
-          exit 0
+          # PR_NUMBER and BASE_BRANCH will be set by the script
+          ${SCRIPT_DIR}/getPRFromTriggeringWorkflow.sh \
+            --repo=${REPO} \
+            --workflow-run="${WORKFLOW_RUN}" \
+            --workflow-run-id=${WORKFLOW_RUN_ID}
 
-      - name: SetLabels
-        env:
-          LABEL_TIP:  ${{ vars.PR_SUBMIT_TESTING_IN_PROGRESS }}
-          LABEL_PASS: ${{ vars.PR_SUBMIT_TESTS_PASSED }}
-          LABEL_FAIL: ${{ vars.PR_SUBMIT_TESTS_FAILED }}
-        run: |
-          # Setting labels
-          if [ "$ACTION" == "requested" ] ; then
-            gh pr edit --repo ${REPO} \
-              --remove-label ${LABEL_PASS} \
-              --remove-label ${LABEL_FAIL} \
-              --add-label ${LABEL_TIP} \
-              $PR_NUMBER || :
-          else
-            [ "$CONCLUSION" == "success" ] && LABEL_RESULT=${LABEL_PASS} || LABEL_RESULT=${LABEL_FAIL}
-            gh pr edit --repo ${REPO} \
-              --remove-label ${LABEL_TIP} \
-              --add-label ${LABEL_RESULT} \
-              $PR_NUMBER || :
-          fi
-
-      - name: Get cherry-pick branches
-        if: github.event.action == 'completed'
-        id: getbranches
-        uses: asterisk/asterisk-ci-actions/GetCherryPickBranchesFromPR@main
-        with:
-          repo:              ${{ env.REPO }}
-          pr_number:         ${{ steps.getpr.outputs.PR_NUMBER }}
-          cherry_pick_regex: ${{ vars.CHERRY_PICK_REGEX }}
-          github_token:      ${{ secrets.TOKEN }}
-
-      - name: Add cherry-pick reminder
-        if: github.event.action == 'completed'
+      - name: OnRequested
+        if: github.event.action == 'requested'
         env:
           PR_NUMBER:            ${{ steps.getpr.outputs.PR_NUMBER }}
-          CHERRY_PICK_REMINDER: ${{ vars.CHERRY_PICK_REMINDER }}
-          BRANCHES_OUTPUT:      ${{ toJSON(steps.getbranches.outputs) }}
-          BRANCH_COUNT:         ${{ steps.getbranches.outputs.branch_count }}
-          FORCED_NONE:          ${{ steps.getbranches.outputs.forced_none }}
         run: |
-          # Add cherry-pick reminder
-          if [ "$FORCED_NONE" == "true" ] || [ ${BRANCH_COUNT} -gt 0 ] ; then
-            echo "No reminder needed"
-            exit 0
-          fi
-          URL="/repos/${REPO}/issues/${PR_NUMBER}/comments"
-          ALREADY_HAS_CPR=$(gh api $URL --jq '.[] | select(.body | startswith("<!--CPR-->")) | has("body")')
-          if [ "$ALREADY_HAS_CPR" == "true" ] ; then
-            echo "Already has CPR"
-            exit 0
-          fi
-          echo "$CHERRY_PICK_REMINDER" | gh --repo ${REPO} pr comment ${PR_NUMBER} --body-file -
-
-      - name: PreStart
-        if: github.event.action == 'requested'
-        run: |
+          # OnRequested
           gh cache delete -R ${REPO} ${WORKFLOW}-${PR_NUMBER}-${BASE_BRANCH} &> /dev/null || :
+          #
+          gh pr edit --repo ${REPO} \
+            --remove-label ${LABEL_PASS} \
+            --remove-label ${LABEL_FAIL} \
+            --add-label ${LABEL_TIP} \
+            $PR_NUMBER || :
 
-      - name: PostComplete
-        if: ( github.event.action == 'completed' && github.event.workflow_run.conclusion == 'success' )
+      - name: OnCompleted
+        if: ( github.event.action == 'completed' )
+        env:
+          PR_NUMBER:            ${{ steps.getpr.outputs.PR_NUMBER }}
+          CHERRY_PICK_REGEX: ${{ vars.CHERRY_PICK_REMINDER }}
+          CHERRY_PICK_REMINDER: ${{ vars.CHERRY_PICK_REMINDER }}
+          SQUASH_COMMITS_REMINDER: ${{ vars.SQUASH_COMMITS_REMINDER }}
+          USER_NOTE_REMINDER: ${{ vars.USER_NOTE_REMINDER }}
+          UPGRADE_NOTE_REMINDER: ${{ vars.UPGRADE_NOTE_REMINDER }}
         run: |
-          gh cache delete -R ${REPO} ${BUILD_CACHE_KEY_PREFIX}-${PR_NUMBER}-${BASE_BRANCH} || :
+          # OnCompleted ${{github.event.workflow_run.conclusion}}
+          if [ "$CONCLUSION" == "success" ] ; then
+            LABEL_RESULT=${LABEL_PASS}
+            gh cache delete -R ${REPO} ${BUILD_CACHE_KEY_PREFIX}-${PR_NUMBER}-${BASE_BRANCH} || :
+          else
+            LABEL_RESULT=${LABEL_FAIL}
+          fi
+          #
+          gh pr edit --repo ${REPO} \
+            --remove-label ${LABEL_TIP} \
+            --add-label ${LABEL_RESULT} \
+            $PR_NUMBER || :
+          #
+          ${SCRIPT_DIR}/addCherryPickReminderIfNeeded.sh \
+            --repo=${REPO} \
+            --pr-number=${PR_NUMBER} \
+            --cherry-pick-regex="${CHERRY_PICK_REGEX}" \
+            --cherry-pick-reminder="${CHERRY_PICK_REMINDER}"
+
