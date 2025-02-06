@@ -63,7 +63,7 @@ if [ -z $LCOV_DIR ]; then
 fi
 
 if [ -n "$CACHE_DIR" ] ; then
-	mkdir -p $CACHE_DIR/sounds $CACHE_DIR/externals 2> /dev/null
+	mkdir -p $CACHE_DIR 2> /dev/null
 fi
 
 MAKE=`which make`
@@ -87,7 +87,7 @@ source <(sed -r -e "s/\s+//g" third-party/versions.mak)
 [ -n "${JANSSON_VERSION}" ] && { $PKGCONFIG "jansson >= ${JANSSON_VERSION}" || common_config_args+=" --with-jansson-bundled" ; }
 [ -n "${LIBJWT_VERSION}" ] && { $PKGCONFIG "libjwt >= ${LIBJWT_VERSION}" && common_config_args+=" --with-libjwt" || common_config_args+=" --with-libjwt-bundled" ; } 
 
-common_config_args+=" ${CACHE_DIR:+--with-download-cache=${CACHE_DIR}/downloads}"
+common_config_args+=" ${CACHE_DIR:+--with-download-cache=${CACHE_DIR}}"
 if ! $NO_DEV_MODE ; then
 	common_config_args+=" --enable-dev-mode"
 fi

@@ -28,6 +28,10 @@ on:
         required: false
         type: string
         default: "buildAsterisk.sh"
+      no_alembic:
+        required: false
+        type: boolean
+        default: false
       build_options:
         required: false
         type: string
@@ -48,14 +52,19 @@ on:
       build_cache_dir:
         type: string
         required: false
-        default: build-cache
+        default: ""
       build_cache_key:
         type: string
-        required: true
+        required: false
+        default: ""
       debug:
         required: false
         type: boolean
         default: false
+      job_name_extra:
+        required: false
+        type: string
+        default: ""
     secrets:
       TOKEN:
         required: true
@@ -67,6 +76,7 @@ env:
   BASE_BRANCH:       ${{ inputs.base_branch }}
   IS_CHERRY_PICK:    ${{ inputs.is_cherry_pick }}
   PR_NUMBER:         ${{ inputs.pr_number }}
+  NO_ALEMBIC:        ${{ inputs.no_alembic }}
   BUILD_SCRIPT:      ${{ inputs.build_script }}
   BUILD_OPTIONS:     ${{ inputs.build_options }}
   MODULES_BLACKLIST: ${{ inputs.modules_blacklist }}
@@ -85,7 +95,7 @@ env:
 
 jobs:
   Build:
-    name: ${{ inputs.base_branch }}-build
+    name: ${{ inputs.base_branch }}-build${{inputs.job_name_extra}}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -114,10 +124,13 @@ jobs:
             --pr-number=${PR_NUMBER} --destination=${REPO_DIR}
 
           cd ${REPO_DIR}
-          echo "*** Running Alembic Tests"
-          sudo ${SCRIPT_DIR}/setupDatabase.sh
-          sudo ${SCRIPT_DIR}/runAlembicTests.sh
-          sudo ${SCRIPT_DIR}/teardownDatabase.sh --stop-database
+          
+          if ! ${NO_ALEMBIC} ; then
+            echo "*** Running Alembic Tests"
+            sudo ${SCRIPT_DIR}/setupDatabase.sh
+            sudo ${SCRIPT_DIR}/runAlembicTests.sh
+            sudo ${SCRIPT_DIR}/teardownDatabase.sh --stop-database
+          fi
 
           echo "*** Starting build"
           ${SCRIPT_DIR}/${BUILD_SCRIPT} --github --branch-name=${BASE_BRANCH} \
@@ -127,7 +140,7 @@ jobs:
             --cache-dir=${CACHE_DIR}
           echo "*** Build Complete"
 
-          if [ -z "${BUILD_CACHE_DIR} ] ; then
+          if [ -z "${BUILD_CACHE_DIR}" ] ; then
             echo "*** No build cache dir specified.  Not caching"
             exit 0
           fi
@@ -150,7 +163,7 @@ jobs:
           gh cache delete ${BUILD_CACHE_KEY} || :
 
       - id: cache-build-output
-        if: inputs.build_cache_dir != ''
+        if: inputs.build_cache_dir != '' && inputs.build_cache_key != ''
         name: CacheBuildProducts
         uses: actions/cache/save@v4
         with:

@@ -90,6 +90,7 @@ jobs:
   BuildNoDevmode:
     uses: ./.github/workflows/AsteriskBuildAndCache.yml
     with:
+      job_name_extra:    -no-dev-mode
       actions_ref:       ${{ inputs.actions_ref }}
       test_type:         ${{ inputs.test_type }}
       asterisk_repo:     ${{ inputs.asterisk_repo }}
@@ -97,6 +98,7 @@ jobs:
       base_branch:       ${{ inputs.base_branch }}
       is_cherry_pick:    ${{ inputs.is_cherry_pick }}
       build_options:     ${{ inputs.build_options }} --compile-double --no-dev-mode
+      no_alembic:        true
       modules_blacklist: ${{ inputs.modules_blacklist }}
       build_cache_dir:
     secrets: inherit
