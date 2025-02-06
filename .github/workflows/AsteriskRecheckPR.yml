@@ -14,37 +14,51 @@ on:
 
 env:
   PR_NUMBER: ${{ github.event.number }}
+  ACTIONS_OWNER:     ${{ fromJSON(inputs.actions_ref).owner }}
+  ACTIONS_REPO:      ${{ fromJSON(inputs.actions_ref).repo }}
+  ACTIONS_BRANCH:    ${{ fromJSON(inputs.actions_ref).branch }}
+  SCRIPT_DIR:        ${{ github.workspace }}/asterisk-ci-actions/scripts
 
 jobs:
   Setup:
     runs-on: ubuntu-latest
     outputs:
-      testsuite_test_pr:  ${{ steps.testsuitepr.outputs.testsuite_test_pr }}
+      testsuite_test_pr:  ${{ steps.prestart.outputs.TESTSUITE_TEST_PR }}
     steps:
-      - name: Set Label
-        id: setlabel
+      - name: Setup Runner
+        run: |
+          # Setup
+          wget -qO asterisk-ci-actions.tar.gz \
+            https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
+          tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
+
+      - name: PreStart
+        id: prestart
         env:
+          REPO: ${{ github.repository }}
+          RECHECKPR_LABEL:    ${{ vars.RECHECKPR_LABEL }}
+          PR_SUBMIT_TESTS_PASSED: ${{ vars.PR_SUBMIT_TESTS_PASSED }}
+          PR_SUBMIT_TESTS_FAILED: ${{ vars.PR_SUBMIT_TESTS_FAILED }}
+          PR_SUBMIT_TESTING_IN_PROGRESS: ${{ vars.PR_SUBMIT_TESTING_IN_PROGRESS }}
+          TESTSUITE_TEST_PR_REGEX: ${{ vars.TESTSUITE_TEST_PR_REGEX }}
           GH_TOKEN:  ${{ secrets.TOKEN }}
         run: | 
-          gh pr edit --repo ${{ github.repository }} \
-            --remove-label ${{ vars.RECHECKPR_LABEL }} \
-            --remove-label ${{ vars.PR_SUBMIT_TESTS_PASSED }} \
-            --remove-label  ${{ vars.PR_SUBMIT_TESTS_FAILED }} \
-            --add-label ${{ vars.PR_SUBMIT_TESTING_IN_PROGRESS }} \
-            $PR_NUMBER || :
+          gh pr edit --repo ${REPO} \
+            --remove-label ${RECHECKPR_LABEL} \
+            --remove-label ${PR_SUBMIT_TESTS_PASSED} \
+            --remove-label ${PR_SUBMIT_TESTS_FAILED} \
+            --add-label ${PR_SUBMIT_TESTING_IN_PROGRESS} \
+            ${PR_NUMBER} || :
 
-      - name: GetTestsuitePR
-        id: testsuitepr
-        uses: asterisk/asterisk-ci-actions/GetTestsuitePRFromAsteriskPR@main
-        with:
-          repo:                            ${{ github.repository }}
-          pr_number:                       ${{ github.event.number }}
-          testsuite_test_pr_regex:         ${{ vars.TESTSUITE_TEST_PR_REGEX }}
-          testsuite_test_auto_merge_regex: ${{ vars.TESTSUITE_TEST_AUTO_MERGE_REGEX }}
-          github_token:                    ${{ secrets.TOKEN }}
+          # Testsuite PR will be placed in TESTSUITE_TEST_PR in both
+          # GITHUB_ENV and GITHUB_OUTPUT by the script.
+          ${SCRIPT_DIR}/getTestsuitePRfromAsteriskPR.sh \
+            --repo=${REPO} \
+            --pr-number=${PR_NUMBER} \
+            --testsuite-pr-regex="${TESTSUITE_TEST_PR_REGEX}"
 
-  PRCheck:
-    name: PRCheck
+  Check:
+    name: Check
     needs: Setup
     uses: ./.github/workflows/AsteriskUnitGateTest.yml
     with:
@@ -64,18 +78,19 @@ jobs:
   TestResults:
     if: always()
     runs-on: ubuntu-latest
-    needs: [PRCheck]
+    needs: [Check]
     steps:
       - name: Check status
         env:
+          REPO:              ${{ github.repository }}
           GH_TOKEN:          ${{ secrets.TOKEN }}
-          RESULT_UNIT:       ${{ needs.PRCheck.result }}
+          RESULT:            ${{ needs.Check.result }}
           IN_PROGRESS_LABEL: ${{ vars.PR_SUBMIT_TESTING_IN_PROGRESS }}
           PASSED_LABEL:      ${{ vars.PR_SUBMIT_TESTS_PASSED }}
           FAILED_LABEL:      ${{ vars.PR_SUBMIT_TESTS_FAILED }}
         run: |
           declare -i rc=0
-          case $RESULT_UNIT in
+          case ${RESULT} in
             success)
               echo "All tests passed"
               ;;
@@ -87,10 +102,10 @@ jobs:
               echo "One or more tests failed ($RESULT)"
               rc+=1
           esac
-          [ $rc -gt 0 ] && label=$FAILED_LABEL || label=$PASSED_LABEL
-          gh pr edit --repo ${{ github.repository }} \
-            --remove-label $IN_PROGRESS_LABEL \
-            --add-label $label \
+          [ ${rc} -gt 0 ] && label=${FAILED_LABEL} || label=${PASSED_LABEL}
+          gh pr edit --repo ${REPO} \
+            --remove-label ${IN_PROGRESS_LABEL} \
+            --add-label ${label} \
             ${PR_NUMBER} || :
           exit 0
-          
+
