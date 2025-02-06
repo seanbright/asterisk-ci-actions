@@ -5,7 +5,6 @@ PUSH=false
 NO_CLONE=false
 
 source ${SCRIPT_DIR}/ci.functions
-set -x
 set -e
 
 if [ -z "${REPO}" ] ; then
@@ -52,6 +51,7 @@ gh auth setup-git -h github.com
 : ${BRANCHES:=[\'$BRANCH\']}
 
 if ! $NO_CLONE ; then
+	debug_out "Cloning ${REPO} to ${REPO_DIR}"
 	mkdir -p ${REPO_DIR}
 	git clone -q --depth 10 --no-tags \
 		${GITHUB_SERVER_URL}/${REPO} ${REPO_DIR}
@@ -59,9 +59,11 @@ if ! $NO_CLONE ; then
 fi
 
 cd ${REPO_DIR}
+debug_out "Fetching PR ${PR_NUMBER}"
 git fetch --depth 10 --no-tags origin refs/pull/${PR_NUMBER}/head
 
 # Get commits
+debug_out "Getting commits for PR ${PR_NUMBER}"
 mapfile COMMITS < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + "|" + (.commit.message | split("\n")[0]) + "|" + .commit.author.name + "|" + .commit.author.email + "|"' || echo "@_ERROR_@")
 [[ "${COMMITS[0]}" =~ @_ERROR_@ ]] && {
 	echo "::error::No commits for PR ${PR_NUMBER}"
@@ -71,9 +73,9 @@ mapfile COMMITS < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | 
 echo "COMMITS array: "
 declare -p COMMITS
 
-echo "There are ${#COMMITS[@]} for PR ${PR_NUMBER}"
+debug_out "There are ${#COMMITS[@]} commits for PR ${PR_NUMBER}"
 for commit in "${COMMITS[@]}" ; do
-	echo "Testing: '$commit'"
+	debug_out "Testing: '$commit'"
 	[[ "$commit" =~ ([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\| ]] || {
 		echo "::error::Unable to parse commit '$commit'"
 		exit 1
@@ -82,22 +84,25 @@ for commit in "${COMMITS[@]}" ; do
 	MESSAGE=${BASH_REMATCH[2]}
 	NAME=${BASH_REMATCH[3]}
 	EMAIL=${BASH_REMATCH[4]}
-	echo "Found commit: SHA: $SHA MESSAGE: $MESSAGE NAME: $NAME EMAIL: $EMAIL"
+	debug_out "Found commit: SHA: $SHA MESSAGE: $MESSAGE NAME: $NAME EMAIL: $EMAIL"
 done
 
 branches=${BRANCHES//[\"\|\'|\]|\[]/}
-echo "Cherry-picking to branches: $branches"
+debug_out "Cherry-picking to branches: $branches"
 
+error_msg=""
+RC=0
 IFS=$','
 for BRANCH in $branches ; do
-	echo "Cherry-picking commits to branch $BRANCH"
+	debug_out "Cherry-picking commits to branch $BRANCH"
 	$NO_CLONE || git fetch --no-tags --depth 10 origin refs/heads/$BRANCH:$BRANCH
 	git checkout $BRANCH
 	
 	for commit in "${COMMITS[@]}" ; do
 		[[ "$commit" =~ ([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\| ]] || {
-			echo "::error::Unable to parse commit '$commit'"
-			exit 1
+			error_msg+="Unable to parse commit '$commit'\n"
+			RC=1
+			continue
 		}
 		SHA=${BASH_REMATCH[1]}
 		MESSAGE=${BASH_REMATCH[2]}
@@ -108,13 +113,14 @@ for BRANCH in $branches ; do
 		git config --local user.name "$NAME"
 		# The SHA should already be downloaded in FETCH_HEAD
 		# so we should be able to just cherry-pick it.
-		echo "Cherry-picking: SHA: $SHA MESSAGE: $MESSAGE NAME: $NAME EMAIL: $EMAIL"
+		debug_out "Cherry-picking: SHA: $SHA MESSAGE: $MESSAGE NAME: $NAME EMAIL: $EMAIL"
 		git cherry-pick ${SHA} || {
-			echo "::error::Unable to cherry-pick commit"
+			error_msg+="Unable to cherry-pick commit '${MESSAGE}' to branch ${BRANCH}\n"
 			git cherry-pick --abort || :
-			exit 1
+			RC=1
+			continue
 		} 
-		echo "Success"
+		debug_out "Success"
 	done
 	
 	# We should already be on the correct branch
@@ -122,10 +128,13 @@ for BRANCH in $branches ; do
 	# We just need to push unless DRY_RUN is true.
 	
 	if $PUSH  ; then
+		debug_out "Pushing to branch $BRANCH" 
 		git push --set-upstream origin $BRANCH
-	else
-		echo "Push skipped"
 	fi
 done
 
-exit 0
+if [ -n "$error_msg" ] ; then
+	echo -e "::error::$error_msg"
+fi
+
+exit $RC

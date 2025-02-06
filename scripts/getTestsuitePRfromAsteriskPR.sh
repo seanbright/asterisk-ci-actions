@@ -11,7 +11,10 @@ done
 jq_exp=".[].body | match(\"${TESTSUITE_PR_REGEX}\"; \"g\") | .captures[0].string"
 testsuite_pr=$(gh api /repos/${REPO}/issues/${PR_NUMBER}/comments \
 	--jq "$jq_exp") || \
-	{ debug_out "::error::Unable to retrieve comments for /repos/${REPO}/issues/${PR_NUMBER}" ; exit 1 ; }
+	{
+		debug_out "::error::Unable to retrieve comments for /repos/${REPO}/issues/${PR_NUMBER}"
+		exit 1
+	}
 
 if [ -z "${testsuite_pr}" ] ; then
 	debug_out "No Testsuite PR found (OK)"
