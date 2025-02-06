@@ -86,7 +86,21 @@ jobs:
       build_cache_dir:   ${{ inputs.build_cache_dir }}
       build_cache_key:   ${{ github.workflow }}-${{ github.run_number }}-${{ inputs.pr_number }}-${{ inputs.base_branch }}
     secrets: inherit
-  
+
+  BuildNoDevmode:
+    uses: ./.github/workflows/AsteriskBuildAndCache.yml
+    with:
+      actions_ref:       ${{ inputs.actions_ref }}
+      test_type:         ${{ inputs.test_type }}
+      asterisk_repo:     ${{ inputs.asterisk_repo }}
+      pr_number:         ${{ inputs.pr_number }}
+      base_branch:       ${{ inputs.base_branch }}
+      is_cherry_pick:    ${{ inputs.is_cherry_pick }}
+      build_options:     ${{ inputs.build_options }} --compile-double --no-dev-mode
+      modules_blacklist: ${{ inputs.modules_blacklist }}
+      build_cache_dir:
+    secrets: inherit
+
   Unit:
     needs: Build
     uses: ./.github/workflows/RunAsteriskUnitTests.yml
@@ -128,7 +142,7 @@ jobs:
     name: '**Cleanup-${{ inputs.base_branch }}'
     if: always()
     runs-on: ubuntu-latest
-    needs: [Unit,Gate]
+    needs: [BuildNoDevmode,Unit,Gate]
     steps:
       - name: Check test matrix status
         env:

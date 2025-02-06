@@ -3,12 +3,12 @@
 SCRIPT_DIR=$(dirname $(readlink -fn $0))
 GITHUB=false
 COVERAGE=false
+COMPILE_DOUBLE=false
 REF_DEBUG=false
 DISABLE_BINARY_MODULES=false
 NO_CONFIGURE=false
 NO_MENUSELECT=false
 NO_MAKE=false
-NO_ALEMBIC=false
 NO_DEV_MODE=false
 OUTPUT_DIR=/tmp/asterisk_ci/
 TESTED_ONLY=false
@@ -87,7 +87,7 @@ source <(sed -r -e "s/\s+//g" third-party/versions.mak)
 [ -n "${JANSSON_VERSION}" ] && { $PKGCONFIG "jansson >= ${JANSSON_VERSION}" || common_config_args+=" --with-jansson-bundled" ; }
 [ -n "${LIBJWT_VERSION}" ] && { $PKGCONFIG "libjwt >= ${LIBJWT_VERSION}" && common_config_args+=" --with-libjwt" || common_config_args+=" --with-libjwt-bundled" ; } 
 
-common_config_args+=" ${CACHE_DIR:+--with-sounds-cache=${CACHE_DIR}/sounds --with-externals-cache=${CACHE_DIR}/externals}"
+common_config_args+=" ${CACHE_DIR:+--with-download-cache=${CACHE_DIR}/downloads}"
 if ! $NO_DEV_MODE ; then
 	common_config_args+=" --enable-dev-mode"
 fi
@@ -116,12 +116,16 @@ if ! $NO_MENUSELECT ; then
 	$SUCCESS || exit 1
 
 	runner menuselect/menuselect `gen_mods enable DONT_OPTIMIZE` menuselect.makeopts
+	if ! $COMPILE_DOUBLE ; then
+		runner menuselect/menuselect `gen_mods disable COMPILE_DOUBLE` menuselect.makeopts
+	fi
+	
 	grep -q ADD_CFLAGS_TO_BUILDOPTS_H ./build_tools/cflags.xml && \
 		runner menuselect/menuselect --enable ADD_CFLAGS_TO_BUILDOPTS_H menuselect.makeopts
 	if ! $NO_DEV_MODE ; then
 		runner menuselect/menuselect `gen_mods enable DO_CRASH TEST_FRAMEWORK` menuselect.makeopts
 	fi
-	runner menuselect/menuselect `gen_mods disable COMPILE_DOUBLE BUILD_NATIVE` menuselect.makeopts
+	runner menuselect/menuselect `gen_mods disable BUILD_NATIVE` menuselect.makeopts
 	if $REF_DEBUG ; then
 		runner menuselect/menuselect --enable REF_DEBUG menuselect.makeopts
 	fi
