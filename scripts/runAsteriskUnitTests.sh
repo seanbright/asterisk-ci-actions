@@ -47,6 +47,12 @@ run_tests_socket() {
 	$ASTERISK -rx "test show results failed" -C $CONFFILE
 	$ASTERISK -rx "test generate results xml $OUTPUTFILE" -C $CONFFILE
 	$ASTERISK -rx "core stop now" -C $CONFFILE
+	if [ -n "$JOB_SUMMARY_OUTPUT" ] ; then
+		xmlstarlet sel -t -m "//testcase[count(failure) > 0]" \
+			-o "FAILED: Job: ${TEST_NAME}: " -v "translate(@classname,'.','/')" -o '/' -v "@name" -n \
+			$OUTPUTFILE > $OUTPUT_DIR/${JOB_SUMMARY_OUTPUT}
+	fi
+
 	xmlstarlet sel -t -v "//failure" $OUTPUTFILE && return 1
 	return 0
 }
@@ -124,7 +130,7 @@ if [ -n "$corefiles" ] ; then
 	sudo $SCRIPT_DIR/ast_coredumper.sh --no-conf-file --outputdir=$OUTPUT_DIR \
 		--tarball-coredumps --delete-coredumps-after $coreglob
 	# If the return code was 2, none of the coredumps actually came from asterisk.
-	[ $? -eq 2 ] && TESTRC=0
+	[ $? -eq 2 ] && TESTRC=0 || echo "Coredumps found" >> $OUTPUT_DIR/failed_tests.txt
 fi
 
 exit $TESTRC

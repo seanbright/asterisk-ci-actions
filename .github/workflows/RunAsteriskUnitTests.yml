@@ -79,7 +79,8 @@ jobs:
       - name: Run Unit Tests
         run: |
           # Run Unit Tests
-          echo "UNIT_TEST_NAME=unit-${BASE_BRANCH//\//-}" >> "${GITHUB_ENV}"
+          UNIT_TEST_NAME=${BASE_BRANCH//\//-}-unit
+          echo "UNIT_TEST_NAME=${UNIT_TEST_NAME}" >> "${GITHUB_ENV}"
           if [ -d ${REPO_DIR} ] ; then
             echo "*** Found asterisk source cache '${REPO_DIR}'"
             [ -n "${USER_GROUP}" ] && chown -R ${USER_GROUP} ${REPO_DIR}
@@ -90,6 +91,8 @@ jobs:
           mkdir -p ${OUTPUT_DIR}
           echo "*** Running asterisk unit tests"
           ${SCRIPT_DIR}/runAsteriskUnitTests.sh --no-expect --github \
+            --job-summary-output=job_summary.txt \
+            --test-name=${UNIT_TEST_NAME} \
             --user-group=${USER_GROUP} \
             --output-dir=${OUTPUT_DIR} \
             --output-xml=${OUTPUT_DIR}/unittests-results.xml \

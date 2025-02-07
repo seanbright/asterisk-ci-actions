@@ -107,6 +107,8 @@ jobs:
           # to pass the complete environment but that's
           # overkill and might cause other issues.
           sudo ${SCRIPT_DIR}/runAsteriskGateTests.sh \
+            --test-name=${GC_TEST_NAME} \
+            --job-summary-output=job_summary.txt \
             --testsuite-dir=${TESTSUITE_DIR} \
             --asterisk-dir=${ASTERISK_DIR} \
             --test-timeout=${TEST_TIMEOUT} --realtime=$REALTIME --stop-database=true \

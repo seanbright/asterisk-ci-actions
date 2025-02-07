@@ -69,6 +69,11 @@ else
 	for f in $failures ; do
 		[ $f -gt 0 ] && TESTRC=1
 	done
+	if [ -n "$JOB_SUMMARY_OUTPUT" ] ; then
+		xmlstarlet sel -t -m "//testcase[count(failure) > 0]" \
+			-o "FAILED: Job: ${TEST_NAME}: " -v "translate(@classname,'.','/')" -o '/' -v "@name" -n \
+			./asterisk-test-suite-report.xml > logs/${JOB_SUMMARY_OUTPUT}
+	fi
 fi
 
 if $REALTIME ; then
@@ -85,7 +90,7 @@ if [ -n "$corefiles" ] ; then
 	$SCRIPT_DIR/ast_coredumper.sh --no-conf-file --outputdir=./logs/ \
 		--tarball-coredumps --delete-coredumps-after $coreglob
 	# If the return code was 2, none of the coredumps actually came from asterisk.
-	[ $? -eq 2 ] && TESTRC=0
+	[ $? -eq 2 ] && TESTRC=0 || echo "Coredumps found" >> logs/failed_tests.txt
 fi
 
 if [ -n "$TESTSUITE_DIR" ] ; then

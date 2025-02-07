@@ -14,6 +14,7 @@ on:
 env:
   REPO:           ${{ github.repository }}
   PR_NUMBER:      ${{ github.event.number }}
+  WORKFLOW_RUN_ID:   ${{ github.run_id }}
   REPO_DIR:       ${{ github.event.repository.name }}
   REPO_ORG:       ${{ github.event.repository.owner.login }}
   GH_TOKEN:       ${{ secrets.TOKEN }}
@@ -138,7 +139,6 @@ jobs:
         env:
           RESULT_CLEAN:      ${{ needs.WillCherryPickCleanly.result }}
           RESULT_UNIT:       ${{ needs.CherryPickTestMatrix.result }}
-          GH_TOKEN:          ${{ secrets.TOKEN }}
           IN_PROGRESS_LABEL: ${{ vars.CHERRY_PICK_TESTING_IN_PROGRESS }}
           PASSED_LABEL:      ${{ vars.CHERRY_PICK_CHECKS_PASSED_LABEL }}
           FAILED_LABEL:      ${{ vars.CHERRY_PICK_CHECKS_FAILED_LABEL }}
@@ -157,8 +157,43 @@ jobs:
               rc+=1
           esac
           [ $rc -gt 0 ] && label=$FAILED_LABEL || label=$PASSED_LABEL
-          gh pr edit --repo ${{ github.repository }} \
+          gh pr edit --repo ${REPO} \
             --remove-label $IN_PROGRESS_LABEL \
             --add-label $label \
             $PR_NUMBER || :
           exit 0
+
+      - name: Create Job Summary
+        env:
+          RESULT: ${{ needs.Check.result }}
+        run: |
+          cd ${GITHUB_WORKSPACE}
+
+          wget -qO asterisk-ci-actions.tar.gz \
+            https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
+          tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
+
+          mkdir logs
+          ${SCRIPT_DIR}/createJobSummary.sh \
+            --repo=${REPO} \
+            --pr-number=${PR_NUMBER} \
+            --workflow-run=${WORKFLOW_RUN_ID} \
+            --tmp-dir=./run-${WORKFLOW_RUN_ID} \
+            --output-dir=./logs
+          if [ ! -f ./logs/job_summary.txt ] ; then
+            echo "No failures" >> ./logs/job_summary.txt
+          fi
+          cat ./logs/job_summary.txt
+          echo "STEP SUMMARY FILE: $GITHUB_STEP_SUMMARY"
+          cat ./logs/job_summary.txt >> $GITHUB_STEP_SUMMARY
+          exit 0
+
+      - name: Save Output
+        id: save-output
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: workflow_summary
+          path: |
+            logs
+
