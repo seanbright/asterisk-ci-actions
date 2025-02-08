@@ -76,7 +76,7 @@ jobs:
       gatetest_commands: ${{ vars.GATETEST_COMMANDS }}
     secrets: inherit
 
-  Cleanup:
+  PostWorkflow:
     if: always()
     runs-on: ubuntu-latest
     needs: [Check]
@@ -109,11 +109,7 @@ jobs:
           exit 0
 
       - name: Create Job Summary
-        env:
-          RESULT: ${{ needs.Check.result }}
         run: |
-          cd ${GITHUB_WORKSPACE}
-
           wget -qO asterisk-ci-actions.tar.gz \
             https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
           tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
@@ -121,24 +117,14 @@ jobs:
           mkdir logs
           ${SCRIPT_DIR}/createJobSummary.sh \
             --repo=${REPO} \
-            --pr-number=${PR_NUMBER} \
             --workflow-run=${WORKFLOW_RUN_ID} \
             --tmp-dir=./run-${WORKFLOW_RUN_ID} \
-            --output-dir=./logs
+            --job-summary-output=job_summary.txt \
+            --output-dir=./logs \
+            --write-step-summary \
+            --verbose
           if [ ! -f ./logs/job_summary.txt ] ; then
             echo "No failures" >> ./logs/job_summary.txt
+            echo "No failures" >> "$GITHUB_STEP_SUMMARY"
           fi
-          cat ./logs/job_summary.txt
-          echo "STEP SUMMARY FILE: $GITHUB_STEP_SUMMARY"
-          cat ./logs/job_summary.txt >> $GITHUB_STEP_SUMMARY
           exit 0
-
-      - name: Save Output
-        id: save-output
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: workflow_summary
-          path: |
-            logs
-

@@ -49,7 +49,7 @@ run_tests_socket() {
 	$ASTERISK -rx "core stop now" -C $CONFFILE
 	if [ -n "$JOB_SUMMARY_OUTPUT" ] ; then
 		xmlstarlet sel -t -m "//testcase[count(failure) > 0]" \
-			-o "FAILED: Job: ${TEST_NAME}: " -v "translate(@classname,'.','/')" -o '/' -v "@name" -n \
+			-o "FAILED: " -v "translate(@classname,'.','/')" -o '/' -v "@name" -n \
 			$OUTPUTFILE > $OUTPUT_DIR/${JOB_SUMMARY_OUTPUT}
 	fi
 

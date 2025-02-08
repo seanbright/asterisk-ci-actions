@@ -71,7 +71,7 @@ else
 	done
 	if [ -n "$JOB_SUMMARY_OUTPUT" ] ; then
 		xmlstarlet sel -t -m "//testcase[count(failure) > 0]" \
-			-o "FAILED: Job: ${TEST_NAME}: " -v "translate(@classname,'.','/')" -o '/' -v "@name" -n \
+			-o "FAILED: " -v "translate(@classname,'.','/')" -o '/' -v "@name" -n \
 			./asterisk-test-suite-report.xml > logs/${JOB_SUMMARY_OUTPUT}
 	fi
 fi

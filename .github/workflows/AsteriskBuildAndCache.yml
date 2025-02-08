@@ -82,7 +82,8 @@ env:
   MODULES_BLACKLIST: ${{ inputs.modules_blacklist }}
   SIPP_VERSION:      ${{ inputs.sipp_version }}
   CACHE_DIR:         ${{ github.workspace }}/${{ inputs.output_cache_dir }}
-  REPO_DIR:          ${{ github.event.repository.name }}
+  LOG_DIR:           ${{ github.workspace }}/logs
+  REPO_DIR:          ${{ github.workspace }}/${{ github.event.repository.name }}
   REPO_ORG:          ${{ github.event.repository.owner.login }}
   OUTPUT_DIR:        ${{ github.workspace }}/${{ inputs.output_cache_dir }}/output
   BUILD_CACHE_DIR:   ${{ inputs.build_cache_dir }}
@@ -108,27 +109,32 @@ jobs:
             https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
           tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
           sudo ${SCRIPT_DIR}/setupRunner.sh --sipp-version=${SIPP_VERSION}
+          echo "NORMALIZED_BRANCH=${BASE_BRANCH/\//-}" >> ${GITHUB_ENV}
 
       - name: BuildAsterisk
         run: |
           # Building Asterisk
-          REPO_DIR=$(basename ${ASTERISK_REPO})
 
           mkdir -p ${REPO_DIR}
           mkdir -p ${CACHE_DIR}
           mkdir -p ${OUTPUT_DIR}
+          mkdir -p ${LOG_DIR}
 
-          echo "*** Checking out ${ASTERISK_REPO}"
+          echo "*** Checking out ${ASTERISK_REPO} to ${REPO_DIR}"
           ${SCRIPT_DIR}/checkoutRepo.sh --repo=${ASTERISK_REPO} \
             --branch=${BASE_BRANCH} --is-cherry-pick=${IS_CHERRY_PICK} \
-            --pr-number=${PR_NUMBER} --destination=${REPO_DIR}
+            --pr-number=${PR_NUMBER} --repo-dir=${REPO_DIR}
 
           cd ${REPO_DIR}
           
           if ! ${NO_ALEMBIC} ; then
             echo "*** Running Alembic Tests"
             sudo ${SCRIPT_DIR}/setupDatabase.sh
-            sudo ${SCRIPT_DIR}/runAlembicTests.sh
+            sudo ${SCRIPT_DIR}/runAlembicTests.sh || {
+              echo "FAILED: Alembic Tests" > ${LOG_DIR}/job_summary.txt
+              sudo ${SCRIPT_DIR}/teardownDatabase.sh --stop-database
+              exit 1
+            }
             sudo ${SCRIPT_DIR}/teardownDatabase.sh --stop-database
           fi
 
@@ -137,7 +143,10 @@ jobs:
             --ccache-disable ${BUILD_OPTIONS} \
             --modules-blacklist="${MODULES_BLACKLIST// /}" \
             --output-dir=${OUTPUT_DIR} \
-            --cache-dir=${CACHE_DIR}
+            --cache-dir=${CACHE_DIR} || {
+              echo "FAILED: Build" > ${LOG_DIR}/job_summary.txt
+              exit 1
+          }
           echo "*** Build Complete"
 
           if [ -z "${BUILD_CACHE_DIR}" ] ; then
@@ -163,9 +172,18 @@ jobs:
           gh cache delete ${BUILD_CACHE_KEY} || :
 
       - id: cache-build-output
-        if: inputs.build_cache_dir != '' && inputs.build_cache_key != ''
+        if: success() && inputs.build_cache_dir != '' && inputs.build_cache_key != ''
         name: CacheBuildProducts
         uses: actions/cache/save@v4
         with:
           path: ${{ inputs.build_cache_dir }}
           key:  ${{ inputs.build_cache_key }}
+
+      - name: Save Output
+        if: ${{ always() }}
+        id: save-output
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NORMALIZED_BRANCH }}-build${{inputs.job_name_extra}}
+          if-no-files-found: ignore
+          path: ${{ env.LOG_DIR }}

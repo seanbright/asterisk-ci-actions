@@ -5,50 +5,35 @@ PUSH=false
 NO_CLONE=false
 
 source ${SCRIPT_DIR}/ci.functions
-set -e
 
-if [ -z "${REPO}" ] ; then
-	echo "::error::Missing repo"
-	exit 1
-fi
-
-if [ -z "${PR_NUMBER}" ] ; then
-	echo "::error::Missing PR number"
-	exit 1
-fi
+for v in REPO REPO_DIR PR_NUMBER ; do
+	assert_env_variable $v || exit 1
+done
 
 if [ -z "${BRANCH}" ] && [ -z "${BRANCHES}" ] ; then
-	echo "::error::Either --branch or --branches must be specified"
+	error_out "Either --branch or --branches must be specified"
 	exit 1
 fi
 
 if [ -n "${BRANCH}" ] && [ -n "${BRANCHES}" ] ; then
-	echo "::error::Can't specify both --branch and --branches at the same time"
-	exit 1
-fi
-
-if [ -z "${GH_TOKEN}" ] ; then
-	echo "::error::Missing GH_TOKEN in environment"
+	error_out "Can't specify both --branch and --branches at the same time"
 	exit 1
 fi
 
 if ! [[ "${PUSH}" =~ (true|false) ]] ; then
-	echo "::error::--push can only be true or false"
+	error_out "--push can only be true or false"
 	exit 1
 fi
 
 if ! [[ "${NO_CLONE}" =~ (true|false) ]] ; then
-	echo "::error::--no-clone can only be true or false"
+	error_out "--no-clone can only be true or false"
 	exit 1
 fi
 
-
-cd ${GITHUB_WORKSPACE}
-gh auth setup-git -h github.com
-
-: ${REPO_DIR:=${GITHUB_WORKSPACE}/$(basename ${REPO})}
+cd $(dirname ${REPO_DIR})
 
 : ${BRANCHES:=[\'$BRANCH\']}
+: ${GITHUB_SERVER_URL:="https://github.com"}
 
 if ! $NO_CLONE ; then
 	debug_out "Cloning ${REPO} to ${REPO_DIR}"
@@ -56,6 +41,13 @@ if ! $NO_CLONE ; then
 	git clone -q --depth 10 --no-tags \
 		${GITHUB_SERVER_URL}/${REPO} ${REPO_DIR}
 	git config --global --add safe.directory $(realpath ${REPO_DIR})
+else
+	debug_out "Skipping clone"
+fi
+
+if [ ! -d ${REPO_DIR}/.git ] ; then
+	error_out "Failed to clone ${REPO} to ${REPO_DIR}"
+	exit 1
 fi
 
 cd ${REPO_DIR}
@@ -66,18 +58,17 @@ git fetch --depth 10 --no-tags origin refs/pull/${PR_NUMBER}/head
 debug_out "Getting commits for PR ${PR_NUMBER}"
 mapfile COMMITS < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + "|" + (.commit.message | split("\n")[0]) + "|" + .commit.author.name + "|" + .commit.author.email + "|"' || echo "@_ERROR_@")
 [[ "${COMMITS[0]}" =~ @_ERROR_@ ]] && {
-	echo "::error::No commits for PR ${PR_NUMBER}"
+	error_out "No commits for PR ${PR_NUMBER}"
 	exit 1
 }
 
 echo "COMMITS array: "
 declare -p COMMITS
 
-debug_out "There are ${#COMMITS[@]} commits for PR ${PR_NUMBER}"
+debug_out "***** There are ${#COMMITS[@]} commits for PR ${PR_NUMBER}"
 for commit in "${COMMITS[@]}" ; do
-	debug_out "Testing: '$commit'"
 	[[ "$commit" =~ ([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\| ]] || {
-		echo "::error::Unable to parse commit '$commit'"
+		error_out "Unable to parse commit '$commit'"
 		exit 1
 	}
 	SHA=${BASH_REMATCH[1]}
@@ -88,13 +79,15 @@ for commit in "${COMMITS[@]}" ; do
 done
 
 branches=${BRANCHES//[\"\|\'|\]|\[]/}
-debug_out "Cherry-picking to branches: $branches"
+debug_out "***** Cherry-picking to branches: $branches"
 
-error_msg=""
+declare -a error_msgs
 RC=0
 IFS=$','
 for BRANCH in $branches ; do
-	debug_out "Cherry-picking commits to branch $BRANCH"
+	[ -n "${GITHUB_OUTPUT}" ] && echo "::group::Branch $BRANCH"
+
+	debug_out "***** Cherry-picking commits to branch $BRANCH"
 	$NO_CLONE || git fetch --no-tags --depth 10 origin refs/heads/$BRANCH:$BRANCH
 	git checkout $BRANCH
 	
@@ -113,28 +106,44 @@ for BRANCH in $branches ; do
 		git config --local user.name "$NAME"
 		# The SHA should already be downloaded in FETCH_HEAD
 		# so we should be able to just cherry-pick it.
-		debug_out "Cherry-picking: SHA: $SHA MESSAGE: $MESSAGE NAME: $NAME EMAIL: $EMAIL"
-		git cherry-pick ${SHA} || {
-			error_msg+="Unable to cherry-pick commit '${MESSAGE}' to branch ${BRANCH}\n"
-			git cherry-pick --abort || :
+		debug_out "Cherry-picking: SHA: $SHA MESSAGE: $MESSAGE to branch $BRANCH"
+		git cherry-pick ${SHA}
+		if [ $? -eq 0 ] ; then
+			debug_out "Successfully cherry-picked: SHA: $SHA MESSAGE: $MESSAGE to branch $BRANCH"
+		else
+			git cherry-pick --abort &>/dev/null || :
+			msg="Unable to cherry-pick commit '${MESSAGE}' to branch ${BRANCH}"
+			error_out "$msg"
+			error_msgs+=( "${msg}" )
 			RC=1
-			continue
-		} 
-		debug_out "Success"
+			break
+		fi
 	done
-	
-	# We should already be on the correct branch
-	# with the cherry-picks applied.
-	# We just need to push unless DRY_RUN is true.
-	
-	if $PUSH  ; then
-		debug_out "Pushing to branch $BRANCH" 
-		git push --set-upstream origin $BRANCH
-	fi
+	[ -n "${GITHUB_OUTPUT}" ] && echo "::endgroup::"
 done
 
-if [ -n "$error_msg" ] ; then
-	echo -e "::error::$error_msg"
+if $PUSH ; then
+	gh auth setup-git -h github.com
+	if [ $RC -eq 0 ] ; then
+		for BRANCH in $branches ; do
+			debug_out "Pushing to branch $BRANCH"
+			git checkout ${BRANCH}
+			git push --set-upstream origin $BRANCH
+		done
+	else
+		debug_out "Not pushing to any branches due to errors"
+	fi
+fi
+
+echo "RC: $RC  OUTPUT_DIR: ${OUTPUT_DIR}"
+declare -p error_msgs
+
+if [ -n "${OUTPUT_DIR}" ] && [ ${#error_msgs[@]} -gt 0 ] ; then
+	debug_out "Writing cherry-pick errors to ${OUTPUT_DIR}/job_summary.txt"
+	mkdir -p "${OUTPUT_DIR}"
+	for msg in "${error_msgs[@]}" ; do
+		echo "$msg" >> "${OUTPUT_DIR}/job_summary.txt"
+	done
 fi
 
 exit $RC

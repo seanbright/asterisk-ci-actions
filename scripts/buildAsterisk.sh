@@ -72,7 +72,7 @@ _libdir=`${SCRIPT_DIR}/findLibdir.sh`
 
 git config --global --add safe.directory $PWD
 
-runner ulimit -a
+ulimit -a
 _version=$(./build_tools/make_version .)
 for var in BRANCH_NAME MAINLINE_BRANCH OUTPUT_DIR CACHE_DIR CCACHE_DISABLE CCACHE_DIR _libdir _version ; do
 	declare -p $var 2>/dev/null || :
@@ -142,7 +142,9 @@ if ! $NO_MENUSELECT ; then
 	if ! $NO_DEV_MODE ; then
 		cat_enables+=" MENUSELECT_TESTS"
 	fi
-	runner menuselect/menuselect `gen_cats enable $cat_enables` menuselect.makeopts || SUCCESS=false
+	if [ -n "$cat_enables" ] ; then
+		runner menuselect/menuselect `gen_cats enable $cat_enables` menuselect.makeopts || SUCCESS=false
+	fi
 	if [ -n "$cat_disables" ] ; then
 		runner menuselect/menuselect `gen_cats disable $cat_disables` menuselect.makeopts || SUCCESS=false
 	fi
