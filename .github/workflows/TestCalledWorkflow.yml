@@ -3,58 +3,78 @@ run-name: "TestCalledWorkflow"
 on:
   workflow_call:
     inputs:
-      test_type:
+      actions_ref:
+        description: 'JSON object reference to the actions: { "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
         type: string
-        default: "Nightly"
-      base_branch:
+        required: false
+        default: '{ "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
+      jobname:
         type: string
-        default: master
-      user_group:
-        type: string
-        default: asteriskci:users
-      testsuite_repo:
-        description: 'Testsuite Repo (default: asterisk/testsuite)'
-        type: string
-        default: asterisk/testsuite
-      testsuite_test_pr:
-        type: string
-      gatetest_group:
-        description: 'Gate Group'
-        type: string
-        default: "somegroup"
-      gatetest_commands:
-        description: 'Gate Commands'
-        type: string
-        default: '[]'
-      build_cache_dir:
-        type: string
-        default: build-cache
-      build_cache_key:
-        type: string
-        default: "akey"
+        required: true
+    secrets:
+      TOKEN:
+        required: true
 
 env:
-  WF_ENV: ${{ inputs.build_cache_dir }}
+  ACTIONS_OWNER:     asterisk
+  ACTIONS_REPO:      asterisk-ci-actions
+  ACTIONS_BRANCH:    main
+  SCRIPT_DIR:        ${{ github.workspace }}/asterisk-ci-actions/scripts
+  GH_TOKEN:          ${{secrets.TOKEN}}
+  RUN_ID:            ${{ github.run_id }}
 
 jobs:
-
-  Setup:
-    env:
-      JOB_ENV: ${{ inputs.build_cache_key }}
+  Job1:
+    name: ${{inputs.jobname}}-Job1
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/asterisk/asteriskci-agent-rocky8:latest
-      options: --privileged
-
     defaults:
       run:
         shell: bash
-
     steps:
       - name: DumpEnvironment
         uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
-      - name: TestSysctl
+        with:
+          save_output: true
+          artifact_id: DumpEnvironment-${{inputs.jobname}}-Job1
+
+      - name: test
         run: |
-          sysctl -w kernel.core_pattern=/tmp/core-%e-%t
-          sysctl -n kernel.core_pattern
-          df -h
+          mkdir logs
+          step_summary=""
+          step_summary+="FAILURE: rest_api/recording/duration\nFAILURE: rest_api/recording/nominal"
+          echo -e "$step_summary" >> logs/job_summary.txt
+          exit 1
+      - name: Save Output
+        id: save-output
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{inputs.jobname}}-Job1
+          path: |
+            logs
+
+  Job2:
+    runs-on: ubuntu-latest
+    name: ${{inputs.jobname}}-Job2
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: test
+        run: |
+          mkdir logs
+          step_summary=""
+          step_summary+="FAILURE: rest_api/recording/XXXXX\nFAILURE: rest_api/recording/YYYYYYY"
+          echo -e "$step_summary" >> logs/job_summary.txt
+          exit 1
+      - name: Save Output
+        id: save-output
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{inputs.jobname}}-Job2
+          path: |
+            logs
+      - name: DumpEnvironment
+        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+

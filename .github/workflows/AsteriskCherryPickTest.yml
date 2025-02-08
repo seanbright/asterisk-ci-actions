@@ -83,31 +83,31 @@ jobs:
             --repo=${REPO} \
             --pr-number=${PR_NUMBER} \
             --testsuite-pr-regex="${TESTSUITE_TEST_PR_REGEX}"
-          
 
-  WillCherryPickCleanly:
-    needs: [Setup]
-    if: ${{ needs.Setup.outputs.branch_count > 0 }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setup Runner
-        run: |
-          # Setup
-          wget -qO asterisk-ci-actions.tar.gz \
-            https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
-          tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
-  
-      - name: CheckCherryPicks
-        env:
-          BRANCHES: ${{ needs.Setup.outputs.branches }}
-        run: |
-          ${SCRIPT_DIR}/cherryPick.sh \
-            --repo=${REPO} \
-            --repo-dir=${REPO_DIR} \
-            --pr-number=${PR_NUMBER} \
-            --branches="${BRANCHES}"
 
-  CherryPickTestMatrix:
+#  WillCherryPickCleanly:
+#    needs: [Setup]
+#    if: ${{ needs.Setup.outputs.branch_count > 0 }}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Setup Runner
+#        run: |
+           # Setup
+#          wget -qO asterisk-ci-actions.tar.gz \
+#            https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
+#          tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
+#  
+#      - name: CheckCherryPicks
+#        env:
+#          BRANCHES: ${{ needs.Setup.outputs.branches }}
+#        run: |
+#          ${SCRIPT_DIR}/cherryPick.sh \
+#            --repo=${REPO} \
+#            --repo-dir=${REPO_DIR} \
+#            --pr-number=${PR_NUMBER} \
+#            --branches="${BRANCHES}"
+
+  Check:
     needs: [Setup,WillCherryPickCleanly]
     if: ${{ needs.Setup.outputs.branch_count > 0 }}
     strategy:
@@ -131,7 +131,7 @@ jobs:
     secrets: inherit
 
   Cleanup:
-    needs: [ Setup, WillCherryPickCleanly, CherryPickTestMatrix ]
+    needs: [ Setup, Check ]
     if: ${{ needs.Setup.outputs.branch_count > 0 && ( success() || failure() ) }}
     runs-on: ubuntu-latest
     steps:

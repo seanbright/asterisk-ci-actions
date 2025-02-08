@@ -8,6 +8,12 @@ inputs:
     required: false
     type: string
     default: '{}'
+  save_output:
+    type: boolean
+    default: false
+  artifact_id:
+    type: string
+    default: 'DumpEnvironment'
 
 runs:
   using: "composite"
@@ -15,53 +21,71 @@ runs:
     - name: "Dump github context"
       shell: bash
       run: |
+        OUTPUT_DIR=/tmp/DumpEnvironment
+        echo "SAVE_NAME=${SAVE_NAME}" >> ${GITHUB_ENV}
+        echo "OUTPUT_DIR=${OUTPUT_DIR}" >> ${GITHUB_ENV}
+        if [ -d ${OUTPUT_DIR} ] ; then
+          rm -rf ${OUTPUT_DIR}
+        fi
+        mkdir ${OUTPUT_DIR}
         set +e +v +x
         echo "::group::inputs"
-        cat <<%%EOF%%
+        cat <<%%EOF%% | tee ${OUTPUT_DIR}/inputs.json
         ${{toJSON(fromJSON(inputs.action-inputs))}}
         %%EOF%%
         echo "::endgroup::"
         
         echo "::group::vars"
-        cat <<%%EOF%%
+        cat <<%%EOF%% | tee ${OUTPUT_DIR}/vars.json
         ${{toJSON(fromJSON(inputs.action-vars))}}
         %%EOF%%
         echo "::endgroup::"
         
         echo "::group::ctxenv"
-        cat <<%%EOF%%
+        cat <<%%EOF%% | tee ${OUTPUT_DIR}/job.env
         ${{toJSON(env)}}
         %%EOF%%
         echo "::endgroup::"
         
         echo "::group::env"
-        printenv | sort
+        printenv | sort | tee ${OUTPUT_DIR}/workflow.env
         echo "::endgroup::"
         
         echo "::group::github_context"
-        cat <<%%EOF%%
+        cat <<%%EOF%% | tee ${OUTPUT_DIR}/context.json
         ${{toJSON(github)}}
         %%EOF%%
         echo "::endgroup::"
 
         echo "::group::GITHUB_WORKSPCE: ${GITHUB_WORKSPACE}"
-        ls -al ${GITHUB_WORKSPACE}
+        echo "${GITHUB_WORKSPACE}" > ${OUTPUT_DIR}/GITHUB_WORKSPACE.txt
+        ls -al ${GITHUB_WORKSPACE} | tee -a ${OUTPUT_DIR}/GITHUB_WORKSPACE.txt
         echo "::endgroup::"
 
         echo "::group::HOME: ${HOME}"
-        ls -al ${HOME}
+        echo "${HOME}" > ${OUTPUT_DIR}/HOME.txt
+        ls -al ${HOME} | tee -a ${OUTPUT_DIR}/HOME.txt
         echo "::endgroup::"
 
         echo "::group::RUNNER_WORKSPACE: ${RUNNER_WORKSPACE}"
-        ls -al ${RUNNER_WORKSPACE}
+        echo "${RUNNER_WORKSPACE}" > ${OUTPUT_DIR}/RUNNER_WORKSPACE.txt
+        ls -al ${RUNNER_WORKSPACE} | tee -a ${OUTPUT_DIR}/RUNNER_WORKSPACE.txt
         echo "::endgroup::"
 
         if [ -n "${GITHUB_ACTION_PATH}" ] ; then
           echo "::group::GITHUB_ACTION_PATH: ${GITHUB_ACTION_PATH}"
-          ls -al ${GITHUB_ACTION_PATH}
+          echo "${GITHUB_ACTION_PATH}" > ${OUTPUT_DIR}/GITHUB_ACTION_PATH.txt
+          ls -al ${GITHUB_ACTION_PATH} | tee -a ${OUTPUT_DIR}/GITHUB_ACTION_PATH.txt
           echo "::endgroup::"
         fi
-
-
-
         exit 0
+
+    - name: Save Output
+      id: save-output
+      if: ${{ inputs.save_output }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{inputs.artifact_id}}
+        path: |
+          ${{env.OUTPUT_DIR}}
+        
