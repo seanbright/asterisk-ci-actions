@@ -66,7 +66,18 @@ jobs:
           step_summary=""
           step_summary+="FAILURE: rest_api/recording/XXXXX\nFAILURE: rest_api/recording/YYYYYYY"
           echo -e "$step_summary" >> logs/job_summary.txt
-          exit 1
+          echo "::group::outer group"
+          echo "outer 1"
+          echo "outer 2"
+          echo "::group::inner group"
+          echo "inner 1"
+          echo "inner 2"
+          echo "::endgroup::"
+          echo "outer 3"
+          echo "outer 4"
+          echo "::endgroup::"
+          
+          exit 0
       - name: Save Output
         id: save-output
         if: ${{ always() }}
