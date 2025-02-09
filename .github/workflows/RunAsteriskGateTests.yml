@@ -43,6 +43,10 @@ on:
       build_cache_key:
         type: string
         required: true
+      sipp_version:
+        required: false
+        type: string
+        default: v3.6.1
     secrets:
       TOKEN:
         required: true
@@ -58,6 +62,7 @@ env:
   REPO_DIR:     ${{ github.event.repository.name }}
   REPO_ORG:     ${{ github.event.repository.owner.login }}
   REALTIME:     ${{ inputs.realtime }}
+  SIPP_VERSION: ${{ inputs.sipp_version }}
   TESTSUITE_REPO:     ${{ inputs.testsuite_repo }}
   TESTSUITE_TEST_PR:  ${{ inputs.testsuite_test_pr }}
   GATETEST_GROUP:     ${{ inputs.gatetest_group }}
@@ -78,10 +83,23 @@ jobs:
       - name: Setup Runner
         run: |
           # Setup
+          echo "::group::Getting actions repo"
           wget -qO asterisk-ci-actions.tar.gz \
             https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
           tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
-          sudo ${SCRIPT_DIR}/setupRunner.sh
+          echo "::endgroup::"
+          source ${SCRIPT_DIR}/ci.functions
+          echo "::group::Installing software"
+          sudo ${SCRIPT_DIR}/setupRunner.sh --sipp-version=${SIPP_VERSION}
+          echo "::endgroup::"
+
+          NORMALIZED_BRANCH=${BASE_BRANCH/\//-}
+          TESTSUITE_DIR=${GITHUB_WORKSPACE}/$(basename ${TESTSUITE_REPO})
+          ASTERISK_DIR=${GITHUB_WORKSPACE}/${REPO_DIR}
+          LOG_DIR=${TESTSUITE_DIR}/logs
+          LOG_FILE=${LOG_DIR}/job_summary.txt
+          export_to_github NORMALIZED_BRANCH TESTSUITE_DIR ASTERISK_DIR \
+            LOG_DIR LOG_FILE
 
       - name: Restore Asterisk Cache
         uses: ./asterisk-ci-actions/RestoreAsteriskFromCache
@@ -93,13 +111,14 @@ jobs:
 
       - name: "Setup testsuite"
         run: |
-          # Setup testsuite
+          echo "::group::Setting up testsuite"
+          # This scripts exports variables to GITHUB_ENV
           ${SCRIPT_DIR}/setupAsteriskGateTests.sh
-          mkdir -p ${OUTPUT_DIR}
+          echo "::endgroup::"
 
       - name: "Run Gate Test ${{inputs.gatetest_group}}"
         run: |
-          # Run Gate Test ${{inputs.gatetest_group}}
+          echo "::group::Run Gate Test ${{inputs.gatetest_group}}"
           TESTRC=0
           # Because we're using sudo, the environment isn't
           # passed to the script so we need to use the
@@ -107,12 +126,14 @@ jobs:
           # to pass the complete environment but that's
           # overkill and might cause other issues.
           sudo ${SCRIPT_DIR}/runAsteriskGateTests.sh \
-            --test-name=${GC_TEST_NAME} \
-            --job-summary-output=job_summary.txt \
+            --test-name=${GATETEST_GROUP} \
+            --log-dir=${LOG_DIR} \
+            --log-file=${LOG_FILE} \
             --testsuite-dir=${TESTSUITE_DIR} \
             --asterisk-dir=${ASTERISK_DIR} \
             --test-timeout=${TEST_TIMEOUT} --realtime=$REALTIME --stop-database=true \
             --testsuite-command="${TEST_OPTIONS} ${TEST_CMD}" || TESTRC=1
+          echo "::endgroup::"
           exit $TESTRC
 
       - name: Save Output
@@ -120,7 +141,8 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.GC_TEST_NAME }}
+          name: ${{ env.NORMALIZED_BRANCH }}-${{inputs.gatetest_group}}
+          if-no-files-found: ignore
           path: |
-            ${{ env.GC_TESTSUITE_DIR }}/logs
+            ${{ env.LOG_DIR }}
 

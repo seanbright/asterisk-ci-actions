@@ -1,5 +1,6 @@
 #!/usr/bin/bash
-SCRIPT_DIR=$(dirname $(realpath $0))
+
+SCRIPT_DIR=$(dirname $(readlink -fn $0))
 
 PUSH=false
 NO_CLONE=false
@@ -46,7 +47,7 @@ else
 fi
 
 if [ ! -d ${REPO_DIR}/.git ] ; then
-	error_out "Failed to clone ${REPO} to ${REPO_DIR}"
+	log_error_msg "Failed to clone ${REPO} to ${REPO_DIR}"
 	exit 1
 fi
 
@@ -58,7 +59,7 @@ git fetch --depth 10 --no-tags origin refs/pull/${PR_NUMBER}/head
 debug_out "Getting commits for PR ${PR_NUMBER}"
 mapfile COMMITS < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + "|" + (.commit.message | split("\n")[0]) + "|" + .commit.author.name + "|" + .commit.author.email + "|"' || echo "@_ERROR_@")
 [[ "${COMMITS[0]}" =~ @_ERROR_@ ]] && {
-	error_out "No commits for PR ${PR_NUMBER}"
+	log_error_msg "No commits for PR ${PR_NUMBER}"
 	exit 1
 }
 
@@ -68,7 +69,7 @@ declare -p COMMITS
 debug_out "***** There are ${#COMMITS[@]} commits for PR ${PR_NUMBER}"
 for commit in "${COMMITS[@]}" ; do
 	[[ "$commit" =~ ([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\| ]] || {
-		error_out "Unable to parse commit '$commit'"
+		log_error_msg "Unable to parse commit '$commit'"
 		exit 1
 	}
 	SHA=${BASH_REMATCH[1]}
@@ -85,9 +86,8 @@ declare -a error_msgs
 RC=0
 IFS=$','
 for BRANCH in $branches ; do
-	[ -n "${GITHUB_OUTPUT}" ] && echo "::group::Branch $BRANCH"
 
-	debug_out "***** Cherry-picking commits to branch $BRANCH"
+	debug_out "\n***** Cherry-picking commits to branch $BRANCH"
 	$NO_CLONE || git fetch --no-tags --depth 10 origin refs/heads/$BRANCH:$BRANCH
 	git checkout $BRANCH
 	
@@ -113,7 +113,6 @@ for BRANCH in $branches ; do
 		else
 			git cherry-pick --abort &>/dev/null || :
 			msg="Unable to cherry-pick commit '${MESSAGE}' to branch ${BRANCH}"
-			error_out "$msg"
 			error_msgs+=( "${msg}" )
 			RC=1
 			break
@@ -123,27 +122,23 @@ for BRANCH in $branches ; do
 done
 
 if $PUSH ; then
-	gh auth setup-git -h github.com
 	if [ $RC -eq 0 ] ; then
+		gh auth setup-git -h github.com
 		for BRANCH in $branches ; do
 			debug_out "Pushing to branch $BRANCH"
 			git checkout ${BRANCH}
-			git push --set-upstream origin $BRANCH
+			git push --set-upstream origin $BRANCH || {
+				msg="Unable to push to branch ${BRANCH}"
+				error_msgs+=( "${msg}" )
+				RC=1
+				break
+			}
 		done
 	else
 		debug_out "Not pushing to any branches due to errors"
 	fi
 fi
 
-echo "RC: $RC  OUTPUT_DIR: ${OUTPUT_DIR}"
-declare -p error_msgs
-
-if [ -n "${OUTPUT_DIR}" ] && [ ${#error_msgs[@]} -gt 0 ] ; then
-	debug_out "Writing cherry-pick errors to ${OUTPUT_DIR}/job_summary.txt"
-	mkdir -p "${OUTPUT_DIR}"
-	for msg in "${error_msgs[@]}" ; do
-		echo "$msg" >> "${OUTPUT_DIR}/job_summary.txt"
-	done
-fi
+log_error_msgs "${error_msgs[@]}"
 
 exit $RC

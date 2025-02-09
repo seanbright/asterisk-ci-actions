@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR=$(dirname $(readlink -fn $0))
-PROGNAME=$(basename $(readlink -fn $0))
 . ${SCRIPT_DIR}/ci.functions
 
 for v in REPO PR_NUMBER TESTSUITE_PR_REGEX ; do
@@ -12,7 +11,7 @@ jq_exp=".[].body | match(\"${TESTSUITE_PR_REGEX}\"; \"g\") | .captures[0].string
 testsuite_pr=$(gh api /repos/${REPO}/issues/${PR_NUMBER}/comments \
 	--jq "$jq_exp") || \
 	{
-		debug_out "::error::Unable to retrieve comments for /repos/${REPO}/issues/${PR_NUMBER}"
+		log_error_msgs "::error::Unable to retrieve comments for /repos/${REPO}/issues/${PR_NUMBER}"
 		exit 1
 	}
 

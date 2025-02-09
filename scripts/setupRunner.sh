@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 
-echo "Setting up runner"
-[ $UID -ne 0 ] && { echo "This script must be run as root!" ; exit 1 ; }
 
 : ${SIPP_VERSION:=v3.6.1}
 : ${GITHUB_SERVER_URL:=https://github.com}
 SCRIPT_DIR=$(dirname $(readlink -fn $0))
 . $SCRIPT_DIR/ci.functions
 
-set -e
+[ $UID -ne 0 ] && {
+	log_error_msgs "This script must be run as root!"
+	exit 1
+}
 
-echo "Setting kernel.core_pattern=/tmp/core-%e-%t"
+debug_out "Setting kernel.core_pattern=/tmp/core-%e-%t"
 sysctl -w kernel.core_pattern=/tmp/core-%e-%t
 chmod 1777 /tmp
 
@@ -20,14 +21,14 @@ apt-get install -y -qq wget curl file apt-utils >/dev/null
 
 # Install packages
 if ! which gh &>/dev/null ; then
-	echo "Installing github cli repo"
+	debug_out "Installing github cli repo"
 	wget -q -O/tmp/githubcli-archive-keyring.gpg https://cli.github.com/packages/githubcli-archive-keyring.gpg
 	install --mode=0644 -D -t /etc/apt/keyrings /tmp/githubcli-archive-keyring.gpg
-	echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /tmp/github-cli.list
+	debug_out "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /tmp/github-cli.list
 	install --mode=0644 -D -t /etc/apt/sources.list.d /tmp/github-cli.list
 fi
 
-echo "Installing dev packages"
+debug_out "Installing dev packages"
 apt-get install -qq sudo build-essential gdb binutils-dev freetds-dev \
   libasound2-dev libbluetooth-dev libc-client2007e-dev \
   libcap-dev libcfg-dev libcodec2-dev libcorosync-common-dev \
@@ -54,20 +55,24 @@ if ! which jq &>/dev/null ; then
 	addons+=" jq"
 fi
 
-echo "Installing addons" 
+debug_out "Installing addons" 
 apt-get install -qq ${addons} >/dev/null
 
-echo "Building and installing sipp"
+debug_out "Building and installing sipp"
 SIPPDIR=$(mktemp -d -p /opt/ -t sipp.XXXXXXXX)
-trap "rm -rf ${SIPPDIR}" EXIT
 
 cd ${SIPPDIR}
-echo "*** Retrieving sipp ${SIPP_VERSION}"
+debug_out "*** Retrieving sipp ${SIPP_VERSION}"
 wget -q https://github.com/SIPp/sipp/releases/download/${SIPP_VERSION}/sipp-${SIPP_VERSION/v/}.tar.gz
 tar -xf sipp-${SIPP_VERSION/v/}.tar.gz
 cd sipp-${SIPP_VERSION/v/}
-echo "*** Building sipp ${SIPP_VERSION}"
-./build.sh --full &>/tmp/sipp.build.out || { cat /tmp/sipp.build.out ; exit 1 ; }
-echo "*** Installing sipp ${SIPP_VERSION} to /usr/bin"
+debug_out "*** Building sipp ${SIPP_VERSION}"
+./build.sh --full &>/tmp/sipp.build.out || {
+	log_error_msgs "Failed to build sipp ${SIPP_VERSION}"
+	cat /tmp/sipp.build.out
+	exit 1
+}
+debug_out "*** Installing sipp ${SIPP_VERSION} to /usr/bin"
 install -D -t /usr/bin sipp
-cd
+
+exit 0

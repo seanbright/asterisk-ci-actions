@@ -3,14 +3,20 @@ SCRIPT_DIR=$(dirname $(readlink -fn $0))
 REALTIME=false
 STOP_DATABASE=false
 TEST_TIMEOUT=600
+
 source $SCRIPT_DIR/ci.functions
+
 ASTETCDIR="$DESTDIR/etc/asterisk"
 ASTERISK="$DESTDIR/usr/sbin/asterisk"
 CONFFILE="$ASTETCDIR/asterisk.conf"
 
-echo "Starting gate tests"
-[ ! -x "$ASTERISK" ] && { echo "Asterisk isn't installed." ; exit 1 ; }
-[ ! -f "$CONFFILE" ] && { echo "Asterisk samples aren't installed." ; exit 1 ; }
+assert_env_variables --print TEST_NAME TESTSUITE_DIR ASTERISK_DIR \
+	TESTSUITE_COMMAND TEST_TIMEOUT || exit 1
+printvars LOG_DIR LOG_FILE
+
+debug_out "Starting gate tests"
+[ ! -x "$ASTERISK" ] && { log_error_msgs "Asterisk isn't installed." ; exit 1 ; }
+[ ! -f "$CONFFILE" ] && { log_error_msgs "Asterisk samples aren't installed." ; exit 1 ; }
 
 if [ x"$WORK_DIR" != x ] ; then
 	export AST_WORK_DIR="$(readlink -f $WORK_DIR)"
@@ -18,7 +24,6 @@ if [ x"$WORK_DIR" != x ] ; then
 fi
 
 if [ -n "$TESTSUITE_DIR" ] ; then
-	ls -al $TESTSUITE_DIR
 	pushd $TESTSUITE_DIR  &>/dev/null
 fi
 
@@ -26,11 +31,11 @@ fi
 coreglob=$(asterisk_corefile_glob)
 corefiles=$(find $(dirname $coreglob) -name $(basename $coreglob))
 if [ -n "$corefiles" ] ; then
-	echo "*** Found one or more core files before running tests ***"
-	echo "Search glob: ${coreglob}"
-	echo "Corefiles: ${corefiles}"
+	debug_out "*** Found one or more core files before running tests ***" \
+		"Search glob: ${coreglob}" \
+		"Corefiles: ${corefiles}"
 	if [[ "$coreglob" =~ asterisk ]] ; then
-		echo "Removing matching corefiles: $corefiles"
+		debug_out "Removing matching corefiles: $corefiles"
 		rm -rf $corefiles || :
 	fi
 fi
@@ -42,26 +47,26 @@ fi
 
 # check to see if venv scripts exist so we can use them
 if [ -f ./setupVenv.sh ] ; then
-	echo "Running in Virtual Environment"
+	debug_out "Running in Virtual Environment"
 	# explicitly invoking setupVenv to capture output in case of failure
 	./setupVenv.sh ${USE_REALTIME} &>/tmp/setupVenv.out || { cat /tmp/setupVenv.out ; exit 1 ; }
 	VENVPREFIX="runInVenv.sh python "
 else
-	echo "Running in Legacy Mode"
+	debug_out "Running in Legacy Mode"
 	export PYTHONPATH=./lib/python/
 fi
 
 TESTRC=0
 $REALTIME && TESTSUITE_COMMAND+=" -G realtime-incompatible"
 
-echo "Running tests ${TESTSUITE_COMMAND} ${AST_WORK_DIR:+with work directory ${AST_WORK_DIR}}"
+debug_out "Running tests ${TESTSUITE_COMMAND} ${AST_WORK_DIR:+with work directory ${AST_WORK_DIR}}"
 ./${VENVPREFIX}runtests.py --cleanup --timeout=${TEST_TIMEOUT} \
 	${TESTSUITE_COMMAND} \
 	| contrib/scripts/pretty_print --no-color --no-timer \
 		--term-width=100 --show-errors || :
 	
 if [ ! -f ./asterisk-test-suite-report.xml ] ; then
-	echo "./asterisk-test-suite-report.xml not found"
+	log_error_msgs "./asterisk-test-suite-report.xml not found"
 	TESTRC=1
 else
 	cp asterisk-test-suite-report.xml logs/ || :
@@ -69,11 +74,9 @@ else
 	for f in $failures ; do
 		[ $f -gt 0 ] && TESTRC=1
 	done
-	if [ -n "$JOB_SUMMARY_OUTPUT" ] ; then
-		xmlstarlet sel -t -m "//testcase[count(failure) > 0]" \
-			-o "FAILED: " -v "translate(@classname,'.','/')" -o '/' -v "@name" -n \
-			./asterisk-test-suite-report.xml > logs/${JOB_SUMMARY_OUTPUT}
-	fi
+	log_failed_tests $(xmlstarlet sel -t -m "//testcase[count(failure) > 0]" \
+			-v "translate(@classname,'.','/')" -o '/' -v "@name" -n \
+			./asterisk-test-suite-report.xml)
 fi
 
 if $REALTIME ; then
@@ -83,18 +86,18 @@ fi
 coreglob=$(asterisk_corefile_glob)
 corefiles=$(find $(dirname $coreglob) -name $(basename $coreglob))
 if [ -n "$corefiles" ] ; then
-	echo "*** Found one or more core files after running tests ***"
-	echo "Search glob: ${coreglob}"
-	echo "Matching corefiles: ${corefiles}"
+	debug_out "*** Found one or more core files after running tests ***" \
+		"Search glob: ${coreglob}" \
+		"Matching corefiles: ${corefiles}"
 	TESTRC=1
 	$SCRIPT_DIR/ast_coredumper.sh --no-conf-file --outputdir=./logs/ \
 		--tarball-coredumps --delete-coredumps-after $coreglob
 	# If the return code was 2, none of the coredumps actually came from asterisk.
-	[ $? -eq 2 ] && TESTRC=0 || echo "Coredumps found" >> logs/failed_tests.txt
+	[ $? -eq 2 ] && TESTRC=0 || log_error_msgs "Coredumps found after running tests"
 fi
 
 if [ -n "$TESTSUITE_DIR" ] ; then
 	popd &>/dev/null
 fi
-echo "Exiting gate tests"
+debug_out "Exiting gate tests"
 exit $TESTRC

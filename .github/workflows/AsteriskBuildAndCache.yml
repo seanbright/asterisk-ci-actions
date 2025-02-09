@@ -82,13 +82,15 @@ env:
   MODULES_BLACKLIST: ${{ inputs.modules_blacklist }}
   SIPP_VERSION:      ${{ inputs.sipp_version }}
   CACHE_DIR:         ${{ github.workspace }}/${{ inputs.output_cache_dir }}
-  LOG_DIR:           ${{ github.workspace }}/logs
+  REPO_NAME:         ${{ github.event.repository.name }}
   REPO_DIR:          ${{ github.workspace }}/${{ github.event.repository.name }}
   REPO_ORG:          ${{ github.event.repository.owner.login }}
   OUTPUT_DIR:        ${{ github.workspace }}/${{ inputs.output_cache_dir }}/output
   BUILD_CACHE_DIR:   ${{ inputs.build_cache_dir }}
   BUILD_CACHE_PATH:  ${{ github.workspace }}/${{ inputs.build_cache_dir }}
   BUILD_CACHE_KEY:   ${{ inputs.build_cache_key }}
+  LOG_DIR:           ${{ github.workspace }}/logs
+  LOG_FILE:          ${{ github.workspace }}/logs/job_summary.txt
   ACTIONS_OWNER:     ${{ fromJSON(inputs.actions_ref).owner }}
   ACTIONS_REPO:      ${{ fromJSON(inputs.actions_ref).repo }}
   ACTIONS_BRANCH:    ${{ fromJSON(inputs.actions_ref).branch }}
@@ -105,52 +107,67 @@ jobs:
       - name: Setup Runner
         run: |
           # Setup
+          echo "::group::Getting actions repo"
           wget -qO asterisk-ci-actions.tar.gz \
             https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
           tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
+          echo "::endgroup::"
+          echo "::group::Installing software"
           sudo ${SCRIPT_DIR}/setupRunner.sh --sipp-version=${SIPP_VERSION}
+          echo "::endgroup::"
           echo "NORMALIZED_BRANCH=${BASE_BRANCH/\//-}" >> ${GITHUB_ENV}
-
-      - name: BuildAsterisk
-        run: |
-          # Building Asterisk
-
           mkdir -p ${REPO_DIR}
           mkdir -p ${CACHE_DIR}
           mkdir -p ${OUTPUT_DIR}
           mkdir -p ${LOG_DIR}
 
-          echo "*** Checking out ${ASTERISK_REPO} to ${REPO_DIR}"
+      - name: BuildAsterisk
+        run: |
+          # Building Asterisk
+
+          echo "::group::Checking out ${ASTERISK_REPO} to ${REPO_DIR}"
           ${SCRIPT_DIR}/checkoutRepo.sh --repo=${ASTERISK_REPO} \
             --branch=${BASE_BRANCH} --is-cherry-pick=${IS_CHERRY_PICK} \
-            --pr-number=${PR_NUMBER} --repo-dir=${REPO_DIR}
+            --pr-number=${PR_NUMBER} --repo-dir=${REPO_DIR} || {
+            echo "::endgroup::"
+            exit 1
+          }
+          echo "::endgroup::"
 
           cd ${REPO_DIR}
-          
+
           if ! ${NO_ALEMBIC} ; then
-            echo "*** Running Alembic Tests"
-            sudo ${SCRIPT_DIR}/setupDatabase.sh
+            echo "::group::Running Alembic Tests"
+            sudo ${SCRIPT_DIR}/setupDatabase.sh || {
+              echo "FAILED: Unable to set up database for alembic tests" >> ${LOG_FILE}
+              echo "::endgroup::"
+              exit 1
+            }
             sudo ${SCRIPT_DIR}/runAlembicTests.sh || {
-              echo "FAILED: Alembic Tests" > ${LOG_DIR}/job_summary.txt
+              echo "FAILED: Alembic Tests" >> ${LOG_FILE}
               sudo ${SCRIPT_DIR}/teardownDatabase.sh --stop-database
+              echo "::endgroup::"
               exit 1
             }
             sudo ${SCRIPT_DIR}/teardownDatabase.sh --stop-database
+            echo "::endgroup::"
           fi
 
-          echo "*** Starting build"
+          echo "::group::Starting build"
           ${SCRIPT_DIR}/${BUILD_SCRIPT} --github --branch-name=${BASE_BRANCH} \
             --ccache-disable ${BUILD_OPTIONS} \
             --modules-blacklist="${MODULES_BLACKLIST// /}" \
             --output-dir=${OUTPUT_DIR} \
             --cache-dir=${CACHE_DIR} || {
-              echo "FAILED: Build" > ${LOG_DIR}/job_summary.txt
+              echo "FAILED: Build" > ${LOG_FILE}
               exit 1
           }
-          echo "*** Build Complete"
+          echo "::endgroup::"
 
+          echo "::group::Cache"
           if [ -z "${BUILD_CACHE_DIR}" ] ; then
             echo "*** No build cache dir specified.  Not caching"
+            echo "::endgroup::"
             exit 0
           fi
 
@@ -162,14 +179,14 @@ jobs:
           echo "*** Installing headers to ${BUILD_CACHE_PATH}"
           make DESTDIR=${BUILD_CACHE_PATH} install-headers  >/dev/null
           echo "*** Caching source"
-          git archive --format=tar -o ${BUILD_CACHE_PATH}/asterisk-source.tar --prefix=${REPO_DIR}/ HEAD
-          gzip ${BUILD_CACHE_PATH}/asterisk-source.tar
+          git archive --format=tar.gz -o ${BUILD_CACHE_PATH}/asterisk-source.tar.gz --prefix=${REPO_NAME}/ HEAD
           ls -al ${BUILD_CACHE_PATH}/
-          echo "*** Install Complete"
+          echo "::endgroup::"
 
-          echo "*** Deleting old cache (if any): ${BUILD_CACHE_KEY}"
+          echo "::group::Deleting old cache (if any): ${BUILD_CACHE_KEY}"
           # We don't care if it fails
           gh cache delete ${BUILD_CACHE_KEY} || :
+          echo "::endgroup::"
 
       - id: cache-build-output
         if: success() && inputs.build_cache_dir != '' && inputs.build_cache_key != ''

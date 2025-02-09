@@ -1,5 +1,5 @@
 #!/usr/bin/bash
-SCRIPT_DIR=$(dirname $(realpath $0))
+SCRIPT_DIR=$(dirname $(readlink -fn $0))
 
 source ${SCRIPT_DIR}/ci.functions
 set -e

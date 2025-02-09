@@ -1,27 +1,29 @@
 #!/usr/bin/env bash
 SCRIPT_DIR=$(dirname $(readlink -fn $0))
+source $SCRIPT_DIR/ci.functions
 
 ASTERISK_DIR=../asterisk
 
 if [ ! -f test-config.yaml ] || [ ! -f tox.ini ] ; then
-	echo "This script needs to be run from the testsuite directory"
+	log_error_msgs "This script needs to be run from the testsuite directory"
 	exit 1
 fi
 
 source $SCRIPT_DIR/db.functions
 
 [ ! -d "${ASTERISK_DIR}" ] && \
-	{ echo "Asterisk directory ${ASTERISK_DIR} doesn't exist" ; exit 1 ; }
+	{ log_error_msgs "Asterisk directory ${ASTERISK_DIR} doesn't exist" ; exit 1 ; }
 
-echo "Setting up testsuite for realtime"
+debug_out "Setting up testsuite for realtime"
 
 ${SCRIPT_DIR}/setupDatabase.sh --host=${HOST} --database=${DATABASE} --user=${USER} \
-	--password=${PASSWORD} --dsn=${DSN} --stop-database=${STOP_DATABASE}
+	--password=${PASSWORD} --dsn=${DSN} --stop-database=${STOP_DATABASE} || exit 1
 
 pushd ${ASTERISK_DIR}/contrib/ast-db-manage &>/dev/null
-echo "Running alembic upgrade"
+debug_out "Running alembic upgrade"
 sed -r -e "s/^sqlalchemy.url\s*=\s*mysql.*/sqlalchemy.url = postgresql:\/\/${USER}:${PASSWORD}@${HOST}\/${DATABASE}/g" config.ini.sample > .config.ini
 alembic -c ./.config.ini upgrade head &>/tmp/alembic.out || {
+	log_error_msgs "Failed to run alembic upgrade"
 	cat /tmp/alembic.out
 	exit 1
 }
@@ -29,7 +31,7 @@ popd &>/dev/null
 
 cp test-config.yaml test-config.orig.yaml
 
-echo "Configuring test-config.yaml"
+debug_out "Configuring test-config.yaml"
 cat >test-config.yaml <<-EOF
 	global-settings:
 	    test-configuration: config-realtime
@@ -95,5 +97,5 @@ cat >test-config.yaml <<-EOF
 	        db: "${DATABASE}"
 	        dsn: "${DSN}"
 EOF
-echo "Testsuite realtime setup complete"
+debug_out "Testsuite realtime setup complete"
 exit 0

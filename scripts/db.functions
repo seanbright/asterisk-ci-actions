@@ -1,8 +1,10 @@
 
-[ -n "$CI_FUNCTIONS_INCLUDED" ] && {
-	echo "ci.functions can't be sourced directly when db.functions is"
+[ -n "$DB_FUNCTIONS_INCLUDED" ] && {
+	echo "db.functions can't be sourced directly when db.functions is"
 	exit 1
 }
+
+DB_FUNCTIONS_INCLUDED=1
 
 [ ! -f /etc/os-release ] && {
 	echo "No /etc/os-release found.  Can't determine distribution"
@@ -15,8 +17,6 @@ USER=asterisk_test
 PASSWORD=asterisk_test
 DSN=asterisk_test
 STOP_DATABASE=false
-
-source $SCRIPT_DIR/ci.functions
 
 : ${DATABASE_CDR:=cdr-${DATABASE##*-}}
 : ${DATABASE_VOICEMAIL:=voicemail-${DATABASE##*-}}

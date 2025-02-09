@@ -30,6 +30,10 @@ on:
       build_cache_key:
         type: string
         required: true
+      sipp_version:
+        required: false
+        type: string
+        default: v3.6.1
     secrets:
       TOKEN:
         required: true
@@ -44,9 +48,12 @@ env:
   OUTPUT_DIR:       ${{ github.workspace }}/${{ inputs.output_cache_dir }}/output
   REPO_DIR:         ${{ github.event.repository.name }}
   REPO_ORG:         ${{ github.event.repository.owner.login }}
+  SIPP_VERSION:     ${{ inputs.sipp_version }}
   BUILD_CACHE_DIR:  ${{ inputs.build_cache_dir }}
   BUILD_CACHE_KEY:  ${{ inputs.build_cache_key }}
   UNITTEST_COMMAND: ${{ inputs.unittest_command }}
+  LOG_DIR:          ${{ github.workspace }}/logs
+  LOG_FILE:         ${{ github.workspace }}/logs/job_summary.txt
   ACTIONS_OWNER:    ${{ fromJSON(inputs.actions_ref).owner }}
   ACTIONS_REPO:     ${{ fromJSON(inputs.actions_ref).repo }}
   ACTIONS_BRANCH:   ${{ fromJSON(inputs.actions_ref).branch }}
@@ -63,10 +70,17 @@ jobs:
       - name: Setup Runner
         run: |
           # Setup
+          echo "::group::Getting actions repo"
           wget -qO asterisk-ci-actions.tar.gz \
             https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
           tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
-          sudo ${SCRIPT_DIR}/setupRunner.sh
+          echo "::endgroup::"
+          echo "::group::Installing software"
+          sudo ${SCRIPT_DIR}/setupRunner.sh --sipp-version=${SIPP_VERSION}
+          echo "::endgroup::"
+          echo "NORMALIZED_BRANCH=${BASE_BRANCH/\//-}" >> ${GITHUB_ENV}
+          mkdir -p ${LOG_DIR}
+          mkdir -p ${OUTPUT_DIR}
 
       - name: Restore Asterisk Cache
         uses: ./asterisk-ci-actions/RestoreAsteriskFromCache
@@ -78,15 +92,19 @@ jobs:
 
       - name: Run Unit Tests
         run: |
-          # Run Unit Tests
+          echo "::group::Running unit tests"
           UNIT_TEST_NAME=${BASE_BRANCH//\//-}-unit
-          echo "UNIT_TEST_NAME=${UNIT_TEST_NAME}" >> "${GITHUB_ENV}"
-          if [ -d ${REPO_DIR} ] ; then
-            echo "*** Found asterisk source cache '${REPO_DIR}'"
-            [ -n "${USER_GROUP}" ] && chown -R ${USER_GROUP} ${REPO_DIR}
-            cd ${REPO_DIR}
-            [ -f tests/keys/rsa_key1.key ] && \
+          if [ ! -d ${REPO_DIR} ] ; then
+            echo "*** Didn't find asterisk source cache '${REPO_DIR}'" >> ${LOG_FILE}
+            exit 1
+          fi
+          [ -n "${USER_GROUP}" ] && chown -R ${USER_GROUP} ${REPO_DIR}
+          cd ${REPO_DIR}
+          if [ -f tests/keys/rsa_key1.key ] ; then
               chmod go-rw tests/keys/rsa_key1.key || :
+          else
+            echo "Didn't find crypto keys" >> ${LOG_FILE}
+            exit 1
           fi
           mkdir -p ${OUTPUT_DIR}
           echo "*** Running asterisk unit tests"
@@ -103,6 +121,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.UNIT_TEST_NAME }}
-          path: ${{ inputs.output_cache_dir }}/output
+          name: ${{ env.NORMALIZED_BRANCH }}-unit
+          if-no-files-found: ignore
+          path: |
+            ${{ env.LOG_DIR }}
+            ${{ inputs.output_cache_dir }}/output
 

@@ -1,58 +1,54 @@
 #!/usr/bin/env bash
-echo "Setting up database"
-
-[ $UID -ne 0 ] && { echo "This script must be run as root!" ; exit 1 ; }
 
 SCRIPT_DIR=$(dirname $(readlink -fn $0))
+source $SCRIPT_DIR/ci.functions
+[ $UID -ne 0 ] && { log_error_msgs "This script must be run as root!" ; exit 1 ; }
 source $SCRIPT_DIR/db.functions
 
-echo " PGSQLCONF: ${PGSQLCONF}"
-echo "    PGDATA: ${PGDATA}"
-echo "PG_VERSION: ${PG_VERSION}"
-echo "     PGHBA: ${PGHBA}"
+printvars PGSQLCONF PGDATA PG_VERSION PGHBA
 
 [ ! -f ${PGDATA}/PG_VERSION ] && {
-	echo "Initializing database in ${PGDATA}"
+	debug_out "Initializing database in ${PGDATA}"
 	_pg_ctl initdb &>/tmp/pg_ctl_initdb.out || {
-		echo "FAILED"
+		log_error_msgs "Unable to initialize database engine"
 		cat /tmp/pg_ctl_initdb.out
 		exit 1
 	}
 }
 
 _pg_ctl status &>/dev/null && {
-	echo "Stopping running database"
+	debug_out "Stopping running database"
 	_pg_ctl stop
 }
 
-echo "Starting database"
+debug_out "Starting database"
 _pg_ctl start || {
-	echo "FAILED"
+	log_error_msgs "Unable to start database"
 	exit 1
 }
 ls -al /var/run/postgresql
 
-echo "Dropping any existing objects"
+debug_out "Dropping any existing objects"
 dropdb $PGOPTS --if-exists -e ${DATABASE_CDR} &>/dev/null || :
 dropdb $PGOPTS --if-exists -e ${DATABASE_VOICEMAIL} &>/dev/null || :
 dropdb $PGOPTS --if-exists -e ${DATABASE} &>/dev/null || :
 dropuser $PGOPTS --if-exists -e ${USER} &>/dev/null || :
 
-echo "Creating ${USER} user using $PGOPTS"
+debug_out "Creating ${USER} user using $PGOPTS"
 psql $PGOPTS -c "create user ${USER} with login password '${PASSWORD}';" &>/tmp/create_user.out || {
-	echo "FAILED"
+	log_error_msgs "Unable to create database user"
 	cat /tmp/create_user.out
 	exit 1
 }
 
-echo "Creating ${DATABASE} database"
+debug_out "Creating ${DATABASE} database"
 createdb $PGOPTS -E UTF-8 -T template0 -O ${USER} ${DATABASE} &>/tmp/create_db.out || {
-	echo "FAILED"
+	log_error_msgs "Unable to create database"
 	cat /tmp/create_db.out
 	exit 1
 }
 
-echo "Creating ${DSN} ODBC DSN"
+debug_out "Creating ${DSN} ODBC DSN"
 declare -a DRIVERS=( "PostgreSQL" "PostgreSQL Unicode" )
 DRIVER=
 for d in "${DRIVERS[@]}" ; do
@@ -63,7 +59,7 @@ for d in "${DRIVERS[@]}" ; do
 done
 
 [ -z "$DRIVER" ] && {
-	echo "No ODBC Postgres driver found"
+	log_error_msgs "No ODBC Postgres driver found"
 	exit 1
 }
 
@@ -84,11 +80,11 @@ odbcinst -i -s -l -n ${DSN} -f /dev/stdin <<-EOF
 	ConnSettings       =
 EOF
 
-echo "Testing ${DSN} ODBC DSN"
+debug_out "Testing ${DSN} ODBC DSN"
 echo "help;" | isql ${DSN} ${USER} ${PASSWORD} -b &>/tmp/isql_test.out || {
-	echo "FAILED"
+	log_error_msgs "ODBC DSN test failed"
 	cat /tmp/isql_test.out
 	exit 1
 }
-echo "Database setup complete"
+debug_out "Database setup complete"
 exit 0

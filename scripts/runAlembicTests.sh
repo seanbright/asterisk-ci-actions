@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 SCRIPT_DIR=$(dirname $(readlink -fn $0))
+source $SCRIPT_DIR/ci.functions
 source $SCRIPT_DIR/db.functions
 
 [ ! -f contrib/ast-db-manage/config.ini.sample ] && {

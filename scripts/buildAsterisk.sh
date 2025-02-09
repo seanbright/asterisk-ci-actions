@@ -70,15 +70,12 @@ MAKE=`which make`
 PKGCONFIG=`which pkg-config`
 _libdir=`${SCRIPT_DIR}/findLibdir.sh`
 
-git config --global --add safe.directory $PWD
-
 ulimit -a
 _version=$(./build_tools/make_version .)
-for var in BRANCH_NAME MAINLINE_BRANCH OUTPUT_DIR CACHE_DIR CCACHE_DISABLE CCACHE_DIR _libdir _version ; do
-	declare -p $var 2>/dev/null || :
-done
 
-echo "Creating configure arguments"
+printvars BRANCH_NAME MAINLINE_BRANCH OUTPUT_DIR CACHE_DIR CCACHE_DISABLE CCACHE_DIR _libdir _version
+
+debug_out "Creating configure arguments"
 
 common_config_args="--prefix=/usr ${_libdir:+--libdir=${_libdir}} --sysconfdir=/etc --with-pjproject-bundled"
 
@@ -101,19 +98,25 @@ fi
 export WGET_EXTRA_ARGS="--quiet"
 
 if ! $NO_CONFIGURE ; then
-	echo "Running configure"
+	debug_out "Running configure"
 	SUCCESS=true
 	runner ./configure ${common_config_args} > /dev/null || SUCCESS=false
 	$SUCCESS || { SUCCESS=true ; runner ./configure ${common_config_args} NOISY_BUILD=yes || SUCCESS=false ; }
 	cp config.{status,log} makeopts ${OUTPUT_DIR}/ || :
-	$SUCCESS || exit 1
+	$SUCCESS || {
+		log_error_msgs "./configure failed"
+		exit 1
+	}
 fi
 
 if ! $NO_MENUSELECT ; then
 	SUCCESS=true
 	runner ${MAKE} menuselect.makeopts || SUCCESS=false
 	cp menuselect-tree menuselect.{makedeps,makeopts} ${OUTPUT_DIR}/
-	$SUCCESS || exit 1
+	$SUCCESS || {
+		log_error_msgs "Initial menuselect failed"
+		exit 1
+	}
 
 	runner menuselect/menuselect `gen_mods enable DONT_OPTIMIZE` menuselect.makeopts
 	if ! $COMPILE_DOUBLE ; then
@@ -151,7 +154,10 @@ if ! $NO_MENUSELECT ; then
 	
 	cp menuselect.makedeps ${OUTPUT_DIR}/menuselect.makedeps.postcats
 	cp menuselect.makeopts ${OUTPUT_DIR}/menuselect.makeopts.postcats
-	$SUCCESS || exit 1
+	$SUCCESS || {
+		log_error_msgs "menuselect failed"
+		exit 1
+	}
 
 	mod_disables="codec_ilbc codec_silk codec_siren7 codec_siren14 codec_g729a res_digium_phone"
 	grep -q res_pjsip_config_sangoma res/res.xml && mod_disables+=" res_pjsip_config_sangoma"
@@ -180,7 +186,10 @@ if ! $NO_MENUSELECT ; then
 	runner menuselect/menuselect `gen_mods disable $mod_disables` menuselect.makeopts || SUCCESS=false
 	cp menuselect.makedeps ${OUTPUT_DIR}/menuselect.makedeps.moddisables
 	cp menuselect.makeopts ${OUTPUT_DIR}/menuselect.makeopts.moddisables
-	$SUCCESS || exit 1
+	$SUCCESS || {
+		log_error_msgs "menuselect failed"
+		exit 1
+	}
 
 	mod_enables="app_voicemail app_directory"
 	mod_enables+=" res_mwi_external res_ari_mailboxes res_mwi_external_ami res_stasis_mailbox"
@@ -188,22 +197,31 @@ if ! $NO_MENUSELECT ; then
 	runner menuselect/menuselect `gen_mods enable $mod_enables` menuselect.makeopts || SUCCESS=false
 	cp menuselect.makedeps ${OUTPUT_DIR}/menuselect.makedeps.modenables
 	cp menuselect.makeopts ${OUTPUT_DIR}/menuselect.makeopts.modenables
-	$SUCCESS || exit 1
+	$SUCCESS || {
+		log_error_msgs "menuselect failed"
+		exit 1
+	}
 fi
 
-runner ${MAKE} ari-stubs
+runner ${MAKE} ari-stubs || {
+		log_error_msgs "make ari-stubs failed"
+		exit 1
+	}
 changes=$(git status --porcelain)
 if [ -n "$changes" ] ; then
-		echo "ERROR: 'make ari-stubs' generated new files which were not checked in.
+		log_error_msgs "ERROR: 'make ari-stubs' generated new files which were not checked in.
 Perhaps you forgot to run 'make ari-stubs' yourself?
 Files:
 $changes
-" >&2
+"
 	exit 1
 fi
 
 if ! $NO_MAKE ; then
-	runner ${MAKE} -j8 full || runner ${MAKE} -j1 NOISY_BUILD=yes full
+	runner ${MAKE} -j8 full || runner ${MAKE} -j1 NOISY_BUILD=yes full || {
+		log_error_msgs "compile failed"
+		exit 1
+	}
 fi
 
 runner rm -f ${LCOV_DIR}/*.info 2>/dev/null || :
@@ -223,5 +241,8 @@ if $COVERAGE ; then
 fi
 
 if [ -f "doc/core-en_US.xml" ] ; then
-	runner ${MAKE} validate-docs || ${MAKE} NOISY_BUILD=yes validate-docs
+	runner ${MAKE} validate-docs || ${MAKE} NOISY_BUILD=yes validate-docs || {
+		log_error_msgs "Documentation validation failed"
+		exit 1
+	}
 fi

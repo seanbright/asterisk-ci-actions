@@ -4,11 +4,15 @@
 #
 
 [ -n "$CI_FUNCTIONS_INCLUDED" ] && {
-	echo "ci.functions can't be included more than once"
+	echo "ci.functions can't be included more than once" >&2
 	exit 1
 }
 
 CI_FUNCTIONS_INCLUDED=1
+PROGNAME=$(basename $(readlink -fn $0))
+
+echo "====== Entering ${PROGNAME}" >&2
+trap 'echo "====== Exiting ${PROGNAME}" >&2' EXIT
 
 declare -a POSITIONAL_ARGS
 for a in "$@" ; do
@@ -75,6 +79,13 @@ export_to_github() {
 	done
 }
 
+printvars() {
+	for var in "$@" ; do
+		declare -n vc=$var
+		echo "$var=$vc" >&2
+	done
+}
+
 assert_env_variable() {
 	declare -n VAR="$1"
 	if [ -z "${VAR}" ] ; then
@@ -83,10 +94,54 @@ assert_env_variable() {
 	fi
 }
 
+assert_env_variables() {
+	printit=false
+	rc=0
+	[ "$1" == "--print" ] && { printit=true ; shift ; }
+	for var in "$@" ; do
+		declare -n vc=$var
+		if [ -z "${vc}" ] ; then
+			echo "::error::Missing $var in environment" >&2
+			rc=1
+			continue
+		fi
+		$printit && echo "$var=$vc" >&2
+	done
+	return $rc
+}
+
 debug_out() {
-	echo "$(basename ${0}): $@" >&2
+	IFS=$'\n'
+	echo "${*/#*/${PROGNAME}: &}" >&2
+	unset IFS
 }
 
 error_out() {
-	echo "::error::$(basename ${0}): $@" >&2
+	IFS=$'\n'
+	echo "::error::${*/#*/${PROGNAME}: &}" >&2
+	unset IFS
+}
+
+log_error_msgs() {
+	IFS=$'\n'
+	echo "::error::${*/#*/${PROGNAME}: &}" >&2
+	[ -n "${LOG_FILE}" ] && {
+		rp=$(realpath -m "${LOG_FILE}")
+		logdir=$(dirname "${rp}")
+		[ ! -d "${logdir}" ] && mkdir -p "${logdir}"
+		echo "${*/#*/${PROGNAME}: &}" >> "${LOG_FILE}"
+	}
+	unset IFS
+}
+
+log_failed_tests() {
+	IFS=$'\n'
+#	echo "::error::${*/#*/FAILED TEST: &}" >&2
+	[ -n "${LOG_FILE}" ] && {
+		rp=$(realpath -m "${LOG_FILE}")
+		logdir=$(dirname "${rp}")
+		[ ! -d "${logdir}" ] && mkdir -p "${logdir}"
+		echo "${*/#*/FAILED TEST: &}" >> "${LOG_FILE}"
+	}
+	unset IFS
 }
