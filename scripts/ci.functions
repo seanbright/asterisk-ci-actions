@@ -21,18 +21,17 @@ for a in "$@" ; do
 		--*=*)
 			[[ $a =~ --([^=]+)=(.*) ]]
 			l=${BASH_REMATCH[1]//-/_}
-			r=${BASH_REMATCH[2]}
-			eval ${l^^}=\"$r\"
+			printf -v "${l^^}" "%b" "${BASH_REMATCH[2]}"
 			;;
 		--*)
 			[[ $a =~ --(.+) ]]
 			l=${BASH_REMATCH[1]//-/_}
-			eval ${l^^}=true
+			printf -v "${l^^}" "%b" "true"
 			;;
 		--no-*)
 			[[ $a =~ --no-(.+) ]]
 			l=${BASH_REMATCH[1]//-/_}
-			eval ${l^^}=false
+			printf -v "${l^^}" "%b" "false"
 			;;
 		*)
 			POSITIONAL_ARGS+=($a)
@@ -47,13 +46,13 @@ runner() {
 begin_group() {
 	${GITHUB_ACTIONS:-false} || return 0
 	echo "::group::$1"
-	trap end_group EXIT
+#	trap end_group EXIT
 }
 
 end_group() {
 	${GITHUB_ACTIONS:-false} || return 0
 	trap - EXIT
-	echo "::endgroup::"
+#	echo "::endgroup::"
 }
 
 asterisk_corefile_glob() {
@@ -74,21 +73,18 @@ asterisk_corefile_glob() {
 export_to_github() {
 	out=${GITHUB_ENV:-/dev/stdout}
 	for var in "$@" ; do
-		declare -n vc=$var
-		echo "$var=$vc" >> "$out"
+		echo "$var=${!var}" >> "$out"
 	done
 }
 
 printvars() {
 	for var in "$@" ; do
-		declare -n vc=$var
-		echo "$var=$vc" >&2
+		echo "$var=${!var}" >&2
 	done
 }
 
 assert_env_variable() {
-	declare -n VAR="$1"
-	if [ -z "${VAR}" ] ; then
+	if [ -z "${!1}" ] ; then
 		echo "::error::Missing $1 in environment" >&2
 		return 1
 	fi
@@ -99,30 +95,37 @@ assert_env_variables() {
 	rc=0
 	[ "$1" == "--print" ] && { printit=true ; shift ; }
 	for var in "$@" ; do
-		declare -n vc=$var
-		if [ -z "${vc}" ] ; then
+		if [ -z "${!var}" ] ; then
 			echo "::error::Missing $var in environment" >&2
 			rc=1
 			continue
 		fi
-		$printit && echo "$var=$vc" >&2
+		$printit && echo "$var=${!var}" >&2
 	done
 	return $rc
 }
 
 debug_out() {
+	[ ${#@} -eq 0 ] && return 0
+	_IFS=$"$IFS"
 	IFS=$'\n'
 	echo "${*/#*/${PROGNAME}: &}" >&2
 	unset IFS
+	IFS=$"$_IFS"
 }
 
 error_out() {
+	[ ${#@} -eq 0 ] && return 0
+	_IFS=$"$IFS"
 	IFS=$'\n'
 	echo "::error::${*/#*/${PROGNAME}: &}" >&2
 	unset IFS
+	IFS=$"$_IFS"
 }
 
 log_error_msgs() {
+	[ ${#@} -eq 0 ] && return 0
+	_IFS=$"$IFS"
 	IFS=$'\n'
 	echo "::error::${*/#*/${PROGNAME}: &}" >&2
 	[ -n "${LOG_FILE}" ] && {
@@ -132,11 +135,13 @@ log_error_msgs() {
 		echo "${*/#*/${PROGNAME}: &}" >> "${LOG_FILE}"
 	}
 	unset IFS
+	IFS=$"$_IFS"
 }
 
 log_failed_tests() {
+	[ ${#@} -eq 0 ] && return 0
+	_IFS=$"$IFS"
 	IFS=$'\n'
-#	echo "::error::${*/#*/FAILED TEST: &}" >&2
 	[ -n "${LOG_FILE}" ] && {
 		rp=$(realpath -m "${LOG_FILE}")
 		logdir=$(dirname "${rp}")
@@ -144,4 +149,5 @@ log_failed_tests() {
 		echo "${*/#*/FAILED TEST: &}" >> "${LOG_FILE}"
 	}
 	unset IFS
+	IFS=$"$_IFS"
 }

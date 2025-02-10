@@ -11,6 +11,8 @@ for v in REPO REPO_DIR PR_NUMBER ; do
 	assert_env_variable $v || exit 1
 done
 
+printvars REPO REPO_DIR PR_NUMBER BRANCH BRANCHES PUSH NO_CLONE
+
 if [ -z "${BRANCH}" ] && [ -z "${BRANCHES}" ] ; then
 	error_out "Either --branch or --branches must be specified"
 	exit 1
@@ -57,7 +59,7 @@ git fetch --depth 10 --no-tags origin refs/pull/${PR_NUMBER}/head
 
 # Get commits
 debug_out "Getting commits for PR ${PR_NUMBER}"
-mapfile COMMITS < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + "|" + (.commit.message | split("\n")[0]) + "|" + .commit.author.name + "|" + .commit.author.email + "|"' || echo "@_ERROR_@")
+mapfile -t COMMITS < <(gh api repos/${REPO}/pulls/${PR_NUMBER}/commits --jq '.[] | .sha + "|" + (.commit.message | split("\n")[0]) + "|" + .commit.author.name + "|" + .commit.author.email + "|"' || echo "@_ERROR_@")
 [[ "${COMMITS[0]}" =~ @_ERROR_@ ]] && {
 	log_error_msg "No commits for PR ${PR_NUMBER}"
 	exit 1
@@ -79,18 +81,18 @@ for commit in "${COMMITS[@]}" ; do
 	debug_out "Found commit: SHA: $SHA MESSAGE: $MESSAGE NAME: $NAME EMAIL: $EMAIL"
 done
 
-branches=${BRANCHES//[\"\|\'|\]|\[]/}
+branches=$(echo ${BRANCHES} | jq -c -r '.[]' | tr '\n' ' ')
 debug_out "***** Cherry-picking to branches: $branches"
 
 declare -a error_msgs
 RC=0
-IFS=$','
+
 for BRANCH in $branches ; do
 
-	debug_out "\n***** Cherry-picking commits to branch $BRANCH"
+	debug_out "***** Cherry-picking commits to branch $BRANCH"
 	$NO_CLONE || git fetch --no-tags --depth 10 origin refs/heads/$BRANCH:$BRANCH
 	git checkout $BRANCH
-	
+
 	for commit in "${COMMITS[@]}" ; do
 		[[ "$commit" =~ ([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\| ]] || {
 			error_msg+="Unable to parse commit '$commit'\n"
@@ -118,25 +120,28 @@ for BRANCH in $branches ; do
 			break
 		fi
 	done
-	[ -n "${GITHUB_OUTPUT}" ] && echo "::endgroup::"
 done
 
+if [ $RC -ne 0 ] ; then
+	debug_out "***** Cherry-picking failed"
+	log_error_msgs "${error_msgs[@]}"
+	exit $RC
+fi
+debug_out "***** Cherry-picking done"
+
+RC=0
 if $PUSH ; then
-	if [ $RC -eq 0 ] ; then
-		gh auth setup-git -h github.com
-		for BRANCH in $branches ; do
-			debug_out "Pushing to branch $BRANCH"
-			git checkout ${BRANCH}
-			git push --set-upstream origin $BRANCH || {
-				msg="Unable to push to branch ${BRANCH}"
-				error_msgs+=( "${msg}" )
-				RC=1
-				break
-			}
-		done
-	else
-		debug_out "Not pushing to any branches due to errors"
-	fi
+	gh auth setup-git -h github.com
+	for BRANCH in $branches ; do
+		debug_out "Pushing to branch $BRANCH"
+		git checkout ${BRANCH}
+		git push --set-upstream origin $BRANCH || {
+			msg="Unable to push to branch ${BRANCH}"
+			error_msgs+=( "${msg}" )
+			RC=1
+			break
+		}
+	done
 fi
 
 log_error_msgs "${error_msgs[@]}"

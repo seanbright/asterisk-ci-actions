@@ -19,79 +19,79 @@ on:
         required: true
 
 env:
-  PR_NUMBER:   ${{ github.event.number }}
-  BASE_BRANCH: ${{ github.event.pull_request.base.ref }}
-  ACTIONS_OWNER:    ${{ fromJSON(inputs.actions_ref).owner }}
-  ACTIONS_REPO:     ${{ fromJSON(inputs.actions_ref).repo }}
-  ACTIONS_BRANCH:   ${{ fromJSON(inputs.actions_ref).branch }}
-  SCRIPT_DIR:       ${{ github.workspace }}/asterisk-ci-actions/scripts
+  REPO:            ${{ github.repository }}
+  REPO_DIR:        ${{ github.workspace }}/${{ github.event.repository.name }}
+  REPO_ORG:        ${{ github.event.repository.owner.login }}
+  PR_NUMBER:       ${{ github.event.number }}
+  BASE_BRANCH:     ${{ github.event.pull_request.base.ref }}
+  LOG_DIR:         ${{ github.workspace }}/logs
+  LOG_FILE:        ${{ github.workspace }}/logs/job_summary.txt
+  ACTIONS_OWNER:   ${{ fromJSON(inputs.actions_ref).owner }}
+  ACTIONS_REPO:    ${{ fromJSON(inputs.actions_ref).repo }}
+  ACTIONS_BRANCH:  ${{ fromJSON(inputs.actions_ref).branch }}
+  SCRIPT_DIR:      ${{ github.workspace }}/asterisk-ci-actions/scripts
+  GH_TOKEN:        ${{ secrets.TOKEN }}
 
 jobs:
-  GetBranches:
-    name: GetBranches
+  Setup:
+    name: Setup
     runs-on: ubuntu-latest
     outputs:
-      branches:     ${{ steps.getbranches.outputs.branches }}
-      all_branches: ${{ steps.checkbranches.outputs.all_branches }}
-      branch_count: ${{ steps.getbranches.outputs.branch_count }}
+      branches:     ${{ steps.setup.outputs.BRANCHES }}
+      branch_count: ${{ steps.setup.outputs.BRANCH_COUNT }}
+      all_branches: ${{ steps.setup.outputs.all_branches }}
     steps:
-      - name: Setup Runner
+      - id: setup
+        env:
+          CHERRY_PICK_REGEX:  ${{ vars.CHERRY_PICK_REGEX }}
         run: |
           # Setup
           wget -qO asterisk-ci-actions.tar.gz \
             https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
           tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
 
-      - name: Clean up labels
-        env:
-          GH_TOKEN: ${{ secrets.TOKEN }}
-        run: |
-          gh pr edit --repo ${{ github.repository }} \
+          gh pr edit --repo ${REPO} \
             --remove-label ${{ github.event.label.name }} \
             --remove-label ${{ vars.PRE_MERGE_CHECKS_PASSED_LABEL }} \
             --remove-label ${{ vars.PRE_MERGE_CHECKS_FAILED_LABEL }} \
             --remove-label ${{ vars.PRE_MERGE_TESTING_IN_PROGRESS }} \
-            ${{ env.PR_NUMBER }} || :
+            ${PR_NUMBER} || :
 
-      - name: Get cherry-pick branches
-        uses: ./asterisk-ci-actions/GetCherryPickBranchesFromPR
-        id: getbranches
-        with:
-          repo:              ${{ github.repository }}
-          pr_number:         ${{ env.PR_NUMBER }}
-          cherry_pick_regex: ${{ vars.CHERRY_PICK_REGEX }}
-          github_token:      ${{ secrets.TOKEN }}
+          # The script will populate BRANCHES and BRANCH_COUNT in
+          # both GITHUB_ENV and GITHUB_OUTPUT for future use but
+          # we need them here as well so we need to capture and
+          # parse the output.
+          result=$(${SCRIPT_DIR}/getCherryPickBranchesFromPR.sh \
+            --repo=${REPO} \
+            --pr-number=${PR_NUMBER} \
+            --cherry-pick-regex="${CHERRY_PICK_REGEX}")
+          BRANCH_COUNT=$(echo ${result} | jq -c '.branch_count')
+          BRANCHES=$(echo ${result} | jq -c '.branches')
+          FORCED_NONE=$(echo ${result} | jq -c '.forced_none')
 
-      - name: Check Branch Count
-        id: checkbranches
-        env:
-          BRANCH_COUNT: ${{ steps.getbranches.outputs.branch_count }}
-          BRANCHES:     ${{ steps.getbranches.outputs.branches }}
-          GH_TOKEN:     ${{ secrets.TOKEN }}
-        run: |
           gh pr edit --repo ${{ github.repository }} \
-          --add-label ${{ vars.PRE_MERGE_TESTING_IN_PROGRESS }} \
-          ${{ env.PR_NUMBER }} || :
-          all_branches=$(echo "$BRANCHES" | jq -c "[ \"$BASE_BRANCH\" ] + .")
-          echo "all_branches=${all_branches}" >>${GITHUB_OUTPUT}
+            --add-label ${{ vars.PRE_MERGE_TESTING_IN_PROGRESS }} \
+            ${PR_NUMBER} || :
 
-      - name: Pre Check Cherry-Picks
-        if: ${{ steps.getbranches.outputs.branch_count > 0 }}
-        uses: ./asterisk-ci-actions/CherryPick
-        with:
-          repo:         ${{ github.repository }}
-          pr_number:    ${{ env.PR_NUMBER }}
-          branches:     ${{ steps.getbranches.outputs.branches }}
-          github_token: ${{ secrets.TOKEN }}
-          push:         false
+          ALL_BRANCHES=$(echo "$BRANCHES" | jq -c "[ \"$BASE_BRANCH\" ] + .")
+          echo "all_branches=${ALL_BRANCHES}" >>${GITHUB_OUTPUT}
+
+      - name: CheckCherryPicks
+        run: |
+          ${SCRIPT_DIR}/cherryPick.sh \
+            --repo=${REPO} \
+            --repo-dir=${REPO_DIR} \
+            --pr-number=${PR_NUMBER} \
+            --output-dir=${LOG_DIR} \
+            --branches="${BRANCHES}"
 
   PreMergeTest:
-    needs: [ GetBranches ]
+    needs: [ Setup ]
     if: success()
     strategy:
       fail-fast: false
       matrix:
-        branch: ${{ fromJSON(needs.GetBranches.outputs.all_branches) }}
+        branch: ${{ fromJSON(needs.Setup.outputs.all_branches) }}
     uses: ./.github/workflows/AsteriskUnitGateTest.yml
     with:
       actions_ref:       ${{ inputs.actions_ref }}
@@ -108,8 +108,8 @@ jobs:
     secrets: inherit
 
   PreMergeTestResults:
-    if: always()
-    needs: [ GetBranches, PreMergeTest ]
+    if: ${{ success() || failure() || cancelled() }}
+    needs: [ Setup, PreMergeTest ]
     runs-on: ubuntu-latest
     steps:
       - name: Check unit test matrix status
@@ -129,72 +129,83 @@ jobs:
           esac
           [ $rc -gt 0 ] && label=${{ vars.PRE_MERGE_CHECKS_FAILED_LABEL }} || \
             label=${{ vars.PRE_MERGE_CHECKS_PASSED_LABEL }}
-          gh pr edit --repo ${{ github.repository }} \
+          gh pr edit --repo ${REPO} \
             --remove-label ${{ vars.PRE_MERGE_TESTING_IN_PROGRESS }} \
             --add-label $label \
-            $PR_NUMBER || :
+            ${PR_NUMBER} || :
 
   MergeAndCherryPick:
-    needs: [ GetBranches, PreMergeTestResults ]
+    needs: [ Setup, PreMergeTestResults ]
     if: success() && !inputs.dry_run
     runs-on: ubuntu-latest
     steps:
       - name: Start Merge
-        env:
-          GH_TOKEN:  ${{ secrets.TOKEN }}
         run: |
-            gh pr edit --repo ${{ github.repository }} \
+            gh pr edit --repo ${REPO} \
               --add-label ${{ vars.MERGE_IN_PROGRESS_LABEL }} \
-              $PR_NUMBER || :
+              ${PR_NUMBER} || :
 
-      - name: Get Token needed to push cherry-picks
-        id: get_workflow_token
-        uses: peter-murray/workflow-application-token-action@v3
-        with:
-          application_id:          ${{ secrets.application_id }}
-          application_private_key: ${{ secrets.application_private_key }}
-          organization:            asterisk
+#      - name: Get Token needed to push cherry-picks
+#        id: get_workflow_token
+#        uses: peter-murray/workflow-application-token-action@v3
+#        with:
+#          application_id:          ${{ secrets.application_id }}
+#          application_private_key: ${{ secrets.application_private_key }}
+#          organization:            asterisk
 
-      - name: Merge and Cherry Pick to ${{ needs.GetBranches.outputs.branches }}
-        id: mergecp
-        uses: asterisk/asterisk-ci-actions/MergeAndCherryPickComposite@main
-        with:
-          repo:          ${{ github.repository }}
-          pr_number:     ${{ env.PR_NUMBER }}
-          branches:      ${{ needs.GetBranches.outputs.branches }}
-          force:         ${{ env.FORCE }}
-          github_token:  ${{ steps.get_workflow_token.outputs.token }}
-
-      - name: Merge Cleanup
-        if: always()
+      - name: CherryPicks
         env:
-          RESULT:       ${{ steps.mergecp.outcome }}
-          GH_TOKEN:     ${{ secrets.TOKEN }}
-          BRANCH_COUNT: ${{ needs.GetBranches.outputs.branch_count }}
-          BRANCHES:     ${{ needs.GetBranches.outputs.branches }}
+          BRANCHES: ${{ needs.Setup.outputs.branches }}
+        run: |
+          wget -qO asterisk-ci-actions.tar.gz \
+            https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
+          tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
 
+          ${SCRIPT_DIR}/cherryPick.sh \
+            --repo=${REPO} \
+            --repo-dir=${REPO_DIR} \
+            --pr-number=${PR_NUMBER} \
+            --output-dir=${LOG_DIR} \
+            --branches="${BRANCHES}" \
+            --push
+
+      - name: Merge
+        run: |
+          gh pr merge --repo ${REPO} --rebase \
+              --admin ${PR_NUMBER}
+
+  PostWorkflow:
+    needs: [ Setup, PreMergeTestResults, MergeAndCherryPick ]
+    if: ${{ success() || failure() || cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Merge Cleanup
+        env:
+          RESULT:       ${{ needs.MergeAndCherryPick.result }}
+          BRANCH_COUNT: ${{ needs.Setup.outputs.branch_count }}
+          BRANCHES:     ${{ needs.Setup.outputs.branches }}
         run: |
           case $RESULT in
             success)
-              gh pr edit --repo ${{ github.repository }} \
+              gh pr edit --repo ${REPO} \
                 --remove-label ${{ vars.MERGE_IN_PROGRESS_LABEL }} \
-                $PR_NUMBER || :
+                ${PR_NUMBER} || :
               if [ $BRANCH_COUNT -eq 0 ] ; then
-                gh pr comment --repo ${{ github.repository }} \
+                gh pr comment --repo ${REPO} \
                   -b "Successfully merged to branch $BASE_BRANCH." \
-                  $PR_NUMBER || :
+                  ${PR_NUMBER} || :
               else
-                gh pr comment --repo ${{ github.repository }} \
+                gh pr comment --repo ${REPO} \
                   -b "Successfully merged to branch $BASE_BRANCH and cherry-picked to $BRANCHES" \
-                  $PR_NUMBER || :
+                  ${PR_NUMBER} || :
               fi
               exit 0
               ;;
             failure)
-              gh pr edit --repo ${{ github.repository }} \
+              gh pr edit --repo ${REPO} \
                 --remove-label ${{ vars.MERGE_IN_PROGRESS_LABEL }} \
                 --add-label ${{ vars.MERGE_FAILED_LABEL }} \
-                $PR_NUMBER || :
+                ${PR_NUMBER} || :
               exit 1
               ;;
               *)
