@@ -1,0 +1,113 @@
+name: CreateDocs
+on:
+  workflow_call:
+    inputs:
+      actions_ref:
+        description: 'JSON object reference to the actions: { "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
+        type: string
+        required: false
+        default: '{ "owner": "asterisk", "repo": "asterisk-ci-actions", "branch": "main" }'
+      asterisk_repo:
+        required: true
+        type: string
+      base_branch:
+        required: true
+        type: string
+    secrets:
+      TOKEN:
+        required: true
+
+env:
+  GH_TOKEN:         ${{ secrets.TOKEN }}
+  GITHUB_TOKEN:     ${{ secrets.TOKEN }}
+  REPO:             ${{ github.event.repository.full_name }}
+  BASE_BRANCH:      ${{ inputs.base_branch }}
+  REPO_DIR:         ${{ github.event.repository.name }}
+  REPO_ORG:         ${{ github.event.repository.owner.login }}
+  LOG_DIR:          ${{ github.workspace }}/logs
+  LOG_FILE:         ${{ github.workspace }}/logs/job_summary.txt
+  ACTIONS_OWNER:    ${{ fromJSON(inputs.actions_ref).owner }}
+  ACTIONS_REPO:     ${{ fromJSON(inputs.actions_ref).repo }}
+  ACTIONS_BRANCH:   ${{ fromJSON(inputs.actions_ref).branch }}
+  SCRIPT_DIR:       ${{ github.workspace }}/asterisk-ci-actions/scripts
+
+jobs:
+  CreateDocs:
+    name: ${{ inputs.base_branch }}-createdocs
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Setup Runner
+        run: |
+          # Setup
+          echo "::group::Getting actions repo"
+          wget -qO asterisk-ci-actions.tar.gz \
+            https://github.com/${ACTIONS_OWNER}/${ACTIONS_REPO}/archive/refs/heads/${ACTIONS_BRANCH}.tar.gz
+          tar -xf asterisk-ci-actions.tar.gz --transform="s/^${ACTIONS_REPO}-${ACTIONS_BRANCH}/asterisk-ci-actions/g"
+          echo "::endgroup::"
+          echo "::group::Installing software"
+          sudo ${SCRIPT_DIR}/setupRunner.sh ${SIPP_VERSION:+--sipp-version=${SIPP_VERSION}}
+          echo "::endgroup::"
+          echo "NORMALIZED_BRANCH=${BASE_BRANCH/\//-}" >> ${GITHUB_ENV}
+          DOCS_DIR=${GITHUB_WORKSPACE}/docs_dir/${BASE_BRANCH/\//-}
+          echo "DOCS_DIR=${DOCS_DIR}" >> ${GITHUB_ENV}
+          mkdir -p ${DOCS_DIR}
+          mkdir -p ${LOG_DIR}
+
+      - name: BuildAsterisk
+        run: |
+          # Building Asterisk
+
+          echo "::group::Checking out ${REPO} to ${REPO_DIR}"
+          ${SCRIPT_DIR}/checkoutRepo.sh --repo=${REPO} \
+            --branch=${BASE_BRANCH} --repo-dir=${REPO_DIR} || {
+            echo "::endgroup::"
+            exit 1
+          }
+          echo "::endgroup::"
+
+          cd ${REPO_DIR}
+
+          echo "::group::Starting build"
+          ${SCRIPT_DIR}/buildAsterisk.sh --github --branch-name=${BASE_BRANCH} || {
+              echo "::endgroup::"
+              exit 1
+          }
+          echo "::endgroup::"
+
+          python3 rest-api-templates/make_ari_stubs.py \
+            --resources rest-api/resources.json --source-dir . \
+            --dest-dir ${DOCS_DIR} --docs-prefix ../
+
+          echo "::group::Starting install"
+          echo "*** Installing binaries"
+          sudo make WGET_EXTRA_ARGS=-q install >/dev/null
+          echo "*** Installing samples"
+          sudo make samples >/dev/null
+          echo "*** Installing headers"
+          sudo make install-headers  >/dev/null
+          echo "::endgroup::"
+
+      - name: ExportDocs
+        run: |
+          sudo /usr/sbin/asterisk -gn
+          for n in {1..5} ; do
+            sleep 3
+            sudo /usr/sbin/asterisk -rx "core waitfullybooted" && break
+          done
+          sleep 1
+          sudo /usr/sbin/asterisk -rx "xmldoc dump ${DOCS_DIR}/asterisk-docs.xml"
+          sudo /usr/sbin/asterisk -rx "core stop now"
+          sudo killall -KILL asterisk || :
+
+      - name: Save Output
+        id: save-output
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-${{ env.NORMALIZED_BRANCH }}
+          if-no-files-found: ignore
+          path: |
+            ${{ env.DOCS_DIR }}
+

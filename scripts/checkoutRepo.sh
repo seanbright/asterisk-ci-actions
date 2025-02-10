@@ -3,7 +3,7 @@
 SCRIPT_DIR=$(dirname $(readlink -fn $0))
 source ${SCRIPT_DIR}/ci.functions
 
-for v in REPO REPO_DIR PR_NUMBER BRANCH ; do
+for v in REPO REPO_DIR BRANCH ; do
 	assert_env_variable $v || exit 1
 done
 
@@ -12,6 +12,7 @@ printvars REPO REPO_DIR PR_NUMBER BRANCH
 : ${IS_CHERRY_PICK:=false}
 : ${NO_TAGS:=false}
 : ${GITHUB_SERVER_URL:="https://github.com"}
+: ${PR_NUMBER:=-1}
 
 cd $(dirname ${REPO_DIR})
 
