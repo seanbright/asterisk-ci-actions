@@ -13,10 +13,6 @@ on:
     secrets:
       TOKEN:
         required: true
-      application_id:
-        required: true
-      application_private_key:
-        required: true
 
 env:
   REPO:            ${{ github.repository }}
@@ -144,14 +140,6 @@ jobs:
             gh pr edit --repo ${REPO} \
               --add-label ${{ vars.MERGE_IN_PROGRESS_LABEL }} \
               ${PR_NUMBER} || :
-
-#      - name: Get Token needed to push cherry-picks
-#        id: get_workflow_token
-#        uses: peter-murray/workflow-application-token-action@v3
-#        with:
-#          application_id:          ${{ secrets.application_id }}
-#          application_private_key: ${{ secrets.application_private_key }}
-#          organization:            asterisk
 
       - name: CherryPicks
         env:
