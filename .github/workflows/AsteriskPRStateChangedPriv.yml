@@ -78,7 +78,7 @@ jobs:
       - name: OnCompleted
         if: ( github.event.action == 'completed' )
         env:
-          CHERRY_PICK_REGEX:       ${{ vars.CHERRY_PICK_REMINDER }}
+          CHERRY_PICK_REGEX:       ${{ vars.CHERRY_PICK_REGEX }}
           CHERRY_PICK_REMINDER:    ${{ vars.CHERRY_PICK_REMINDER }}
           SQUASH_COMMITS_REMINDER: ${{ vars.SQUASH_COMMITS_REMINDER }}
           USER_NOTE_REMINDER:      ${{ vars.USER_NOTE_REMINDER }}

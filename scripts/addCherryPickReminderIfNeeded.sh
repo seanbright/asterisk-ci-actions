@@ -1,8 +1,7 @@
 #!/usr/bin/bash
 SCRIPT_DIR=$(dirname $(realpath $0))
 
-PUSH=false
-NO_CLONE=false
+DRY_RUN=false
 
 source ${SCRIPT_DIR}/ci.functions
 set -e
@@ -42,5 +41,5 @@ fi
 
 debug_out "Adding cherry-pick reminder"
 
-echo "$CHERRY_PICK_REMINDER" | gh --repo ${REPO} pr comment ${PR_NUMBER} --body-file -
+$DRY_RUN || { echo "$CHERRY_PICK_REMINDER" | gh --repo ${REPO} pr comment ${PR_NUMBER} --body-file - ; }
 
