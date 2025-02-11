@@ -1,4 +1,4 @@
-name: MergePR
+name: PRMerge
 on:
   workflow_call:
     inputs:

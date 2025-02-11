@@ -1,4 +1,4 @@
-name: PRStateChangedPriv
+name: PRChangedPriv
 on:
   workflow_call:
     inputs:
