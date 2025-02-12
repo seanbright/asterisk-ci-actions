@@ -34,7 +34,6 @@ jobs:
       - name: DumpEnvironment
         uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
         with:
-          save_output: true
           artifact_id: DumpEnvironment-${{inputs.jobname}}-Job1
 
       - name: test

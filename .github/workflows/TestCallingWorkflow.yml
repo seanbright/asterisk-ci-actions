@@ -46,6 +46,12 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: DumpEnvironment
+        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+        with:
+          artifact_id: DumpEnvironment-Cleanup
+          needs: ${{ toJSON(needs) }}
+
       - name: Create Job Summary
         env:
           RESULT: ${{ needs.Check.result }}
