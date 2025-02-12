@@ -22,7 +22,7 @@ on:
 jobs:
   TestCalled:
     concurrency:
-      group: check-${{ github.base_ref }}-${{ github.event.pull_request.head.label }}
+      group: check-${{ github.base_ref }}-${{ github.ref_name }}
       cancel-in-progress: true
     uses: ./.github/workflows/TestCalledWorkflow.yml
     with:
