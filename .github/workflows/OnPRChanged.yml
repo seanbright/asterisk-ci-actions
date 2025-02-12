@@ -17,7 +17,7 @@ name: PRLabeled
 run-name: "PR ${{ github.event.number }} Labeled by ${{ github.actor }}"
 on:
   pull_request:
-    types: [ labeled ]
+    types: [ opened,synchronize ]
 
 jobs:
   TestCalled:
