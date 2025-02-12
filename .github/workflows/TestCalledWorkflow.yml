@@ -11,16 +11,12 @@ on:
       jobname:
         type: string
         required: true
-    secrets:
-      TOKEN:
-        required: true
 
 env:
   ACTIONS_OWNER:     asterisk
   ACTIONS_REPO:      asterisk-ci-actions
   ACTIONS_BRANCH:    main
   SCRIPT_DIR:        ${{ github.workspace }}/asterisk-ci-actions/scripts
-  GH_TOKEN:          ${{secrets.TOKEN}}
   RUN_ID:            ${{ github.run_id }}
 
 jobs:
@@ -38,19 +34,8 @@ jobs:
 
       - name: test
         run: |
-          mkdir logs
-          step_summary=""
-          step_summary+="FAILURE: rest_api/recording/duration\nFAILURE: rest_api/recording/nominal"
-          echo -e "$step_summary" >> logs/job_summary.txt
-          exit 1
-      - name: Save Output
-        id: save-output
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{inputs.jobname}}-Job1
-          path: |
-            logs
+          sleep 120
+          exit 0
 
   Job2:
     runs-on: ubuntu-latest
@@ -61,30 +46,5 @@ jobs:
     steps:
       - name: test
         run: |
-          mkdir logs
-          step_summary=""
-          step_summary+="FAILURE: rest_api/recording/XXXXX\nFAILURE: rest_api/recording/YYYYYYY"
-          echo -e "$step_summary" >> logs/job_summary.txt
-          echo "::group::outer group"
-          echo "outer 1"
-          echo "outer 2"
-          echo "::group::inner group"
-          echo "inner 1"
-          echo "inner 2"
-          echo "::endgroup::"
-          echo "outer 3"
-          echo "outer 4"
-          echo "::endgroup::"
-          
+          sleep 120
           exit 0
-      - name: Save Output
-        id: save-output
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{inputs.jobname}}-Job2
-          path: |
-            logs
-      - name: DumpEnvironment
-        uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
-
