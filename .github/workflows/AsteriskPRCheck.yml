@@ -1,4 +1,4 @@
-name: PRCPCheck
+name: PRCheck
 on:
   workflow_call:
 
@@ -21,19 +21,17 @@ env:
   GH_TOKEN:        ${{ github.token }}
   LOG_DIR:         ${{ github.workspace }}/logs
   LOG_FILE:        ${{ github.workspace }}/logs/job_summary.txt
-  BUILD_CACHE_KEY_PREFIX: ${{ github.workflow }}-${{ github.run_number }}-${{ github.event.number }}
-  TESTING_IN_PROGRESS: ${{ vars.CHERRY_PICK_TESTING_IN_PROGRESS }}
-  TESTS_PASSED:        ${{ vars.CHERRY_PICK_CHECKS_PASSED_LABEL }}
-  TESTS_FAILED:        ${{ vars.CHERRY_PICK_CHECKS_FAILED_LABEL }}
+  BUILD_CACHE_KEY: ${{ github.workflow }}-${{ github.run_number }}-${{ github.event.number }}-${{ github.event.pull_request.base.ref }}
+  TRIGGER:         ${{ github.event.action }}
+  TESTING_IN_PROGRESS: ${{ vars.PR_SUBMIT_TESTING_IN_PROGRESS }}
+  TESTS_PASSED:        ${{ vars.PR_SUBMIT_TESTS_PASSED }}
+  TESTS_FAILED:        ${{ vars.PR_SUBMIT_TESTS_FAILED }}
 
 jobs:
   Setup:
-    name: Setup
     runs-on: ubuntu-latest
     outputs:
-      branches:           ${{ steps.setup.outputs.BRANCHES }}
-      branch_count:       ${{ steps.setup.outputs.BRANCH_COUNT }}
-      testsuite_test_pr:  ${{ steps.setup.outputs.TESTSUITE_TEST_PR }}
+      testsuite_test_pr: ${{ steps.setup.outputs.TESTSUITE_TEST_PR }}
     steps:
         # ACTIONS_PATH, SCRIPT_DIR, NORMALIZED_BRANCH env vars
       - name: GetActionsRepo
@@ -41,74 +39,38 @@ jobs:
 
       - id: setup
         env:
-          CHERRY_PICK_TEST_LABEL:          ${{ vars.CHERRY_PICK_TEST_LABEL }}
-          CHERRY_PICK_REGEX:               ${{ vars.CHERRY_PICK_REGEX }}
-          TESTSUITE_TEST_PR_REGEX:         ${{ vars.TESTSUITE_TEST_PR_REGEX }}
+          PR_STATE_CHANGE_DELAY_SEC: ${{ vars.PR_STATE_CHANGE_DELAY_SEC || 120 }}
+          RECHECKPR_LABEL:           ${{ vars.RECHECKPR_LABEL }}
+          TESTSUITE_TEST_PR_REGEX:   ${{ vars.TESTSUITE_TEST_PR_REGEX }}
         run: |
+        
+          if [ "$TRIGGER" != "labeled" ] ; then
+            # Wait then get testsuite PR
+            echo "Waiting for ${PR_STATE_CHANGE_DELAY_SEC} seconds to give user a chance to add PR comments"
+            sleep ${PR_STATE_CHANGE_DELAY_SEC}
+          fi
 
-          # The script will populate TESTSUITE_TEST_PR in both
-          # GITHUB_ENV and GITHUB_OUTPUT.
+          # Testsuite PR will be placed in TESTSUITE_TEST_PR in both
+          # GITHUB_ENV and GITHUB_OUTPUT by the script.
           ${SCRIPT_DIR}/getTestsuitePRfromAsteriskPR.sh \
             --repo=${REPO} \
             --pr-number=${PR_NUMBER} \
             --testsuite-pr-regex="${TESTSUITE_TEST_PR_REGEX}"
 
+          echo "Attempting to delete any existing cache"
+          gh cache delete -R ${REPO} ${BUILD_CACHE_KEY} || :
+
+          echo "Labeling"
           gh pr edit --repo ${REPO} \
-            --remove-label ${CHERRY_PICK_TEST_LABEL} \
+            --remove-label ${RECHECKPR_LABEL} \
             --remove-label ${TESTS_PASSED} \
             --remove-label ${TESTS_FAILED} \
-            --remove-label ${TESTING_IN_PROGRESS} \
-            ${PR_NUMBER} || :
-
-          # The script will populate BRANCHES and BRANCH_COUNT in
-          # both GITHUB_ENV and GITHUB_OUTPUT for future use but
-          # we need them here as well so we need to capture and
-          # parse the output.
-          result=$(${SCRIPT_DIR}/getCherryPickBranchesFromPR.sh \
-            --repo=${REPO} \
-            --pr-number=${PR_NUMBER} \
-            --cherry-pick-regex="${CHERRY_PICK_REGEX}")
-          BRANCH_COUNT=$(echo ${result} | jq -c '.branch_count')
-          BRANCHES=$(echo ${result} | jq -c '.branches')
-          FORCED_NONE=$(echo ${result} | jq -c '.forced_none')
-
-          if [ ${BRANCH_COUNT} -eq 0 ] ; then
-            echo "No cherry-pick branches"
-            exit 0
-          fi
-
-          branches=$(echo $BRANCHES | jq -r '.[]')
-          for b in $branches ; do
-            gh cache delete -R ${REPO} ${BUILD_CACHE_KEY_PREFIX}-$b || :
-          done
-
-          gh pr edit --repo ${REPO} \
             --add-label ${TESTING_IN_PROGRESS} \
             ${PR_NUMBER} || :
 
-      - name: CheckCherryPicks
-        env:
-          BRANCHES: ${{ steps.setup.outputs.branches }}
-        run: |
-          ${SCRIPT_DIR}/cherryPick.sh \
-            --repo=${REPO} \
-            --repo-dir=${REPO_DIR} \
-            --pr-number=${PR_NUMBER} \
-            --output-dir=${LOG_DIR} \
-            --branches="${BRANCHES}"
-
-      - name: Save Output
-        id: save-output
-        if: ${{ always() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: Setup
-          if-no-files-found: ignore
-          path: ${{ env.LOG_DIR }}
-
   Check:
-    needs: [Setup]
-    if: ${{ needs.Setup.outputs.branch_count > 0 && ( success() ) }}
+    name: Check
+    needs: [ Setup ]
     permissions:
       actions: read
       checks: read
@@ -116,17 +78,13 @@ jobs:
       issues: read
       pull-requests: read
       statuses: read
-    strategy:
-      fail-fast: false
-      matrix:
-        branch: ${{ fromJSON(needs.Setup.outputs.branches) }}
     uses: ./.github/workflows/AsteriskUnitGateTest.yml
     with:
-      test_type:         cherry-pick
+      test_type:         prstatechange
       asterisk_repo:     ${{ github.repository }}
       pr_number:         ${{ github.event.number }}
-      base_branch:       ${{ matrix.branch }}
-      is_cherry_pick:    true
+      base_branch:       ${{ github.event.pull_request.base.ref }}
+      is_cherry_pick:    false
       build_options:     ${{ vars.BUILD_OPTIONS }}
       unittest_command:  ${{ vars.UNITTEST_COMMAND }}
       testsuite_repo:    ${{ vars.TESTSUITE_REPO }}
@@ -141,33 +99,32 @@ jobs:
     env:
       RESULT_SETUP:   ${{ needs.Setup.result }}
       RESULT_CHECK:   ${{ needs.Check.result }}
-      BRANCHES: ${{ needs.Setup.outputs.branches }}
+      CHERRY_PICK_REGEX:       ${{ vars.CHERRY_PICK_REGEX }}
+      CHERRY_PICK_REMINDER:    ${{ vars.CHERRY_PICK_REMINDER }}
+      SQUASH_COMMITS_REMINDER: ${{ vars.SQUASH_COMMITS_REMINDER }}
+      USER_NOTE_REMINDER:      ${{ vars.USER_NOTE_REMINDER }}
+      UPGRADE_NOTE_REMINDER:   ${{ vars.UPGRADE_NOTE_REMINDER }}
     steps:
         # ACTIONS_PATH, SCRIPT_DIR, NORMALIZED_BRANCH env vars
       - name: GetActionsRepo
         uses: asterisk/asterisk-ci-actions/GetActionsRepo@main-pr-target
 
-      - name: Check status
+      - name: Add labels, reminders and summary
         run: |
+
           label=""
           RESULT=$RESULT_CHECK
-          branches=$(echo $BRANCHES | jq -r '.[]')
-          echo "Branches: ${branches}"
           echo "Setup status: $RESULT_SETUP Check status: $RESULT_CHECK"
           case $RESULT_CHECK in
             success)
               label=$TESTS_PASSED
-              for b in $branches ; do
-                gh cache delete -R ${REPO} ${BUILD_CACHE_KEY_PREFIX}-$b || :
-              done
+              gh cache delete -R ${REPO} ${BUILD_CACHE_KEY} || :
               ;;
             failure)
               label=$TESTS_FAILED
               ;;
             cancelled)
-              for b in $branches ; do
-                gh cache delete -R ${REPO} ${BUILD_CACHE_KEY_PREFIX}-$b || :
-              done
+              gh cache delete -R ${REPO} ${BUILD_CACHE_KEY} || :
               ;;
             skipped)
               if [ "$RESULT_SETUP" == "failure" ] ; then
@@ -186,6 +143,12 @@ jobs:
               $PR_NUMBER || :
 
           if [[ $RESULT =~ (success|failure) ]] ; then
+            ${SCRIPT_DIR}/addCherryPickReminderIfNeeded.sh \
+              --repo=${REPO} \
+              --pr-number=${PR_NUMBER} \
+              --cherry-pick-regex="${CHERRY_PICK_REGEX}" \
+              --cherry-pick-reminder="${CHERRY_PICK_REMINDER}"
+
             ${SCRIPT_DIR}/createJobSummary.sh \
               --result=${RESULT} \
               --repo=${REPO} \
