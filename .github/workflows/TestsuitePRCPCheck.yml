@@ -36,7 +36,7 @@ jobs:
     steps:
         # ACTIONS_PATH, SCRIPT_DIR, NORMALIZED_BRANCH env vars
       - name: GetActionsRepo
-        uses: asterisk/asterisk-ci-actions/GetActionsRepo@main-pr-target
+        uses: asterisk/asterisk-ci-actions/GetActionsRepo@main
 
       - id: setup
         env:
@@ -128,7 +128,7 @@ jobs:
     steps:
         # ACTIONS_PATH, SCRIPT_DIR, NORMALIZED_BRANCH env vars
       - name: GetActionsRepo
-        uses: asterisk/asterisk-ci-actions/GetActionsRepo@main-pr-target
+        uses: asterisk/asterisk-ci-actions/GetActionsRepo@main
 
       - name: Check status
         run: |
