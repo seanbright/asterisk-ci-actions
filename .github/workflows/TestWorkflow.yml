@@ -7,9 +7,6 @@ on:
         description: "JSON array of branches: ['18','20'] (no spaces) or leave blank for all current branches."
         required:    false
         type:        string
-  schedule:
-#           Times are UTC
-    - cron: '5,15,25,35,45,55 * * * *'
 
 env:
   ACTIONS_OWNER:     asterisk
