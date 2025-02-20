@@ -33,3 +33,7 @@ runs:
           echo "normalized_branch=${norm}" >> ${GITHUB_OUTPUT}
         fi
 
+    - name: DumpEnvironment
+      uses: asterisk/asterisk-ci-actions/DumpEnvironmentAction@main
+
+

@@ -40,12 +40,12 @@ jobs:
         uses: asterisk/asterisk-ci-actions/GetActionsRepo@main
 
       - id: setup
+        name: Setup
         env:
           CHERRY_PICK_TEST_LABEL:          ${{ vars.CHERRY_PICK_TEST_LABEL }}
           CHERRY_PICK_REGEX:               ${{ vars.CHERRY_PICK_REGEX }}
           TESTSUITE_TEST_PR_REGEX:         ${{ vars.TESTSUITE_TEST_PR_REGEX }}
         run: |
-
           # The script will populate TESTSUITE_TEST_PR in both
           # GITHUB_ENV and GITHUB_OUTPUT.
           ${SCRIPT_DIR}/getTestsuitePRfromAsteriskPR.sh \

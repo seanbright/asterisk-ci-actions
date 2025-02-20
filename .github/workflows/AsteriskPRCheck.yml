@@ -38,12 +38,12 @@ jobs:
         uses: asterisk/asterisk-ci-actions/GetActionsRepo@main
 
       - id: setup
+        name: Setup
         env:
           PR_STATE_CHANGE_DELAY_SEC: ${{ vars.PR_STATE_CHANGE_DELAY_SEC || 120 }}
           RECHECKPR_LABEL:           ${{ vars.RECHECKPR_LABEL }}
           TESTSUITE_TEST_PR_REGEX:   ${{ vars.TESTSUITE_TEST_PR_REGEX }}
         run: |
-        
           if [ "$TRIGGER" != "labeled" ] ; then
             # Wait then get testsuite PR
             echo "Waiting for ${PR_STATE_CHANGE_DELAY_SEC} seconds to give user a chance to add PR comments"
