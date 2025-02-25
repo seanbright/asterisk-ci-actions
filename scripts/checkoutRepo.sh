@@ -19,8 +19,8 @@ cd $(dirname ${REPO_DIR})
 no_tags=""
 ${NO_TAGS} && no_tags="--no-tags"
 
-debug_out "CD: $(pwd)"
-debug_out "Cloning ${REPO} to ${REPO_DIR}"
+debug_out "    CD: $(pwd)"
+debug_out "    Cloning ${REPO} to ${REPO_DIR}"
 git clone -q --depth 10 --no-tags \
 	${GITHUB_SERVER_URL}/${REPO} ${REPO_DIR}
 
@@ -31,18 +31,22 @@ fi
 
 git config --global --add safe.directory $(realpath ${REPO_DIR})
 
+cd ${REPO_DIR}
+
 if [ ${PR_NUMBER} -le 0 ] ; then
 	# This is a nightly or dispatch job
 	if ${IS_CHERRY_PICK} ; then
 		log_error_msgs "Cherry-pick requested without a PR to cherry-pick"
 		exit 1
 	fi
+	debug_out "    Fetching ${BRANCH}"
+	git fetch --no-tags --depth 10 origin refs/heads/$BRANCH:$BRANCH
+	git checkout ${BRANCH}
 	exit 0
 fi
 
-cd ${REPO_DIR}
-
 if ! ${IS_CHERRY_PICK} ; then
+	debug_out "    Fetching PR ${PR_NUMBER}"
 	git fetch origin refs/pull/${PR_NUMBER}/head
 	# We're just checking out the PR
 	git checkout FETCH_HEAD

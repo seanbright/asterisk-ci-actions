@@ -79,7 +79,7 @@ export_to_github() {
 
 printvars() {
 	for var in "$@" ; do
-		echo "$var=${!var}" >&2
+		debug_out "$var=${!var}" >&2
 	done
 }
 
