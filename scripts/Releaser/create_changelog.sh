@@ -130,7 +130,7 @@ authorcount=$(cat "${AUTHORS_SUMMARY_FILE}" | wc -l)
 printf -- "- Commit Authors: %d\n" $authorcount >> "${SUMMARY_FILE}"
 
 debug "Getting GitHub issue list"
-issuelist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#([0-9]+)/\2/gp" "${RAW_COMMIT_FILE}" | sort -n | tr '[:space:]' ' ') )
+issuelist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*#([0-9]+).*/\2/gp" "${RAW_COMMIT_FILE}" | sort -n | tr '[:space:]' ' ') )
 issuecount=${#issuelist[*]}
 
 # For historical reasons, let's also look for "ASTERISK-" issues
@@ -141,7 +141,7 @@ astissuecount=${#astlist[*]}
 printf -- "- Issues Resolved: %d\n" $(( $issuecount + $astissuecount )) >> "${SUMMARY_FILE}"
 
 debug "Getting GitHub security advisory list"
-ghsalist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*(#)?((GHSA|ghsa)-[0-9a-z-]+)/\3/gp" "${RAW_COMMIT_FILE}" | sort -n | tr '[:space:]' ' ') )
+ghsalist=( $(sed -n -r -e "s/^\s*(Fixes|Resolves):\s*(#)?((GHSA|ghsa)-[0-9a-z-]+).*/\3/gp" "${RAW_COMMIT_FILE}" | sort -n | tr '[:space:]' ' ') )
 ghsacount=${#ghsalist[*]}
 printf -- "- Security Advisories Resolved: %d\n" $ghsacount
 printf -- "- Security Advisories Resolved: %d\n" $ghsacount >> "${SUMMARY_FILE}"

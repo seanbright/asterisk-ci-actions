@@ -16,6 +16,7 @@ pr_path=/tmp/pr-${PR_NUMBER}.json
 pr_diff_path=/tmp/pr-${PR_NUMBER}.diff
 pr_commits_path=/tmp/pr-commits-${PR_NUMBER}.json
 pr_comments_path=/tmp/pr-comments-${PR_NUMBER}.json
+pr_status_path=/tmp/pr-status-${PR_NUMBER}.json
 
 if ! $DONT_DOWNLOAD ; then
 	debug_out "Downloading PR,  diff, commits, comments"
@@ -27,6 +28,9 @@ if ! $DONT_DOWNLOAD ; then
 	curl -sL https://api.github.com/repos/${REPO}/pulls/${PR_NUMBER}/commits > ${pr_commits_path}
 
 	curl -sL https://api.github.com/repos/${REPO}/issues/${PR_NUMBER}/comments > ${pr_comments_path}
+	
+	status_url=$(jq -r '.statuses_url' ${pr_path})
+	curl -sL ${status_url} > ${pr_status_path}
 fi
 
 if $DOWNLOAD_ONLY ; then
@@ -42,13 +46,20 @@ SCRIPT_ARGS="--repo=${REPO} --pr-number=${PR_NUMBER} \
 --pr-diff-path=${pr_diff_path} \
 --pr-commits-path=${pr_commits_path} \
 --pr-comments-path=${pr_comments_path} \
+--pr-status-path=${pr_status_path} \
 --pr-checklist-path=${pr_checklist_path}"
 
 debug_out "Running PR checks with arguments: ${SCRIPT_ARGS}"
 
 checklist_added=false
+skip_checklists=false
+
 for s in $(find ${CHECKS_DIR} -name '[0-9]*.sh' | sort) ; do
 	check_name=$(basename $s)
+	if $skip_checklists && [ "${check_name:0:2}" != "99" ]; then
+		debug_out "Skipping check: ${check_name}"
+		continue
+	fi
 	debug_out "Running check: ${check_name}"
 	if $QUIET_CHECKS ; then
 		bash $s ${SCRIPT_ARGS} &> /dev/null
@@ -70,7 +81,8 @@ for s in $(find ${CHECKS_DIR} -name '[0-9]*.sh' | sort) ; do
 			;;
 		$EXIT_SKIP_FURTHER_CHECKS)
 			debug_out "    Check ${check_name} requested no more checks."
-			break
+			checklist_added=true
+			skip_checklists=true
 			;;
 		*)
 			debug_out "    Check ${check_name} returned unknown exit code: $RC"
@@ -114,7 +126,7 @@ if [ -n "$checklist_comment_id" ] ; then
 	if $DRY_RUN ; then
 		debug_out "DRY-RUN: gh api /repos/${REPO}/issues/comments/${checklist_comment_id} -X PATCH -F 'body=@${pr_checklist_comment_path}'"
 	else
-		gh api /repos/${REPO}/issues/comments/${checklist_comment_id} -X PATCH -F 'body=@${pr_checklist_comment_path}'
+		gh api /repos/${REPO}/issues/comments/${checklist_comment_id} -X PATCH -F "body=@${pr_checklist_comment_path}"
 	fi
 else
 	debug_out "Creating new PR checklist comment"
@@ -122,7 +134,7 @@ else
 		debug_out "DRY-RUN: gh api /repos/${REPO}/issues/${PR_NUMBER}/comments -F 'body=@${pr_checklist_comment_path}'"
 		debug_out "DRY-RUN: gh pr edit --repo ${REPO} --add-label \"has-pr-checklist\" ${PR_NUMBER}"
 	else
-		gh api /repos/${REPO}/issues/${PR_NUMBER}/comments -F 'body=@${pr_checklist_comment_path}'
+		gh api /repos/${REPO}/issues/${PR_NUMBER}/comments -F "body=@${pr_checklist_comment_path}"
 		gh pr edit --repo ${REPO} --add-label "has-pr-checklist" ${PR_NUMBER}
 	fi
 fi

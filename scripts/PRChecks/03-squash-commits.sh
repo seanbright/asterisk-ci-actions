@@ -19,7 +19,7 @@ fi
 debug_out "${commit_count} commits found."
 
 debug_out "Looking for 'multiple-commits' headers"
-value=$(jq -r "[ .[].body | match(\"(^|\r?\n)multiple-commits:[[:blank:]]*(standalone|interim)\r?\n\"; \"g\") | .captures[1].string ][0]" ${PR_COMMENTS_PATH})
+value=$(jq -r "[ .[].body | match(\"(^|\r?\n)multiple-commits:[[:blank:]]*(standalone|interim)(\r?\n|$)\"; \"g\") | .captures[1].string ][0]" ${PR_COMMENTS_PATH})
 if [[ "$value" =~ (standalone|interim) ]] ; then
 	debug_out "multiple-commits: ${value} found.  No checklist item needed."
 	exit $EXIT_OK
