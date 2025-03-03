@@ -65,6 +65,33 @@ debug_out "Checking commit message for Resolves/Fixes, UpgradeNote and UserNote 
 
 declare -A has_fixes=( ["commit"]=false ["pr"]=false )
 
+has_extra_trailers=false
+
+check_for_extra_trailers() {
+	bad_trailers=$(echo "$2" | grep -A999 -E '^(Resolves|Fixes|UserNote|UpgradeNote)' | sed -n -r -e '/^[^ :]+:/!d;/(Resolves|Fixes|UpgradeNote|UserNote)/!p')
+	if [ -n "$bad_trailers" ] ; then
+		debug_out "${1} has extra trailers: ${bad_trailers}"
+		has_extra_trailers=true
+	fi
+}
+
+# Check PR and commits for extra trailers.
+check_for_extra_trailers "pr" "${pr_body}"
+for (( commit=0 ; commit < commit_count ; commit+=1 )) ; do
+	check_for_extra_trailers "commit" "${commit_bodies[$commit]}"
+done
+
+if $has_extra_trailers ; then
+	cat <<-EOF | print_checklist_item --append-newline
+	- [ ] The PR description and/or commit message has unsupported trailers after 
+	the \`Resolves\`, \`Fixes\`, \`UserNote\`, and/or \`UpgradeNote\` trailers. 
+	Please refrain from adding unsupported trailers as they will confuse the 
+	release change log generation.  If you really need them, please move them 
+	before any of the supportred trailers and ensure there's a blank line after them.
+	EOF
+	checklist_added=true
+fi
+
 has_bad_fixes=false
 check_for_bad_fixes() {
 	[[ "$2" =~ (^|[[:cntrl:]])(Fixes|Resolves)([^[:cntrl:]]+) ]] || return 0
