@@ -87,8 +87,10 @@ if ! $checklist_added ; then
 		debug_out "Removing existing obsolete PR checklist comment"
 		if $DRY_RUN ; then
 			debug_out "DRY-RUN: gh api /repos/${REPO}/issues/comments/${checklist_comment_id} -X DELETE"
+			debug_out "DRY-RUN: gh pr edit --repo ${REPO} --remove-label \"has-pr-checklist\" ${PR_NUMBER}"
 		else
 			gh api /repos/${REPO}/issues/comments/${checklist_comment_id} -X DELETE
+			gh pr edit --repo ${REPO} --remove-label "has-pr-checklist" ${PR_NUMBER}
 		fi
 	fi
 	exit 0
@@ -118,8 +120,10 @@ else
 	debug_out "Creating new PR checklist comment"
 	if $DRY_RUN ; then
 		debug_out "DRY-RUN: gh api /repos/${REPO}/issues/${PR_NUMBER}/comments -F 'body=@${pr_checklist_comment_path}'"
+		debug_out "DRY-RUN: gh pr edit --repo ${REPO} --add-label \"has-pr-checklist\" ${PR_NUMBER}"
 	else
 		gh api /repos/${REPO}/issues/${PR_NUMBER}/comments -F 'body=@${pr_checklist_comment_path}'
+		gh pr edit --repo ${REPO} --add-label "has-pr-checklist" ${PR_NUMBER}
 	fi
 fi
 
