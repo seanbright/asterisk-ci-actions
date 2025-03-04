@@ -128,6 +128,40 @@ if $has_bad_fixes ; then
 	checklist_added=true
 fi
 
+has_stray_refs=false
+
+declare -a stray_issues
+check_for_stray_refs() {
+	[[ "$2" =~ [[:blank:]](#[0-9]+)[[:blank:]] ]] || return 0
+	debug_out "${1} has a stray reference to issue ${BASH_REMATCH[1]}."
+	stray_issues+=("${BASH_REMATCH[1]}")
+	has_stray_refs=true
+}
+
+# Check PR and commits for stray issue references.
+if ! ${has_fixes[pr]} ; then
+	check_for_stray_refs "pr" "${pr_body}"
+fi
+
+if ! ${has_fixes[commit]} ; then
+	for (( commit=0 ; commit < commit_count ; commit+=1 )) ; do
+		check_for_stray_refs "commit" "${commit_bodies[$commit]}"
+	done
+fi
+
+if $has_stray_refs ; then
+	cat <<-EOF | print_checklist_item --append-newline
+	- [ ] The PR description and/or commit message references one or more 
+	issues ( ${stray_issues[@]} ) without a \`Fixes:\` or \`Resolves:\` 
+	keyword. Without those keywords, the issues won't be automatically 
+	closed when the PR merges and won't be listed in the release change logs.<br>
+	  Regular expression: \`^(Fixes|Resolves): #[0-9]+$\`.<br> 
+	  Example: \`Fixes: #9999\`. 
+	EOF
+	checklist_added=true
+fi
+
+
 has_bad_note=false
 check_for_bad_notes() {
 	for keyword in UserNote UpgradeNote ; do
