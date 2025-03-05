@@ -93,7 +93,7 @@ jobs:
       gatetest_commands: ${{ vars.GATETEST_COMMANDS }}
 
   PostWorkflow:
-    if: ${{ success() || failure() || cancelled() }}
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     needs: [Setup,Check]
     env:
