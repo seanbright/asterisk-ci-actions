@@ -67,7 +67,7 @@ jobs:
       unittest_command:  ${{ vars.UNITTEST_COMMAND }}
 
   PostWorkflow:
-    if: ${{ success() || failure() || cancelled() }}
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     needs: [Setup,Check]
     env:
@@ -115,11 +115,9 @@ jobs:
               $PR_NUMBER || :
 
           if [[ $RESULT =~ (success|failure) ]] ; then
-            ${SCRIPT_DIR}/addCherryPickReminderIfNeeded.sh \
+            ${SCRIPT_DIR}/PRChecks/addPRChecklistIfNeeded.sh \
               --repo=${REPO} \
-              --pr-number=${PR_NUMBER} \
-              --cherry-pick-regex="${CHERRY_PICK_REGEX}" \
-              --cherry-pick-reminder="${CHERRY_PICK_REMINDER}"
+              --pr-number=${PR_NUMBER}
 
             ${SCRIPT_DIR}/createJobSummary.sh \
               --result=${RESULT} \

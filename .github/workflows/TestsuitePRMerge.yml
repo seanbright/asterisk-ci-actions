@@ -153,7 +153,7 @@ jobs:
 
   PostWorkflow:
     needs: [ Setup, PreMergeTestResults, MergeAndCherryPick ]
-    if: ${{ success() || failure() || cancelled() }}
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
       - name: Merge Cleanup
