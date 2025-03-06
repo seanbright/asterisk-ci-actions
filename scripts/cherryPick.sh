@@ -7,11 +7,7 @@ NO_CLONE=false
 
 source ${SCRIPT_DIR}/ci.functions
 
-for v in REPO REPO_DIR PR_NUMBER ; do
-	assert_env_variable $v || exit 1
-done
-
-printvars REPO REPO_DIR PR_NUMBER BRANCH BRANCHES PUSH NO_CLONE
+assert_env_variables --print REPO REPO_DIR PR_NUMBER || exit 1
 
 if [ -z "${BRANCH}" ] && [ -z "${BRANCHES}" ] ; then
 	error_out "Either --branch or --branches must be specified"
@@ -33,27 +29,32 @@ if ! [[ "${NO_CLONE}" =~ (true|false) ]] ; then
 	exit 1
 fi
 
+REPO_DIR=$(realpath ${REPO_DIR})
+
 cd $(dirname ${REPO_DIR})
 
-: ${BRANCHES:=[\'$BRANCH\']}
+: ${BRANCHES:=[\"$BRANCH\"]}
 : ${GITHUB_SERVER_URL:="https://github.com"}
 
-if ! $NO_CLONE ; then
+if $NO_CLONE ; then
+	debug_out "Skipping clone"
+else
 	debug_out "Cloning ${REPO} to ${REPO_DIR}"
 	mkdir -p ${REPO_DIR}
 	git clone -q --depth 10 --no-tags \
 		${GITHUB_SERVER_URL}/${REPO} ${REPO_DIR}
-	git config --global --add safe.directory $(realpath ${REPO_DIR})
-else
-	debug_out "Skipping clone"
 fi
 
 if [ ! -d ${REPO_DIR}/.git ] ; then
-	log_error_msg "Failed to clone ${REPO} to ${REPO_DIR}"
+	log_error_msgs "Failed to clone ${REPO} to ${REPO_DIR}"
 	exit 1
 fi
 
 cd ${REPO_DIR}
+
+git config get --global --value=${REPO_DIR} safe.directory &>/dev/null || \
+	git config set --global --append safe.directory ${REPO_DIR}
+
 debug_out "Fetching PR ${PR_NUMBER}"
 git fetch --depth 10 --no-tags origin refs/pull/${PR_NUMBER}/head
 
@@ -61,7 +62,7 @@ git fetch --depth 10 --no-tags origin refs/pull/${PR_NUMBER}/head
 debug_out "Getting commits for PR ${PR_NUMBER}"
 mapfile -t COMMITS < <(curl -s https://api.github.com/repos/${REPO}/pulls/${PR_NUMBER}/commits | jq -r '.[] | .sha + "|" + (.commit.message | split("\n")[0]) + "|" + .commit.author.name + "|" + .commit.author.email + "|"' || echo "@_ERROR_@")
 [[ "${COMMITS[0]}" =~ @_ERROR_@ ]] && {
-	log_error_msg "No commits for PR ${PR_NUMBER}"
+	log_error_msgs "No commits for PR ${PR_NUMBER}"
 	exit 1
 }
 
@@ -71,7 +72,7 @@ declare -p COMMITS
 debug_out "***** There are ${#COMMITS[@]} commits for PR ${PR_NUMBER}"
 for commit in "${COMMITS[@]}" ; do
 	[[ "$commit" =~ ([^|]+)\|([^|]+)\|([^|]+)\|([^|]+)\| ]] || {
-		log_error_msg "Unable to parse commit '$commit'"
+		log_error_msgs "Unable to parse commit '$commit'"
 		exit 1
 	}
 	SHA=${BASH_REMATCH[1]}
