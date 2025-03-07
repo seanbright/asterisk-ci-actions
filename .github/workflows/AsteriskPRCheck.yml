@@ -99,17 +99,7 @@ jobs:
     env:
       RESULT_SETUP:   ${{ needs.Setup.result }}
       RESULT_CHECK:   ${{ needs.Check.result }}
-      CHERRY_PICK_REGEX:       ${{ vars.CHERRY_PICK_REGEX }}
-      CHERRY_PICK_REMINDER:    ${{ vars.CHERRY_PICK_REMINDER }}
-      SQUASH_COMMITS_ADD_REMINDER: ${{ fromJSON(vars.SQUASH_COMMITS_ADD_REMINDER || false) && '--squash-commits' || '' }}
-      SQUASH_COMMITS_REGEX:    ${{ vars.SQUASH_COMMITS_REGEX }}
-      SQUASH_COMMITS_REMINDER: ${{ vars.SQUASH_COMMITS_REMINDER }}
-      USER_NOTE_ADD_REMINDER: ${{ fromJSON(vars.USER_NOTE_ADD_REMINDER || false) && '--user-note' || '' }}
-      USER_NOTE_REGEX:         ${{ vars.USER_NOTE_REGEX }}
-      USER_NOTE_REMINDER:      ${{ vars.USER_NOTE_REMINDER }}
-      UPGRADE_NOTE_ADD_REMINDER: ${{ fromJSON(vars.UPGRADE_NOTE_ADD_REMINDER || false) && '--upgrade-note' || '' }}
-      UPGRADE_NOTE_REGEX:      ${{ vars.UPGRADE_NOTE_REGEX }}
-      UPGRADE_NOTE_REMINDER:   ${{ vars.UPGRADE_NOTE_REMINDER }}
+      CHERRY_PICK_VALID_BRANCHES:       ${{ vars.CHERRY_PICK_VALID_BRANCHES }}
     steps:
         # ACTIONS_PATH, SCRIPT_DIR, NORMALIZED_BRANCH env vars
       - name: GetActionsRepo
@@ -151,7 +141,8 @@ jobs:
           if [[ $RESULT =~ (success|failure) ]] ; then
             ${SCRIPT_DIR}/PRChecks/addPRChecklistIfNeeded.sh \
               --repo=${REPO} \
-              --pr-number=${PR_NUMBER}
+              --pr-number=${PR_NUMBER} \
+              --cherry-pick-valid-branches=${CHERRY_PICK_VALID_BRANCHES}
 
             ${SCRIPT_DIR}/createJobSummary.sh \
               --result=${RESULT} \

@@ -6,7 +6,7 @@ source ${SCRIPT_DIR}/ci.functions
 source ${CHECKS_DIR}/checks.functions
 #set -e
 
-assert_env_variables --print PR_PATH PR_COMMITS_PATH || exit 1
+assert_env_variables --print PR_PATH PR_COMMITS_PATH PR_COMMENTS_PATH || exit 1
 
 : ${PR_CHECKLIST_PATH:=/dev/stderr}
 
@@ -33,7 +33,11 @@ checklist_added=false
 if [ $commit_count -eq 1 ] && [ "$pr_title" != "${commit_titles[0]}" ] ; then
 	debug_out "PR title and commit title mismatch"
 	cat <<-EOF | print_checklist_item --append-newline
-	- [ ] The PR title does not match the commit title.
+	- [ ] The PR title does not match the commit title. This can cause 
+	confusion for reviewers and future maintainers. 
+	GitHub doesn't automatically update the PR title when you update 
+	the commit message so if you've updated the commit with a force-push, 
+	please update the PR title to match the new commit message body. 
 	EOF
 	checklist_added=true
 fi
@@ -41,7 +45,11 @@ fi
 if [ $commit_count -eq 1 ] && [ "${pr_body//[[:cntrl:]]/ }" != "${commit_bodies[0]//[[:cntrl:]]/ }" ] ; then
 	debug_out "PR description and commit message body mismatch."
 	cat <<-EOF | print_checklist_item --append-newline
-	- [ ] The PR description does not match the commit message body.
+	- [ ] The PR description does not match the commit message body. 
+	This can cause confusion for reviewers and future maintainers. 
+	GitHub doesn't automatically update the PR description when you update 
+	the commit message so if you've updated the commit with a force-push, 
+	please update the PR description to match the new commit message body. 
 	EOF
 	checklist_added=true
 fi
@@ -94,15 +102,19 @@ fi
 
 has_bad_fixes=false
 check_for_bad_fixes() {
-	[[ "$2" =~ (^|[[:cntrl:]])(Fixes|Resolves)([^[:cntrl:]]+) ]] || return 0
-	keyword=${BASH_REMATCH[2]}
-	value=${BASH_REMATCH[3]}
-	has_fixes[$1]=true
-	debug_out "${1} has a '${keyword}' trailer.  Checking value '${value}'."
-	if [[ ! "${value}" =~ ^[:][[:blank:]]([#][0-9]+)|(https://github.com/[^/]+/[^/]+/issues/[0-9]+) ]] || [[ ! "${2}" =~ (^|[[:cntrl:]][[:cntrl:]])${keyword} ]] ; then
-		debug_out "${1} '${keyword}' trailer doesn't have a preceeding blank line."
-		has_bad_fixes=true
-	fi
+	while read LINE ; do
+		# Skip the check if someone typed "Resolves an issue..."
+		[[ "$LINE" =~ ^(Resolves|Fixes)[[:blank:]][a-zA-Z] ]] && continue
+		[[ "$LINE" =~ (^|[[:cntrl:]])(Fixes|Resolves)([^[:cntrl:]]+) ]] || continue
+		keyword=${BASH_REMATCH[2]}
+		value=${BASH_REMATCH[3]}
+		has_fixes[$1]=true
+		debug_out "${1} has a '${keyword}' trailer.  Checking value '${value}'."
+		if [[ ! "${value}" =~ ^[:][[:blank:]]([#][0-9]+)|(https://github.com/[^/]+/[^/]+/issues/[0-9]+) ]] || [[ ! "${2}" =~ (^|[[:cntrl:]][[:cntrl:]])${keyword} ]] ; then
+			debug_out "${1} '${keyword}' trailer is malformed."
+			has_bad_fixes=true
+		fi
+	done <<< $2 
 }
 
 # Check PR and commits for bad fixes.
@@ -192,7 +204,7 @@ if $has_bad_note ; then
 	checklist_added=true
 fi
 
-if ${has_fixes[commit]} && ! ${has_fixes[pr]} ; then
+if [ "${has_fixes[commit]}" != "${has_fixes[pr]}" ] ; then
 	debug_out "Commit has fixes but PR doesn't."
 	cat <<-EOF | print_checklist_item --append-newline
 	- [ ] Either the PR description has a \`Fixes\` or \`Resolves\` special trailer 
