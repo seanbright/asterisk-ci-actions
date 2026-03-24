@@ -1,11 +1,12 @@
 #!/usr/bin/bash
 
+SAT_DIR=$(dirname $(readlink -fn $0))
+: ${SCRIPT_DIR:=$(dirname ${SAT_DIR})}
+
 if [ -z "${GITHUB_TOKEN}" ] ; then
 	echo "GITHUB_TOKEN must be provided in the environment"
 	exit 1
 fi
-
-: ${SCRIPT_DIR:=$(dirname $(readlink -fn $0))}
 
 if [ ! -f "${SCRIPT_DIR}/ci.functions" ] ; then
 	echo "Functions script '${SCRIPT_DIR}/ci.functions' doesn't exist."
@@ -88,6 +89,9 @@ git -C "${DST_REPO}" remote set-url --push upstream none
 echo "Creating remote repository asterisk/${DST_REPO} from local directory ./${DST_REPO} and pushing master branch"
 gh repo create "asterisk/${DST_REPO}" --source "./${DST_REPO}" --private --disable-issues --disable-wiki --push
 
+echo "Sleeping for 10 seconds to allow GitHub to process the new repository"
+sleep 10
+
 echo "Setting repo asterisk/${DST_REPO} parameters"
 gh repo edit "asterisk/${DST_REPO}" --allow-forking=true --enable-auto-merge=false \
 	--enable-discussions=false --enable-issues=false --enable-merge-commit=false \
@@ -164,7 +168,7 @@ fi
 
 # Disable the workflows we never want to run in the private repo.
 echo "Disabling workflows in asterisk/${DST_REPO}"
-declare -a DISABLE_WORKFLOWS=( CreateDocs "Issue Opened" PRMerge NightlyAdmin NightlyTests Releaser WeeklyTests )
+declare -a DISABLE_WORKFLOWS=( CreateDocs "Issue Opened" NightlyAdmin NightlyTests Releaser WeeklyTests )
 for w in "${DISABLE_WORKFLOWS[@]}" ; do
 	gh -R asterisk/${DST_REPO} workflow disable "$w" || :
 done

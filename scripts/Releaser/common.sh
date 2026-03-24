@@ -5,9 +5,12 @@ if [ "$0" == "${BASH_SOURCE[0]}" ] ; then
 fi
 
 progname=$(basename -s .sh $0)
+: ${QUIETER:=false}
 
-echo "====== Entering ${progname}" >&2
-trap 'echo "====== Exiting ${progname} exit code: $?" >&2' EXIT
+if ! ${QUIETER} ; then
+	echo "====== Entering ${progname}" >&2
+	trap 'echo "====== Exiting ${progname} exit code: $?" >&2' EXIT
+fi
 
 # Scripts can use this common arg parsing like so...
 # Create 3 arrays that describe the options being used:
@@ -52,6 +55,8 @@ options+=(
 	   [changelog]="--changelog                        # Create changelog"
 	      [commit]="--commit                           # Commit changelog/alembic scripts"
 	         [tag]="--tag                              # Tag the release"
+	  [tag_prefix]="--tag-prefix=<prefix>              # A tag prefix"
+	[tag_prefixes]="--tag-prefixes=<prefix>[,<prefix>]...     # A comma separated list of tag prefixes"
 	        [push]="--push                             # Push ChangeLog commit and tag upstream"
 	     [tarball]="--tarball                          # Create tarball"
 	   [patchfile]="--patchfile                        # Create patchfile"
@@ -77,6 +82,8 @@ options+=(
 	    [user_ok]="--user-ok=<user>                 # Allow this user to run this script"
 	       [help]="--help                           # Print this help"
 	      [debug]="--debug                          # Print debugging info"
+   [last_release]="--last-release=<tag>             # The last release tag in the repo"
+ [next_release_types]="--next-release-types=<type>[,<type>]...   # A comma separated list of major, minor or patch release types"
 )
 
 wants+=( help debug )
@@ -109,6 +116,7 @@ stringoption() {
 
 print_help() {
 	unset IFS
+	declare -F print_before_help >/dev/null && print_before_help > /dev/stdout
 	echo "$@" >/dev/stdout
 	echo "Usage: $0 " >/dev/stdout
 
@@ -119,6 +127,7 @@ print_help() {
 	for x in "${wants[@]}" ; do
 		echo -e "\t[ ${options[$x]} ]" >/dev/stdout
 	done
+	declare -F print_after_help >/dev/null && print_after_help > /dev/stdout
 
 	exit 1
 }
@@ -248,62 +257,7 @@ done
 
 $DRY_RUN && ECHO_CMD="echo"
 
-# tag_parser takes a tag and the _name_ of an existing
-# associative array and parses the former into the latter
-tag_parser() {
-	{ [ -z "$1" ] || [ -z "$2" ] ; } && return 1 
-	local tagin=$1
-	local -n tagarray=$2
-	tagarray[certified]=false
-	tagarray[no_patches]=false
-	tagarray[artifact_prefix]="$PRODUCT"
-	tagarray[download_dir]="$PRODUCT"
-
-	if [[ "$tagin" =~  ^(certified-)?([0-9]+)[.]([0-9]+)(-cert|[.])([0-9]+)(-(rc|pre)([0-9]+))?$ ]]  ; then
-		tagarray[certprefix]=${BASH_REMATCH[1]}
-		tagarray[major]=${BASH_REMATCH[2]}
-		tagarray[minor]=${BASH_REMATCH[3]}
-		tagarray[patchsep]=${BASH_REMATCH[4]}
-		tagarray[patch]=${BASH_REMATCH[5]}
-		tagarray[release]=${BASH_REMATCH[6]}
-		tagarray[release_type]=${BASH_REMATCH[7]:-ga}
-		tagarray[release_num]=${BASH_REMATCH[8]}
-		tagarray[base_version]=${BASH_REMATCH[2]}.${BASH_REMATCH[3]}${BASH_REMATCH[4]}${BASH_REMATCH[5]}
-
-		tagarray[current_linkname]=${tagarray[major]}-current
-		[ "${BASH_REMATCH[1]}" == "certified-" ] && {
-			tagarray[certified]=true
-			tagarray[download_dir]="certified-asterisk"
-			tagarray[current_linkname]=${tagarray[major]}.${tagarray[minor]}-current
-		}
-
-		tagarray[tag]=$tagin
-	else
-		return 1
-	fi
-	if ${tagarray[certified]} ; then
-		[[ ${tagarray[patch]} == 1 ]] && \
-			( [[ ${tagarray[release_type]} == ga ]] || [[ ${tagarray[release]} == -rc1 ]] ) && tagarray[no_patches]=true || :
-		tagarray[branch]="releases/certified-${tagarray[major]}.${tagarray[minor]}"
-		tagarray[source_branch]="certified/${tagarray[major]}.${tagarray[minor]}"
-		tagarray[startpatch]=1
-	else
-		[[ $tagin =~ ^[0-9]+[.]0[.]0(-rc1)?$ ]] && tagarray[no_patches]=true || :
-		tagarray[branch]="releases/${tagarray[major]}"
-		tagarray[source_branch]="${tagarray[major]}"
-		tagarray[startpatch]=0
-	fi
-	return 0
-}
-
-is_new_major_release() {
-	local -n et="$1"
-	if { ${et[certified]} && [ "${et[patch]}" == "1" ] ; } || { [ "${et[minor]}" == "0" ] && [ "${et[patch]}" == "0" ] ; } &&
-		{ [ "${et[release_type]}" == "ga" ] || [ "${et[release_num]}" == "1" ] ; } ; then
-		return 0
-	fi
-	return 1
-}
+source $(dirname $(realpath $0))/tag.functions
 
 mdtohtml() {
 	cat <<-EOF

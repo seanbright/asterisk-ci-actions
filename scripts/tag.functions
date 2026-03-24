@@ -1,0 +1,72 @@
+# tag_parser takes a tag and the _name_ of an existing
+# associative array and parses the former into the latter
+tag_parser() {
+	{ [ -z "$1" ] || [ -z "$2" ] ; } && return 1 
+	local tagin=$1
+	local -n tagarray=$2
+	tagarray[certified]=false
+	tagarray[no_patches]=false
+	tagarray[artifact_prefix]="$PRODUCT"
+	tagarray[download_dir]="$PRODUCT"
+
+	if [[ "$tagin" =~  ^(certified-)?([0-9]+)[.]([0-9]+)(-cert|[.])([0-9]+)(-(rc|pre)([0-9]+))?$ ]]  ; then
+		tagarray[certprefix]=${BASH_REMATCH[1]}
+		tagarray[major]=${BASH_REMATCH[2]}
+		tagarray[minor]=${BASH_REMATCH[3]}
+		tagarray[patchsep]=${BASH_REMATCH[4]}
+		tagarray[patch]=${BASH_REMATCH[5]}
+		tagarray[release]=${BASH_REMATCH[6]}
+		tagarray[release_type]=${BASH_REMATCH[7]:-ga}
+		tagarray[release_num]=${BASH_REMATCH[8]}
+		tagarray[base_version]=${BASH_REMATCH[2]}.${BASH_REMATCH[3]}${BASH_REMATCH[4]}${BASH_REMATCH[5]}
+
+		tagarray[current_linkname]=${tagarray[major]}-current
+		[ "${BASH_REMATCH[1]}" == "certified-" ] && {
+			tagarray[certified]=true
+			tagarray[download_dir]="certified-asterisk"
+			tagarray[current_linkname]=${tagarray[major]}.${tagarray[minor]}-current
+		}
+
+		tagarray[tag]=$tagin
+	else
+		return 1
+	fi
+	if ${tagarray[certified]} ; then
+		[[ ${tagarray[patch]} == 1 ]] && \
+			( [[ ${tagarray[release_type]} == ga ]] || [[ ${tagarray[release]} == -rc1 ]] ) && tagarray[no_patches]=true || :
+		tagarray[branch]="releases/certified-${tagarray[major]}.${tagarray[minor]}"
+		tagarray[source_branch]="certified/${tagarray[major]}.${tagarray[minor]}"
+		tagarray[startpatch]=1
+	else
+		[[ $tagin =~ ^[0-9]+[.]0[.]0(-rc1)?$ ]] && tagarray[no_patches]=true || :
+		tagarray[branch]="releases/${tagarray[major]}"
+		tagarray[source_branch]="${tagarray[major]}"
+		tagarray[startpatch]=0
+	fi
+	return 0
+}
+
+# tag_parser takes the _name_ of an existing
+# associative array and create a tag from it
+tag_from_array() {
+	[ -z "$1" ] && return 1 
+	local -n tagarray=$1
+	
+	if ${tagarray[certified]} ; then
+		printf "certified-%d.%d-cert%d" ${tagarray[major]} ${tagarray[minor]} ${tagarray[patch]}
+	else
+		printf "%d.%d.%d" ${tagarray[major]} ${tagarray[minor]} ${tagarray[patch]}
+	fi
+	
+	return 0
+}
+
+is_new_major_release() {
+	local -n et="$1"
+	if { ${et[certified]} && [ "${et[patch]}" == "1" ] ; } || { [ "${et[minor]}" == "0" ] && [ "${et[patch]}" == "0" ] ; } &&
+		{ [ "${et[release_type]}" == "ga" ] || [ "${et[release_num]}" == "1" ] ; } ; then
+		return 0
+	fi
+	return 1
+}
+

@@ -10,9 +10,12 @@
 
 CI_FUNCTIONS_INCLUDED=1
 PROGNAME=$(basename $(readlink -fn $0))
+: ${QUIETER:=false}
 
-echo "====== Entering ${PROGNAME}" >&2
-trap 'echo "====== Exiting ${PROGNAME} Exit code $?" >&2' EXIT
+if ! ${QUIETER} ; then
+	echo "====== Entering ${PROGNAME}" >&2
+	trap 'echo "====== Exiting ${PROGNAME} Exit code $?" >&2' EXIT
+fi
 
 declare -a POSITIONAL_ARGS
 for a in "$@" ; do
@@ -52,7 +55,11 @@ error_out() {
 	[ ${#@} -eq 0 ] && return 0
 	_IFS=$"$IFS"
 	IFS=$'\n'
-	echo "::error::${*/#*/${PROGNAME}: &}" >&2
+	if ${QUIETER} ; then
+		echo "${*}" >&2
+	else
+		echo "::error::${*/#*/${PROGNAME}: &}" >&2
+	fi
 	unset IFS
 	IFS=$"$_IFS"
 }
@@ -165,3 +172,4 @@ log_failed_tests() {
 	unset IFS
 	IFS=$"$_IFS"
 }
+
