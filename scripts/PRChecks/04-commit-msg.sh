@@ -125,7 +125,8 @@ check_for_bad_fixes() {
 		value=${BASH_REMATCH[3]}
 		has_fixes[$1]=true
 		debug_out "${1} has a '${keyword}' trailer.  Checking value '${value}'."
-		if [[ ! "${value}" =~ ^[:][[:blank:]]([#]([0-9]+|GHSA))|(https://github.com/[^/]+/[^/]+/issues/[0-9]+) ]] || [[ ! "${2}" =~ (^|[[:cntrl:]][[:cntrl:]])${keyword} ]] ; then
+		## 
+		if [[ ! "${value}" =~ ^[:][[:blank:]]([#]([0-9]+|GHSA))|(https://github.com/[^/]+/[^/]+/issues/[0-9]+) ]] || [[ ! "${2}" =~ (^|[[:cntrl:]]+)${keyword} ]] ; then
 			debug_out "${1} '${keyword}' trailer is malformed."
 			has_bad_fixes=true
 		else
