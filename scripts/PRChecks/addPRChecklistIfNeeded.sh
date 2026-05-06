@@ -122,14 +122,29 @@ SCRIPT_ARGS="--repo=${REPO} --pr-number=${PR_NUMBER} \
 --cherry-pick-valid-branches=${CHERRY_PICK_VALID_BRANCHES} \
 --user-is-admin=${USER_IS_ADMIN}"
 
+
+# Get pr-checklist-exception items from admin comments
+mapfile -t checklist_exceptions < <(jq -c -r '.[] | select(.author_association == "MEMBER") 
+			| .body | match(["(^|\r?\n)pr-checklist-exception:[[:blank:]]*(.+)", "g"])
+			| .captures[1].string | gsub("^[[:cntrl:]]+|[[:cntrl:]]+$"; "") | split(",") | .[]' \
+			${pr_comments_path})
+debug_out "Checklist exceptions: ${checklist_exceptions[*]}"
 debug_out "Running PR checks with arguments: ${SCRIPT_ARGS}"
 
 checklist_added=false
 skip_checklists=false
 
 for s in $(find ${CHECKS_DIR} -name '[0-9]*.sh' | sort) ; do
-	check_name=$(basename $s)
-	if $skip_checklists && [ "${check_name:0:2}" != "99" ]; then
+	check_name=$(basename -s .sh $s)
+	exception_skip=false
+	for exception in "${checklist_exceptions[@]}" ; do
+		if [ "${check_name:3}" == "${exception}" ] ; then
+			exception_skip=true
+			break
+		fi
+	done
+
+	if ${exception_skip} || { $skip_checklists && [ "${check_name:0:2}" != "99" ] ; } ; then
 		debug_out "Skipping check: ${check_name}"
 		continue
 	fi
