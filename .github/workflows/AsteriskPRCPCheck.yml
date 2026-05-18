@@ -126,7 +126,7 @@ jobs:
         branch: ${{ fromJSON(needs.Setup.outputs.branches) }}
     uses: ./.github/workflows/AsteriskUnitGateTest.yml
     with:
-      test_type:         cherry-pick
+      test_type:         cpcheck
       asterisk_repo:     ${{ github.repository }}
       pr_number:         ${{ github.event.number }}
       base_branch:       ${{ matrix.branch }}

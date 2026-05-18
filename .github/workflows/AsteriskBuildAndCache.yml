@@ -190,6 +190,8 @@ jobs:
         id: save-output
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.NORMALIZED_BRANCH }}-build${{inputs.job_name_extra}}
+          name: ${{ env.NORMALIZED_BRANCH }}-build${{inputs.job_name_extra}}-${{inputs.test_type}}-${{ github.run_number }}
           if-no-files-found: ignore
-          path: ${{ env.LOG_DIR }}
+          path: |
+            ${{ env.LOG_DIR }}
+            ${{ env.OUTPUT_DIR }}

@@ -148,7 +148,7 @@ if $CONFIGURE ; then
 			exit 1
 		}
 	fi
-	debug_out "Running configure"
+	debug_out "Running configure with ${common_config_args}"
 	SUCCESS=true
 	runner ./configure ${common_config_args} &> ${OUTPUT_DIR}/configure.log || SUCCESS=false
 	$SUCCESS || { SUCCESS=true ; runner ./configure ${common_config_args} NOISY_BUILD=yes  &> ${OUTPUT_DIR}/configure_noisy.log || SUCCESS=false ; }

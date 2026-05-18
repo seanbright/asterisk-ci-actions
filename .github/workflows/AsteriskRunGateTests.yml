@@ -135,7 +135,7 @@ jobs:
         if: ${{ always() }}
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.NORMALIZED_BRANCH }}-${{inputs.gatetest_group}}
+          name: ${{ env.NORMALIZED_BRANCH }}-${{inputs.gatetest_group}}-${{inputs.test_type}}-${{ github.run_number }}
           if-no-files-found: ignore
           path: |
             ${{ env.LOG_DIR }}

@@ -83,7 +83,7 @@ jobs:
       statuses: read
     uses: ./.github/workflows/AsteriskUnitGateTest.yml
     with:
-      test_type:         prstatechange
+      test_type:         check
       asterisk_repo:     ${{ github.repository }}
       pr_number:         ${{ github.event.number }}
       base_branch:       ${{ github.event.pull_request.base.ref }}
