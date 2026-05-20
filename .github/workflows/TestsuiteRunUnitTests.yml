@@ -2,6 +2,9 @@ name: RunUnitTests
 on:
   workflow_call:
     inputs:
+      test_type:
+        required: false
+        type: string
       pr_number:
         required: true
         type: string

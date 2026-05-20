@@ -2,6 +2,9 @@ name: 'RunGateTests'
 on:
   workflow_call:
     inputs:
+      test_type:
+        required: false
+        type: string
       pr_number:
         required: true
         type: string
@@ -32,6 +35,7 @@ on:
         type: string
 
 env:
+  TEST_TYPE:        ${{ inputs.test_type }}
   REPO:             ${{ github.repository }}
   REPO_DIR:         ${{ github.workspace }}/${{ github.event.repository.name }}
   REPO_ORG:         ${{ github.event.repository.owner.login }}
@@ -71,7 +75,7 @@ jobs:
     needs: [ Setup ]
     uses: ./.github/workflows/AsteriskBuildAndCache.yml
     with:
-      test_type:         prstatechange
+      test_type:         ${{ inputs.test_type }}
       asterisk_repo:     ${{ inputs.asterisk_repo }}
       pr_number:         ${{ inputs.asterisk_test_pr }}
       base_branch:       ${{ inputs.base_branch }}
@@ -93,7 +97,7 @@ jobs:
       statuses: read
     uses: ./.github/workflows/AsteriskRunGateTests.yml
     with:
-      test_type:         prstatechange
+      test_type:         ${{ inputs.test_type }}
       base_branch:       ${{ inputs.base_branch }}
       asterisk_repo:     ${{ inputs.asterisk_repo }}
       testsuite_repo:    ${{ github.repository }}

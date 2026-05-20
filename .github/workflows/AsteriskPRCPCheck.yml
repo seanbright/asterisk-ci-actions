@@ -29,6 +29,7 @@ env:
   CHERRY_PICK_TEST_LABEL:   ${{ vars.CHERRY_PICK_TEST_LABEL }}
   CHERRY_PICK_REGEX:        ${{ vars.CHERRY_PICK_REGEX }}
   ASSOCIATED_TEST_PR_REGEX: ${{ vars.ASSOCIATED_TEST_PR_REGEX }}
+  TEST_TYPE:                cpcheck
 
 jobs:
   Setup:
@@ -38,6 +39,7 @@ jobs:
       branches:           ${{ steps.setup.outputs.BRANCHES }}
       branch_count:       ${{ steps.setup.outputs.BRANCH_COUNT }}
       testsuite_test_pr:  ${{ steps.setup.outputs.ASSOCIATED_TEST_PR }}
+      test_type:          ${{ steps.setup.outputs.TEST_TYPE }}
     steps:
         # ACTIONS_PATH, SCRIPT_DIR, NORMALIZED_BRANCH env vars
       - name: GetActionsRepo
@@ -46,6 +48,8 @@ jobs:
       - id: setup
         name: Setup
         run: |
+          # Setup
+          echo "TEST_TYPE=${TEST_TYPE}" >> "${GITHUB_OUTPUT}"
           # The script will populate ASSOCIATED_TEST_PR in both
           # GITHUB_ENV and GITHUB_OUTPUT.
           ${SCRIPT_DIR}/getAssociatedTestPR.sh \
@@ -126,7 +130,7 @@ jobs:
         branch: ${{ fromJSON(needs.Setup.outputs.branches) }}
     uses: ./.github/workflows/AsteriskUnitGateTest.yml
     with:
-      test_type:         cpcheck
+      test_type:         ${{ needs.Setup.outputs.test_type }}
       asterisk_repo:     ${{ github.repository }}
       pr_number:         ${{ github.event.number }}
       base_branch:       ${{ matrix.branch }}
@@ -208,6 +212,7 @@ jobs:
               --pr-number=${PR_NUMBER} \
               --workflow-run=${WORKFLOW_RUN_ID} \
               --tmp-dir=./run-${WORKFLOW_RUN_ID} \
+              --artifact-suffix="-${TEST_TYPE}-${GITHUB_RUN_NUMBER}" \
               --job-summary-output=job_summary.txt \
               --write-step-summary \
               --add-pr-comment \

@@ -34,9 +34,9 @@ for job in "${!jobs[@]}" ; do
 	job_id=${job}
 	job_name=${jobs[${job_id}]}
 	artifact_name=${job_name##* }
-	artifact_name=${artifact_name/\//-}
+	artifact_name="${artifact_name/\//-}${ARTIFACT_SUFFIX}"
 	artifact_id=$(jq -r '.artifacts[] | select(.name == "'${artifact_name}'") | .id' ${TMP_DIR}/artifacts.json)
-	[ -z "${artifact_id}" ] && continue
+	[ -z "${artifact_id}" ] && { debug_out "Couldn't find artifact $artifact_name" ; continue ; }
 	$VERBOSE && debug_out "Downloading ${artifact_name} - ${artifact_id}"
 	gh api /repos/${REPO}/actions/artifacts/${artifact_id}/zip > "${TMP_DIR}/${artifact_name}.zip"
 	unzip -o -qq -d ${TMP_DIR}/${artifact_name} "${TMP_DIR}/${artifact_name}.zip"

@@ -32,6 +32,7 @@ env:
   PR_STATE_CHANGE_DELAY_SEC:  ${{ vars.PR_STATE_CHANGE_DELAY_SEC || 120 }}
   ASSOCIATED_TEST_PR_REGEX:   ${{ vars.ASSOCIATED_TEST_PR_REGEX }}
   CHERRY_PICK_VALID_BRANCHES: ${{ vars.CHERRY_PICK_VALID_BRANCHES }}
+  TEST_TYPE:                  check
 
 jobs:
   Setup:
@@ -40,6 +41,7 @@ jobs:
       run:
         shell: bash
     outputs:
+      test_type:         ${{ steps.setup.outputs.TEST_TYPE }}
       asterisk_test_pr:  ${{ steps.setup.outputs.ASSOCIATED_TEST_PR }}
       gatetest_count:    ${{ steps.checkfiles.outputs.gatetest_count }}
       gatetest_group:    ${{ steps.checkfiles.outputs.gatetest_group }}
@@ -51,6 +53,8 @@ jobs:
       - name: Setup
         id: setup
         run: |
+          # Setup
+          echo "TEST_TYPE=${TEST_TYPE}" >> "${GITHUB_OUTPUT}"
           if [ "$TRIGGER" != "labeled" ] ; then
             # Wait to allow time to add associated PR
             echo "Waiting for ${PR_STATE_CHANGE_DELAY_SEC} seconds to give user a chance to add PR comments"
@@ -93,6 +97,7 @@ jobs:
       statuses: read
     uses: ./.github/workflows/TestsuiteRunUnitTests.yml
     with:
+      test_type:         ${{ needs.Setup.outputs.test_type }}
       pr_number:         ${{ github.event.number }}
       base_branch:       ${{ github.event.pull_request.base.ref }}
       unittest_command:  ${{ vars.UNITTEST_COMMAND }}
@@ -110,6 +115,7 @@ jobs:
       statuses: read
     uses: ./.github/workflows/TestsuiteRunGateTests.yml
     with:
+      test_type:         ${{ needs.Setup.outputs.test_type }}
       pr_number:         ${{ github.event.number }}
       base_branch:       ${{ github.event.pull_request.base.ref }}
       is_cherry_pick:    false
@@ -196,6 +202,7 @@ jobs:
               --workflow-run=${WORKFLOW_RUN_ID} \
               --tmp-dir=./run-${WORKFLOW_RUN_ID} \
               --job-summary-output=job_summary.txt \
+              --artifact-suffix="-${TEST_TYPE}-${GITHUB_RUN_NUMBER}" \
               --write-step-summary \
               --add-pr-comment \
               --verbose || :
