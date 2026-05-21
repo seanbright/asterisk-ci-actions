@@ -33,7 +33,7 @@ fi
 [[ "$(declare -p options 2>/dev/null || : )" =~ "declare -A" ]] || declare -A options
 
 options+=(
-	     [product]="--product=[ asterisk | libpri ]    # Defaults to asterisk"
+	     [product]="--product=[ asterisk | libpri ]"
 	[release_type]="--release-type=[ rc1 | rcn | ga | ganorc ]"
 	   [start_tag]="--start-tag=<tag>"
 	     [end_tag]="--end-tag=<tag>"

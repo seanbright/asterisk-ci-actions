@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-declare needs=( end_tag )
-declare wants=( product src_repo dst_dir sign dry_run )
+declare needs=( product end_tag )
+declare wants=( src_repo dst_dir sign dry_run )
 declare tests=( end_tag src_repo dst_dir )
 
 progdir="$(dirname $(realpath $0) )"
