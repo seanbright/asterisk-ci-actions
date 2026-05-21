@@ -13,9 +13,30 @@ tag_parser ${END_TAG} end_tag_array || bail "Unable to parse end tag '${END_TAG}
 ${DEBUG} && declare -p end_tag_array
 
 debug "Creating tarball for ${END_TAG}"
+
+declare -a extra_artifacts
+
 # Before we create the tarball, we need to retrieve
 # a few basic sounds files.
 if [ "${PRODUCT}" == "asterisk" ] ; then
+[ -x "${SRC_REPO}/configure" ] || {
+	debug "Running bootstrap.sh to create build scripts"
+	(cd "${SRC_REPO}" && ./bootstrap.sh) || bail "Unable to generate build scripts"
+	extra_artifacts=( \
+		--prefix="${end_tag_array[artifact_prefix]}-${END_TAG}/" \
+		 --add-file=aclocal.m4 \
+		 --add-file=config.guess \
+		 --add-file=config.sub \
+		 --add-file=configure \
+		 --add-file=install-sh \
+		--prefix="${end_tag_array[artifact_prefix]}-${END_TAG}/menuselect/" \
+		 --add-file=menuselect/aclocal.m4 \
+		 --add-file=menuselect/autoconfig.h.in \
+		 --add-file=menuselect/configure \
+		--prefix="${end_tag_array[artifact_prefix]}-${END_TAG}/include/asterisk/" \
+		 --add-file=include/asterisk/autoconfig.h.in )
+}
+
 debug "Downloading sound files"
 ${ECHO_CMD} make -C "${SRC_REPO}/sounds" \
 	MENUSELECT_CORE_SOUNDS=CORE-SOUNDS-EN-GSM \
@@ -31,6 +52,7 @@ ${ECHO_CMD} git -C "${SRC_REPO}" archive --format=tar \
 	-o "${DST_DIR}/${end_tag_array[artifact_prefix]}-${END_TAG}.tar" \
 	--prefix="${end_tag_array[artifact_prefix]}-${END_TAG}/sounds/" \
 	$(find "${SRC_REPO}/sounds/" -name "asterisk*.tar.gz" -printf " --add-file=sounds/%P") \
+	"${extra_artifacts[@]}" \
 	--prefix="${end_tag_array[artifact_prefix]}-${END_TAG}/" "${END_TAG}" || bail "Unable to create tarball"
 
 ${ECHO_CMD} tar --delete -f "${DST_DIR}/${end_tag_array[artifact_prefix]}-${END_TAG}.tar" ${end_tag_array[artifact_prefix]}-${END_TAG}/.github || :
