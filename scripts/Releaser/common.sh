@@ -42,7 +42,7 @@ options+=(
 	    [repo_dir]="--repo-dir=<source repo path>"
 	    [src_repo]="--src-repo=<source repo path>"
 	     [gh_repo]='--gh-repo=<github repository>      # defaults asterisk/$(basename ${SRC_REPO})'
-	     [dst_dir]="--dest-dir=<destination directory> # Directory for build artifacts"
+	     [dst_dir]="--dst-dir=<destination directory>  # Directory for build artifacts"
 	      [branch]="--branch=<branch>                  # Release branch"
 	        [norc]="--norc                             # There were no release candidates for this release"
 	    [security]="--security                         # This is a security release"
